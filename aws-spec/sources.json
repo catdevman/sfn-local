@@ -1,0 +1,255 @@
+{
+  "feed": {
+    "id": "release-notes",
+    "url": "https://docs.aws.amazon.com/step-functions/latest/dg/recent-updates.rss",
+    "found_on": "https://docs.aws.amazon.com/step-functions/latest/dg/document-history.html",
+    "note": "The document history page sets meta name=rss to recent-updates.rss. The channel title is Amazon Step Functions Release Notes."
+  },
+  "tables": [
+    {
+      "id": "document-history",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/document-history.md",
+      "kind": "document-history"
+    },
+    {
+      "id": "recent-launches",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/recent-launches.md",
+      "kind": "recent-launches"
+    },
+    {
+      "id": "sdk-integrations",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.md",
+      "kind": "sdk-integrations"
+    }
+  ],
+  "model": {
+    "url": "https://raw.githubusercontent.com/aws/api-models-aws/main/models/sfn/service/2016-11-23/sfn-2016-11-23.json",
+    "output": "states-api/sfn-2016-11-23.json",
+    "upstream": "https://github.com/aws/api-models-aws/blob/main/models/sfn/service/2016-11-23/sfn-2016-11-23.json",
+    "license": "Apache-2.0"
+  },
+  "asl": {
+    "url": "https://states-language.net/spec.html",
+    "output": "asl/spec.html",
+    "source_repo": "https://github.com/awslabs/states-language/blob/master/spec/States.html"
+  },
+  "witnesses": [
+    {
+      "id": "botocore-service-2",
+      "url": "https://raw.githubusercontent.com/boto/botocore/develop/botocore/data/stepfunctions/2016-11-23/service-2.json",
+      "why": "Apache-2.0 client model of the same States API. The hash is recorded so a client-only change shows up. The Smithy snapshot in states-api/ is the file this repo keeps."
+    },
+    {
+      "id": "states-language-github-source",
+      "url": "https://raw.githubusercontent.com/awslabs/states-language/master/spec/States.html",
+      "why": "Source file in awslabs/states-language. The published spec at states-language.net is the copy this repo keeps, because the source file can lag the published spec."
+    }
+  ],
+  "pages": [
+    {
+      "id": "document-history",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/document-history.md",
+      "why": "Human changelog of the developer guide, including documentation-only rows."
+    },
+    {
+      "id": "recent-launches",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/recent-launches.md",
+      "why": "Dated feature launches and links to the announcement posts."
+    },
+    {
+      "id": "awssdk-release-history",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.md",
+      "why": "Dates when AWS SDK integrations were added."
+    },
+    {
+      "id": "concepts-amazon-states-language",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.md",
+      "why": "Amazon States Language overview and the examples AWS publishes."
+    },
+    {
+      "id": "statemachine-structure",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.md",
+      "why": "Top-level state machine fields."
+    },
+    {
+      "id": "workflow-states",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/workflow-states.md",
+      "why": "State type overview."
+    },
+    {
+      "id": "intrinsic-functions",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/intrinsic-functions.md",
+      "why": "States intrinsic functions."
+    },
+    {
+      "id": "state-task",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-task.md",
+      "why": "Task state, including service integration resource forms."
+    },
+    {
+      "id": "state-choice",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-choice.md",
+      "why": "Choice state rules."
+    },
+    {
+      "id": "state-parallel",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-parallel.md",
+      "why": "Parallel state."
+    },
+    {
+      "id": "state-map",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map.md",
+      "why": "Map state overview."
+    },
+    {
+      "id": "state-map-inline",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-inline.md",
+      "why": "Inline Map."
+    },
+    {
+      "id": "state-map-distributed",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-distributed.md",
+      "why": "Distributed Map."
+    },
+    {
+      "id": "state-pass",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-pass.md",
+      "why": "Pass state."
+    },
+    {
+      "id": "state-wait",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-wait.md",
+      "why": "Wait state."
+    },
+    {
+      "id": "state-succeed",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-succeed.md",
+      "why": "Succeed state."
+    },
+    {
+      "id": "state-fail",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.md",
+      "why": "Fail state."
+    },
+    {
+      "id": "concepts-error-handling",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.md",
+      "why": "Retry, Catch, and error names."
+    },
+    {
+      "id": "service-quotas",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/service-quotas.md",
+      "why": "Quotas that change execution limits."
+    },
+    {
+      "id": "concepts-input-output-filtering",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-input-output-filtering.md",
+      "why": "Input and output processing overview."
+    },
+    {
+      "id": "workflow-variables",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/workflow-variables.md",
+      "why": "Workflow variables and Assign."
+    },
+    {
+      "id": "transforming-data",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.md",
+      "why": "JSONata data transformations."
+    },
+    {
+      "id": "input-output-contextobject",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-contextobject.md",
+      "why": "Context object, including $states."
+    },
+    {
+      "id": "amazon-states-language-paths",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-paths.md",
+      "why": "JSONPath fields."
+    },
+    {
+      "id": "input-output-inputpath-params",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-inputpath-params.md",
+      "why": "InputPath, Parameters, and ResultSelector."
+    },
+    {
+      "id": "input-output-resultpath",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-resultpath.md",
+      "why": "ResultPath and output selection."
+    },
+    {
+      "id": "input-output-itemspath",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemspath.md",
+      "why": "Map ItemsPath."
+    },
+    {
+      "id": "input-output-itemreader",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemreader.md",
+      "why": "Distributed Map ItemReader."
+    },
+    {
+      "id": "input-output-itemselector",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemselector.md",
+      "why": "Map ItemSelector."
+    },
+    {
+      "id": "input-output-itembatcher",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itembatcher.md",
+      "why": "Map ItemBatcher."
+    },
+    {
+      "id": "input-output-resultwriter",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-resultwriter.md",
+      "why": "Map ResultWriter."
+    },
+    {
+      "id": "connect-to-resource",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.md",
+      "why": "Integration patterns: Request Response, .sync, and .waitForTaskToken."
+    },
+    {
+      "id": "call-https-apis",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/call-https-apis.md",
+      "why": "HTTP Task."
+    },
+    {
+      "id": "connect-parameters",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-parameters.md",
+      "why": "Task Parameters passed to a service API."
+    },
+    {
+      "id": "concepts-activities",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.md",
+      "why": "Activities and activity workers."
+    },
+    {
+      "id": "test-state-isolation",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/test-state-isolation.md",
+      "why": "TestState API behavior."
+    },
+    {
+      "id": "redrive-executions",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.md",
+      "why": "Redrive behavior."
+    },
+    {
+      "id": "supported-services-awssdk",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/supported-services-awssdk.md",
+      "why": "Catalog of AWS SDK integrations."
+    },
+    {
+      "id": "sfn-local",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local.md",
+      "why": "AWS page for Step Functions Local, the archived local tool."
+    },
+    {
+      "id": "sfn-local-lambda",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local-lambda.md",
+      "why": "Local Lambda endpoint wiring described by AWS."
+    },
+    {
+      "id": "sfn-local-test-sm-exec",
+      "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local-test-sm-exec.md",
+      "why": "Mocked service integrations for local testing, as AWS describes them."
+    }
+  ]
+}

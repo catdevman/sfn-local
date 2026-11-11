@@ -1,0 +1,89 @@
+name: Sync AWS Step Functions spec snapshots
+
+on:
+  schedule:
+    # Daily at 13:17 UTC. GitHub Actions polls; it cannot subscribe to RSS.
+    - cron: "17 13 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: aws-spec-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fetch AWS Step Functions sources
+        run: |
+          set -euo pipefail
+          python3 aws-spec/tools/sync_aws_spec.py | tee /tmp/aws-spec-sync.txt
+
+      - name: Open a pull request when snapshots change
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BASE_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          set -euo pipefail
+          if ! git status --porcelain -- aws-spec | grep -q .; then
+            echo "No AWS spec changes."
+            exit 0
+          fi
+
+          while IFS= read -r line; do
+            path="${line:3}"
+            case "$path" in
+              aws-spec/*) ;;
+              *)
+                echo "Refusing to commit a path outside aws-spec/: $path"
+                exit 1
+                ;;
+            esac
+          done < <(git status --porcelain -- aws-spec)
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -- aws-spec
+          while IFS= read -r path; do
+            case "$path" in
+              aws-spec/*) ;;
+              *)
+                echo "Refusing to commit a path outside aws-spec/: $path"
+                exit 1
+                ;;
+            esac
+          done < <(git diff --cached --name-only)
+
+          git commit -m "Update AWS Step Functions spec snapshots" -m "Fetched the States API model, the Amazon States Language spec, the release notes, and the changelog tables. docs/spec.md is unchanged."
+
+          branch="aws-spec/sync"
+          if git ls-remote --exit-code origin "$branch" >/dev/null 2>&1; then
+            git fetch origin "+refs/heads/${branch}:refs/remotes/origin/${branch}"
+            git push --force-with-lease origin "HEAD:${branch}"
+          else
+            git push origin "HEAD:${branch}"
+          fi
+
+          {
+            echo "## AWS spec snapshots"
+            echo
+            echo "Files under \`aws-spec/\` changed. \`docs/spec.md\` was not modified."
+            echo "This records the AWS sources. It does not change a local runner."
+            echo
+            echo '```'
+            cat /tmp/aws-spec-sync.txt
+            echo '```'
+          } > /tmp/aws-spec-pr.md
+
+          existing="$(gh pr list --head "$branch" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number')"
+          if [ -z "$existing" ]; then
+            gh pr create --base "$BASE_BRANCH" --head "$branch" --title "Update AWS Step Functions spec snapshots" --body-file /tmp/aws-spec-pr.md
+          else
+            gh pr comment "$existing" --body-file /tmp/aws-spec-pr.md
+          fi

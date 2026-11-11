@@ -1,0 +1,10 @@
+{
+  "name": "jsonata",
+  "version": "2.0.6",
+  "tag": "v2.0.6",
+  "commit": "6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b",
+  "repository": "https://github.com/jsonata-js/jsonata",
+  "license": "MIT",
+  "language_docs": "https://docs.jsonata.org/2.0.0/overview",
+  "aws_page": "https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.html"
+}

@@ -1,0 +1,2811 @@
+{
+  "_note": "Generated from the vendored Smithy snapshot. Documentation strings are omitted. The local runner design stays in docs/spec.md.",
+  "source": "states-api/sfn-2016-11-23.json",
+  "service": "com.amazonaws.sfn#AWSStepFunctions",
+  "version": "2016-11-23",
+  "protocol": "aws.protocols#awsJson1_0",
+  "target_prefix": "AWSStepFunctions",
+  "endpoint_prefix": "states",
+  "sdk_id": "SFN",
+  "arn_namespace": "states",
+  "sigv4_name": "states",
+  "operations": [
+    {
+      "name": "CreateActivity",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "name",
+          "target": "Name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "required": false,
+          "type": "list",
+          "member": "Tag"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "output": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ActivityAlreadyExists",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ActivityLimitExceeded",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidEncryptionConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidName",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TooManyTags",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "CreateStateMachine",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "name",
+          "target": "Name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "required": false,
+          "type": "list",
+          "member": "Tag"
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "publish",
+          "target": "Publish",
+          "required": false,
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "versionDescription",
+          "target": "VersionDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidDefinition",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidEncryptionConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidLoggingConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidName",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidTracingConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineAlreadyExists",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineLimitExceeded",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineTypeNotSupported",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TooManyTags",
+          "fault": "client",
+          "http_status": 400
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "CreateStateMachineAlias",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "CharacterRestrictedName",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "required": true,
+          "type": "list",
+          "member": "RoutingConfigurationListItem"
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidName",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "ServiceQuotaExceededException",
+          "fault": "client",
+          "http_status": 402
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "DeleteActivity",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "DeleteStateMachine",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "DeleteStateMachineAlias",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "DeleteStateMachineVersion",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineVersionArn",
+          "target": "LongArn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "DescribeActivity",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ActivityDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "DescribeExecution",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "output": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "target": "ExecutionStatus",
+          "required": true,
+          "type": "enum",
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT",
+            "ABORTED",
+            "PENDING_REDRIVE"
+          ]
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "inputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "outputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "redriveCount",
+          "target": "RedriveCount",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        },
+        {
+          "name": "redriveStatus",
+          "target": "ExecutionRedriveStatus",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "REDRIVABLE",
+            "NOT_REDRIVABLE",
+            "REDRIVABLE_BY_MAP_RUN"
+          ]
+        },
+        {
+          "name": "redriveStatusReason",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "DescribeMapRun",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "target": "MapRunStatus",
+          "required": true,
+          "type": "enum",
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "ABORTED"
+          ]
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        },
+        {
+          "name": "maxConcurrency",
+          "target": "MaxConcurrency",
+          "required": true,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "toleratedFailurePercentage",
+          "target": "ToleratedFailurePercentage",
+          "required": true,
+          "type": "float",
+          "default": 0
+        },
+        {
+          "name": "toleratedFailureCount",
+          "target": "ToleratedFailureCount",
+          "required": true,
+          "type": "long",
+          "default": 0
+        },
+        {
+          "name": "itemCounts",
+          "target": "MapRunItemCounts",
+          "required": true,
+          "type": "structure"
+        },
+        {
+          "name": "executionCounts",
+          "target": "MapRunExecutionCounts",
+          "required": true,
+          "type": "structure"
+        },
+        {
+          "name": "redriveCount",
+          "target": "RedriveCount",
+          "required": false,
+          "type": "integer"
+        },
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachine",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "target": "StateMachineStatus",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ACTIVE",
+            "DELETING"
+          ]
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "required": true,
+          "type": "enum",
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "label",
+          "target": "MapRunLabel",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "target": "VersionDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "variableReferences",
+          "target": "VariableReferences",
+          "required": false,
+          "type": "map",
+          "key": "StateName",
+          "value": "VariableNameList"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachineAlias",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "required": false,
+          "type": "list",
+          "member": "RoutingConfigurationListItem"
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        },
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "required": false,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachineForExecution",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "label",
+          "target": "MapRunLabel",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "variableReferences",
+          "target": "VariableReferences",
+          "required": false,
+          "type": "map",
+          "key": "StateName",
+          "value": "VariableNameList"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "GetActivityTask",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "workerName",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveDataJobInput",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ActivityDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ActivityWorkerLimitExceeded",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "GetExecutionHistory",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "reverseOrder",
+          "target": "ReverseOrder",
+          "required": false,
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "includeExecutionData",
+          "target": "IncludeExecutionDataGetExecutionHistory",
+          "required": false,
+          "type": "boolean"
+        }
+      ],
+      "output": [
+        {
+          "name": "events",
+          "target": "HistoryEventList",
+          "required": true,
+          "type": "list",
+          "member": "HistoryEvent"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "ListActivities",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "activities",
+          "target": "ActivityList",
+          "required": true,
+          "type": "list",
+          "member": "ActivityListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "ListExecutions",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "statusFilter",
+          "target": "ExecutionStatus",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT",
+            "ABORTED",
+            "PENDING_REDRIVE"
+          ]
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "nextToken",
+          "target": "ListExecutionsPageToken",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "redriveFilter",
+          "target": "ExecutionRedriveFilter",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "REDRIVEN",
+            "NOT_REDRIVEN"
+          ]
+        }
+      ],
+      "output": [
+        {
+          "name": "executions",
+          "target": "ExecutionList",
+          "required": true,
+          "type": "list",
+          "member": "ExecutionListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "ListExecutionsPageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineTypeNotSupported",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "ListMapRuns",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "mapRuns",
+          "target": "MapRunList",
+          "required": true,
+          "type": "list",
+          "member": "MapRunListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "ListStateMachineAliases",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineAliases",
+          "target": "StateMachineAliasList",
+          "required": true,
+          "type": "list",
+          "member": "StateMachineAliasListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "ListStateMachineVersions",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachineVersions",
+          "target": "StateMachineVersionList",
+          "required": true,
+          "type": "list",
+          "member": "StateMachineVersionListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "ListStateMachines",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "stateMachines",
+          "target": "StateMachineList",
+          "required": true,
+          "type": "list",
+          "member": "StateMachineListItem"
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "ListTagsForResource",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "tags",
+          "target": "TagList",
+          "required": false,
+          "type": "list",
+          "member": "Tag"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        }
+      ]
+    },
+    {
+      "name": "PublishStateMachineVersion",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "target": "VersionDescription",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ServiceQuotaExceededException",
+          "fault": "client",
+          "http_status": 402
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "RedriveExecution",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "clientToken",
+          "target": "ClientToken",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ExecutionLimitExceeded",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ExecutionNotRedrivable",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "SendTaskFailure",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskTimedOut",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "SendTaskHeartbeat",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskTimedOut",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "SendTaskSuccess",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "required": true,
+          "type": "string"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidOutput",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidToken",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "TaskTimedOut",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "StartExecution",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionAlreadyExists",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ExecutionLimitExceeded",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidExecutionInput",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidName",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "StartSyncExecution",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "output": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "status",
+          "target": "SyncExecutionStatus",
+          "required": true,
+          "type": "enum",
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT"
+          ]
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "inputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "outputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "billingDetails",
+          "target": "BillingDetails",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidExecutionInput",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidName",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineTypeNotSupported",
+          "fault": "client",
+          "http_status": null
+        }
+      ]
+    },
+    {
+      "name": "StopExecution",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "output": [
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ExecutionDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsInvalidStateException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "TagResource",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "required": true,
+          "type": "list",
+          "member": "Tag"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "TooManyTags",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "TestState",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "inspectionLevel",
+          "target": "InspectionLevel",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "INFO",
+            "DEBUG",
+            "TRACE"
+          ]
+        },
+        {
+          "name": "revealSecrets",
+          "target": "RevealSecrets",
+          "required": false,
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "variables",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "stateName",
+          "target": "TestStateStateName",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "mock",
+          "target": "MockInput",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "context",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "stateConfiguration",
+          "target": "TestStateConfiguration",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "output": [
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "inspectionData",
+          "target": "InspectionData",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "nextState",
+          "target": "StateName",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "status",
+          "target": "TestExecutionStatus",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "RETRIABLE",
+            "CAUGHT_ERROR"
+          ]
+        }
+      ],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidDefinition",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidExecutionInput",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "UntagResource",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "tagKeys",
+          "target": "TagKeyList",
+          "required": true,
+          "type": "list",
+          "member": "TagKey"
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        }
+      ]
+    },
+    {
+      "name": "UpdateMapRun",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "maxConcurrency",
+          "target": "MaxConcurrency",
+          "required": false,
+          "type": "integer",
+          "default": null
+        },
+        {
+          "name": "toleratedFailurePercentage",
+          "target": "ToleratedFailurePercentage",
+          "required": false,
+          "type": "float",
+          "default": null
+        },
+        {
+          "name": "toleratedFailureCount",
+          "target": "ToleratedFailureCount",
+          "required": false,
+          "type": "long",
+          "default": null
+        }
+      ],
+      "output": [],
+      "errors": [
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "UpdateStateMachine",
+      "idempotent": true,
+      "input": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "required": false,
+          "type": "structure"
+        },
+        {
+          "name": "publish",
+          "target": "Publish",
+          "required": false,
+          "type": "boolean",
+          "default": false
+        },
+        {
+          "name": "versionDescription",
+          "target": "VersionDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "required": false,
+          "type": "structure"
+        }
+      ],
+      "output": [
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "required": false,
+          "type": "string"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidDefinition",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidEncryptionConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidLoggingConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "InvalidTracingConfiguration",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsAccessDeniedException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "KmsThrottlingException",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "MissingRequiredParameter",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ServiceQuotaExceededException",
+          "fault": "client",
+          "http_status": 402
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "StateMachineDoesNotExist",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "UpdateStateMachineAlias",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "required": false,
+          "type": "string"
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "required": false,
+          "type": "list",
+          "member": "RoutingConfigurationListItem"
+        }
+      ],
+      "output": [
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "required": true,
+          "type": "timestamp"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ConflictException",
+          "fault": "client",
+          "http_status": 409
+        },
+        {
+          "name": "InvalidArn",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ResourceNotFound",
+          "fault": "client",
+          "http_status": 404
+        },
+        {
+          "name": "StateMachineDeleting",
+          "fault": "client",
+          "http_status": null
+        },
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    },
+    {
+      "name": "ValidateStateMachineDefinition",
+      "idempotent": false,
+      "input": [
+        {
+          "name": "definition",
+          "target": "Definition",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "severity",
+          "target": "ValidateStateMachineDefinitionSeverity",
+          "required": false,
+          "type": "enum",
+          "enum": [
+            "ERROR",
+            "WARNING"
+          ]
+        },
+        {
+          "name": "maxResults",
+          "target": "ValidateStateMachineDefinitionMaxResult",
+          "required": false,
+          "type": "integer",
+          "default": 0
+        }
+      ],
+      "output": [
+        {
+          "name": "result",
+          "target": "ValidateStateMachineDefinitionResultCode",
+          "required": true,
+          "type": "enum",
+          "enum": [
+            "OK",
+            "FAIL"
+          ]
+        },
+        {
+          "name": "diagnostics",
+          "target": "ValidateStateMachineDefinitionDiagnosticList",
+          "required": true,
+          "type": "list",
+          "member": "ValidateStateMachineDefinitionDiagnostic"
+        },
+        {
+          "name": "truncated",
+          "target": "ValidateStateMachineDefinitionTruncated",
+          "required": false,
+          "type": "boolean"
+        }
+      ],
+      "errors": [
+        {
+          "name": "ValidationException",
+          "fault": "client",
+          "http_status": 400
+        }
+      ]
+    }
+  ]
+}
