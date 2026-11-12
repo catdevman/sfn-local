@@ -319,7 +319,12 @@ func classified(status string) bool {
 const jarImage = "amazon/aws-stepfunctions-local:2.0.0"
 
 func runnerRegistered(phase string) bool {
-	return phase == "1"
+	switch phase {
+	case "1", "2":
+		return true
+	default:
+		return false
+	}
 }
 
 func jarOracle(root string) (string, error) {

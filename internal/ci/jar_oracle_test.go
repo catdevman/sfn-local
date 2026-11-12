@@ -60,6 +60,22 @@ func compareJar(image string) (string, error) {
 			errorName:  "Boom",
 		},
 		{
+			name:       "choice",
+			definition: `{"StartAt":"C","States":{"C":{"Type":"Choice","Choices":[{"Variable":"$.n","NumericGreaterThan":1,"Next":"Yes"}],"Default":"No"},"Yes":{"Type":"Succeed"},"No":{"Type":"Fail","Error":"TooSmall","Cause":"n<=1"}}}`,
+			input:      `{"n":2}`,
+			status:     "SUCCEEDED",
+			output:     `{"n":2}`,
+			events:     []string{"ExecutionStarted", "ChoiceStateEntered", "ChoiceStateExited", "SucceedStateEntered", "SucceedStateExited", "ExecutionSucceeded"},
+		},
+		{
+			name:       "parameters",
+			definition: `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"name.$":"$.user.name","static":1},"End":true}}}`,
+			input:      `{"user":{"name":"ada"}}`,
+			status:     "SUCCEEDED",
+			output:     `{"name":"ada","static":1}`,
+			events:     []string{"ExecutionStarted", "PassStateEntered", "PassStateExited", "ExecutionSucceeded"},
+		},
+		{
 			name:       "stop-wait",
 			definition: `{"StartAt":"W","States":{"W":{"Type":"Wait","Seconds":30,"End":true}}}`,
 			input:      `{}`,

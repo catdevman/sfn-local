@@ -51,12 +51,24 @@ type State struct {
 	HasParameters     bool
 	HasAssign         bool
 	HasResultSelector bool
+	Parameters        json.RawMessage
+	ResultSelector    json.RawMessage
 	HasError          bool
 	Error             string
 	HasCause          bool
 	Cause             string
 	HasErrorPath      bool
+	ErrorPath         string
 	HasCausePath      bool
+	CausePath         string
+	Choices           json.RawMessage
+	Default           string
+	HasDefault        bool
+	Seconds           *int64
+	Timestamp         string
+	HasTimestamp      bool
+	SecondsPath       string
+	TimestampPath     string
 }
 
 // Program is a validated definition.
@@ -182,17 +194,22 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string) (
 		st.HasResult = true
 		st.Result = append(json.RawMessage(nil), raw...)
 	}
-	if _, ok := fields["Parameters"]; ok {
+	if raw, ok := fields["Parameters"]; ok {
 		st.HasParameters = true
-		if err := checkJSON(fields["Parameters"], join(ptr, "Parameters")); err != nil {
+		st.Parameters = append(json.RawMessage(nil), raw...)
+		if err := checkPayload(raw, join(ptr, "Parameters")); err != nil {
 			return nil, err
 		}
 	}
 	if _, ok := fields["Assign"]; ok {
 		st.HasAssign = true
 	}
-	if _, ok := fields["ResultSelector"]; ok {
+	if raw, ok := fields["ResultSelector"]; ok {
 		st.HasResultSelector = true
+		st.ResultSelector = append(json.RawMessage(nil), raw...)
+		if err := checkPayload(raw, join(ptr, "ResultSelector")); err != nil {
+			return nil, err
+		}
 	}
 	if raw, ok := fields["Error"]; ok {
 		text, err := asString(raw)
@@ -210,12 +227,119 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string) (
 		st.HasCause = true
 		st.Cause = text
 	}
-	_, st.HasErrorPath = fields["ErrorPath"]
-	_, st.HasCausePath = fields["CausePath"]
+	if raw, ok := fields["ErrorPath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return nil, defErr(codeSchema, "Field 'ErrorPath' must be a string", join(ptr, "ErrorPath"))
+		}
+		st.HasErrorPath = true
+		st.ErrorPath = text
+	}
+	if raw, ok := fields["CausePath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return nil, defErr(codeSchema, "Field 'CausePath' must be a string", join(ptr, "CausePath"))
+		}
+		st.HasCausePath = true
+		st.CausePath = text
+	}
 	if err := checkTypeShape(typ, fields, ptr); err != nil {
 		return nil, err
 	}
+	if err := captureRuntime(st, fields, ptr); err != nil {
+		return nil, err
+	}
 	return st, nil
+}
+
+func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) error {
+	if raw, ok := fields["Choices"]; ok {
+		st.Choices = append(json.RawMessage(nil), raw...)
+	}
+	if raw, ok := fields["Default"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'Default' must be a string", join(ptr, "Default"))
+		}
+		st.Default = text
+		st.HasDefault = true
+	}
+	if raw, ok := fields["Seconds"]; ok {
+		n, err := asInt(raw, 0, defaultTimeout)
+		if err != nil {
+			return defErr(codeSchema, "Field 'Seconds' must be an integer in 0..99999999", join(ptr, "Seconds"))
+		}
+		st.Seconds = &n
+	}
+	if raw, ok := fields["Timestamp"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'Timestamp' must be a string", join(ptr, "Timestamp"))
+		}
+		st.Timestamp = text
+		st.HasTimestamp = true
+	}
+	if raw, ok := fields["SecondsPath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'SecondsPath' must be a string", join(ptr, "SecondsPath"))
+		}
+		st.SecondsPath = text
+	}
+	if raw, ok := fields["TimestampPath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'TimestampPath' must be a string", join(ptr, "TimestampPath"))
+		}
+		st.TimestampPath = text
+	}
+	return nil
+}
+
+func checkPayload(raw json.RawMessage, ptr string) error {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var v any
+	if err := dec.Decode(&v); err != nil {
+		return defErr(codeSchema, "Field must be JSON", ptr)
+	}
+	if _, err := dec.Token(); err != io.EOF {
+		return defErr(codeSchema, "trailing tokens", ptr)
+	}
+	return checkTemplate(v, ptr)
+}
+
+func checkTemplate(v any, ptr string) error {
+	switch node := v.(type) {
+	case map[string]any:
+		for key, child := range node {
+			if !strings.HasSuffix(key, ".$") {
+				continue
+			}
+			base := strings.TrimSuffix(key, ".$")
+			if _, ok := node[base]; ok {
+				return defErr(codeSchema, "Fields '"+base+"' and '"+key+"' are mutually exclusive", ptr)
+			}
+			if _, ok := child.(string); !ok {
+				return defErr(codeSchema, "Field '"+key+"' must be a string", ptr)
+			}
+		}
+		for key, child := range node {
+			if strings.HasSuffix(key, ".$") {
+				continue
+			}
+			if err := checkTemplate(child, join(ptr, key)); err != nil {
+				return err
+			}
+		}
+	case []any:
+		for i, child := range node {
+			if err := checkTemplate(child, fmt.Sprintf("%s[%d]", ptr, i)); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func fillPaths(st *State, fields map[string]json.RawMessage, ptr string) error {

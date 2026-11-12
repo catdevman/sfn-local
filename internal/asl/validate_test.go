@@ -58,6 +58,10 @@ func TestValidateOtherStateTypes(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "DISTRIBUTED") {
 		t.Fatal(err)
 	}
+	_, err = Validate(`{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"a":1,"a.$":"$.x"},"End":true}}}`)
+	if err == nil || !strings.Contains(err.Error(), "mutually exclusive") {
+		t.Fatal(err)
+	}
 	_, err = Validate(`{"StartAt":"M","States":{"M":{"Type":"Map","End":true}}}`)
 	if err == nil || !strings.Contains(err.Error(), "Iterator") {
 		t.Fatal(err)

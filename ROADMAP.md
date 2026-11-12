@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0 and Phase 1 checked. Create, describe, list, update, and delete work. Pass, Succeed, and Fail run. Nothing else executes. |
+| Status | Phase 0, Phase 1, and Phase 2 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Tasks do not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -30,7 +30,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [0b](#phase-0b--validator-messages) | Create-time messages match the jar fixtures. Can land beside phase 1. | 1–2 |
 | [V](#phase-v--validate-versions-aliases) | `validate-state-machine-definition`, publish, and alias. | 1–2 |
 | [1](#x-phase-1--pass-succeed-fail) | Smallest useful runner. Pass, Succeed, Fail. | 1.5–2.5 |
-| [2](#phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
+| [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
 | [3](#phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
 | [T](#phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
 | [4](#phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
@@ -137,16 +137,16 @@ Depends on phase 0. This is the smallest useful runner together with G and 0.
 - [x] Fixtures from docs/spec.md: Pass literal Result, Fail, and Stop. Jar oracle compares status, output JSON, and event types when Docker is present.
 - [x] A running STANDARD execution keeps a `DELETING` machine alive. An in-flight EXPRESS execution does not. The running execution fails at the next state boundary with `States.Runtime`.
 
-## Phase 2 — JSONPath, Choice, Wait
+## [x] Phase 2 — JSONPath, Choice, Wait
 
 Depends on phase 1. No variable writes. A `$name` that is not `$.` or `$$` fails with a clear error.
 
-- [ ] `internal/jsonpath` behind a small interface. Reference paths and payload templates. Phase 2 fixtures are the acceptance test for the library.
-- [ ] `InputPath`, `Parameters` with `.$` keys, `ResultPath`, `OutputPath`. `null` paths behave as docs/spec.md says. 262144-byte caps on parameters and state output.
-- [ ] Minimal context object: `Execution`, `State`, `StateMachine`. `$$` reads it.
-- [ ] Choice comparators, including `StringMatches` and the six `Is*` tests. `Is*` result equals the boolean operand. A wrong JSON type is a failed comparison for value comparators. `And`, `Or`, and `Not` short-circuit.
-- [ ] Wait. `Seconds` is multiplied by 1000 before scaling. The scale multiply is float32, then cast toward zero. A negative `WAIT_TIME_SCALE` is stored as its absolute value. Retry sleep is not scaled.
-- [ ] Fixtures: Choice, type mismatch, `IsTimestamp` false, `And` short-circuit, Parameters `.$`, Wait scale, `InputPath` null, `ResultPath` null, `OutputPath` null.
+- [x] `internal/jsonpath` behind a small interface. Reference paths and payload templates. Phase 2 fixtures are the acceptance test for the library.
+- [x] `InputPath`, `Parameters` with `.$` keys, `ResultPath`, `OutputPath`. `null` paths behave as docs/spec.md says. 262144-byte caps on parameters and state output.
+- [x] Minimal context object: `Execution`, `State`, `StateMachine`. `$$` reads it.
+- [x] Choice comparators, including `StringMatches` and the six `Is*` tests. `Is*` result equals the boolean operand. A wrong JSON type is a failed comparison for value comparators. `And`, `Or`, and `Not` short-circuit.
+- [x] Wait. `Seconds` is multiplied by 1000 before scaling. The scale multiply is float32, then cast toward zero. A negative `WAIT_TIME_SCALE` is stored as its absolute value. Retry sleep is not scaled.
+- [x] Fixtures: Choice, type mismatch, `IsTimestamp` false, `And` short-circuit, Parameters `.$`, Wait scale, `InputPath` null, `ResultPath` null, `OutputPath` null.
 
 ## Phase 3 — mocks, Lambda, Retry, Catch
 

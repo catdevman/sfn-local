@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 	"unicode/utf8"
 
@@ -18,7 +19,8 @@ import (
 
 const maxPayload = 262144
 
-// Runner executes Pass, Succeed, and Fail. Other state types fail the run.
+// Runner executes Pass, Succeed, Fail, Choice, and Wait.
+// Task, Parallel, and Map fail the run until a later phase.
 type Runner struct {
 	Store *store.Store
 	// Now overrides the clock. Nil means time.Now.
@@ -26,6 +28,11 @@ type Runner struct {
 	// Boundary runs before each state, outside the store lock.
 	Boundary func(executionARN string)
 	Log      io.Writer
+	// WaitScale is the absolute WAIT_TIME_SCALE. Nil means Wait is not scaled.
+	// Retry sleeps do not read this field.
+	WaitScale *float32
+	// Sleep replaces the interruptible Wait. Nil sleeps on the wall clock.
+	Sleep func(ctx context.Context, d time.Duration) error
 }
 
 // Start runs the execution on a new goroutine. The handle is finished when
@@ -80,12 +87,12 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 			return
 		}
 		switch st.Type {
-		case "Pass", "Succeed", "Fail":
+		case "Pass", "Succeed", "Fail", "Choice", "Wait":
 		default:
 			r.fail(arn, "States.Runtime", "State type "+st.Type+" is not implemented by this local server.")
 			return
 		}
-		next, output, terminal, done := r.step(arn, st, input)
+		next, output, terminal, done := r.step(ctx, arn, st, input)
 		if done {
 			return
 		}
@@ -95,122 +102,6 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 		}
 		input = output
 		name = next
-	}
-}
-
-func (r *Runner) step(arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
-	if err := r.entered(arn, st, input); err != nil {
-		r.onAppendErr(arn, err)
-		return "", "", false, true
-	}
-	if st.HasAssign {
-		r.fail(arn, "States.Runtime", "Assign is not implemented by this local server.")
-		return "", "", false, true
-	}
-	if st.HasParameters {
-		r.fail(arn, "States.Runtime", "Parameters is not implemented by this local server.")
-		return "", "", false, true
-	}
-	if st.HasResultSelector {
-		r.fail(arn, "States.Runtime", "ResultSelector is not implemented by this local server.")
-		return "", "", false, true
-	}
-	effective, err := applyInput(st, input)
-	if err != nil {
-		r.fail(arn, "States.Runtime", err.Error())
-		return "", "", false, true
-	}
-	switch st.Type {
-	case "Fail":
-		r.failState(arn, st, effective)
-		return "", "", false, true
-	case "Pass":
-		result := effective
-		if st.HasResult {
-			result, err = compactRaw(st.Result)
-			if err != nil {
-				r.fail(arn, "States.Runtime", err.Error())
-				return "", "", false, true
-			}
-		}
-		output, err = applyResult(st, input, result)
-	case "Succeed":
-		output, err = applyOutput(st, effective)
-	}
-	if err != nil {
-		r.fail(arn, "States.Runtime", err.Error())
-		return "", "", false, true
-	}
-	if st.Type != "Succeed" {
-		output, err = applyOutput(st, output)
-		if err != nil {
-			r.fail(arn, "States.Runtime", err.Error())
-			return "", "", false, true
-		}
-	}
-	if len(output) > maxPayload {
-		r.fail(arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
-		return "", "", false, true
-	}
-	if err := r.exited(arn, st, output); err != nil {
-		r.onAppendErr(arn, err)
-		return "", "", false, true
-	}
-	if st.End || st.Next == "" {
-		return "", output, true, false
-	}
-	return st.Next, output, false, false
-}
-
-func (r *Runner) failState(arn string, st *asl.State, effective string) {
-	if st.HasErrorPath || st.HasCausePath {
-		r.fail(arn, "States.Runtime", "ErrorPath and CausePath are not implemented by this local server.")
-		return
-	}
-	_ = effective
-	errName := ""
-	cause := ""
-	hasErr := st.HasError
-	hasCause := st.HasCause
-	if hasErr {
-		errName = clip(st.Error, 256)
-	}
-	if hasCause {
-		cause = clip(st.Cause, 32768)
-	}
-	r.finish(arn, store.ExecFailed, "ExecutionFailed", "", false, errName, cause, hasErr, hasCause)
-}
-
-func applyInput(st *asl.State, input string) (string, error) {
-	switch st.InputPath.Kind {
-	case asl.PathDefault, asl.PathIdentity:
-		return input, nil
-	case asl.PathNull:
-		return "{}", nil
-	default:
-		return "", fmt.Errorf("InputPath is not implemented by this local server")
-	}
-}
-
-func applyResult(st *asl.State, original, result string) (string, error) {
-	switch st.ResultPath.Kind {
-	case asl.PathDefault, asl.PathIdentity:
-		return result, nil
-	case asl.PathNull:
-		return original, nil
-	default:
-		return "", fmt.Errorf("ResultPath is not implemented by this local server")
-	}
-}
-
-func applyOutput(st *asl.State, value string) (string, error) {
-	switch st.OutputPath.Kind {
-	case asl.PathDefault, asl.PathIdentity:
-		return value, nil
-	case asl.PathNull:
-		return "{}", nil
-	default:
-		return "", fmt.Errorf("OutputPath is not implemented by this local server")
 	}
 }
 
@@ -308,13 +199,21 @@ func (r *Runner) log(arn, state, event, status, next string) {
 }
 
 func compactRaw(raw json.RawMessage) (string, error) {
-	var v any
-	dec := json.NewDecoder(bytes.NewReader(raw))
-	dec.UseNumber()
-	if err := dec.Decode(&v); err != nil {
+	v, err := parseJSON(string(raw))
+	if err != nil {
 		return "", err
 	}
 	return compactValue(v)
+}
+
+func parseJSON(s string) (any, error) {
+	dec := json.NewDecoder(strings.NewReader(s))
+	dec.UseNumber()
+	var v any
+	if err := dec.Decode(&v); err != nil {
+		return nil, err
+	}
+	return normalize(v), nil
 }
 
 func compactValue(v any) (string, error) {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"net"
 	"net/http"
 	"os"
@@ -50,6 +51,14 @@ func run(args []string, getenv func(string) (string, bool), stdout, stderr io.Wr
 	return serve(ctx, cfg, stdout, stderr)
 }
 
+func waitScale(v *float64) *float32 {
+	if v == nil {
+		return nil
+	}
+	s := float32(math.Abs(*v))
+	return &s
+}
+
 func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 	if ctx == nil {
 		ctx = context.Background()
@@ -73,7 +82,7 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		port, cfg.Account, cfg.Region, cfg.BindAddress)
 	st := store.New()
 	go exec.Sweep(ctx, st)
-	runner := &exec.Runner{Store: st, Log: stdout}
+	runner := &exec.Runner{Store: st, Log: stdout, WaitScale: waitScale(cfg.WaitTimeScale)}
 	srv := &http.Server{
 		Handler: &api.Server{
 			Handlers: &api.Service{

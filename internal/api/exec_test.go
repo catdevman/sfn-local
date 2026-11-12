@@ -299,10 +299,10 @@ func TestStopIdempotencyAndUnimplementedStates(t *testing.T) {
 	choice := createMachine(t, s, "choice", `{"StartAt":"C","States":{"C":{"Type":"Choice","Choices":[{"Variable":"$.n","NumericEquals":1,"Next":"P"}],"Default":"P"},"P":{"Type":"Pass","End":true}}}`, roleARN)
 	choiceRun := startExec(t, s, *choice.StateMachineArn, "run", `{"n":1}`)
 	choiceEx := waitExec(t, s, *choiceRun.ExecutionArn)
-	assertTypes(t, choiceEx, "ExecutionStarted", "ExecutionFailed")
-	if choiceEx.Error != "States.Runtime" || !strings.Contains(choiceEx.Cause, "Choice") {
-		t.Fatal(choiceEx.Cause)
+	if choiceEx.Status != store.ExecSucceeded || choiceEx.Output != `{"n":1}` {
+		t.Fatalf("%s %s %s", choiceEx.Status, choiceEx.Output, choiceEx.Cause)
 	}
+	assertTypes(t, choiceEx, "ExecutionStarted", "ChoiceStateEntered", "ChoiceStateExited", "PassStateEntered", "PassStateExited", "ExecutionSucceeded")
 	missing := createMachine(t, s, "missing", `{"StartAt":"P","States":{"P":{"Type":"Pass","Next":"Gone"}}}`, roleARN)
 	missingRun := startExec(t, s, *missing.StateMachineArn, "run", `{}`)
 	missingEx := waitExec(t, s, *missingRun.ExecutionArn)
@@ -313,16 +313,21 @@ func TestStopIdempotencyAndUnimplementedStates(t *testing.T) {
 	params := createMachine(t, s, "params", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"a":1},"End":true}}}`, roleARN)
 	paramsRun := startExec(t, s, *params.StateMachineArn, "run", `{}`)
 	paramsEx := waitExec(t, s, *paramsRun.ExecutionArn)
-	assertTypes(t, paramsEx, "ExecutionStarted", "PassStateEntered", "ExecutionFailed")
-	if !strings.Contains(paramsEx.Cause, "Parameters is not implemented") {
-		t.Fatal(paramsEx.Cause)
+	if paramsEx.Status != store.ExecSucceeded || paramsEx.Output != `{"a":1}` {
+		t.Fatalf("%s %s", paramsEx.Status, paramsEx.Output)
 	}
 	other := createMachine(t, s, "path", `{"StartAt":"P","States":{"P":{"Type":"Pass","InputPath":"$.n","End":true}}}`, roleARN)
 	otherRun := startExec(t, s, *other.StateMachineArn, "run", `{"n":1}`)
 	otherEx := waitExec(t, s, *otherRun.ExecutionArn)
-	assertTypes(t, otherEx, "ExecutionStarted", "PassStateEntered", "ExecutionFailed")
-	if !strings.Contains(otherEx.Cause, "InputPath is not implemented") {
-		t.Fatal(otherEx.Cause)
+	if otherEx.Status != store.ExecSucceeded || otherEx.Output != `1` {
+		t.Fatalf("%s %s %s", otherEx.Status, otherEx.Output, otherEx.Cause)
+	}
+	assign := createMachine(t, s, "assign", `{"StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"a":1},"End":true}}}`, roleARN)
+	assignRun := startExec(t, s, *assign.StateMachineArn, "run", `{}`)
+	assignEx := waitExec(t, s, *assignRun.ExecutionArn)
+	assertTypes(t, assignEx, "ExecutionStarted", "PassStateEntered", "ExecutionFailed")
+	if !strings.Contains(assignEx.Cause, "Assign is not implemented") {
+		t.Fatal(assignEx.Cause)
 	}
 }
 
