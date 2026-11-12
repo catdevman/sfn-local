@@ -1,0 +1,214 @@
+# ASL field, Appendix A, and Appendix B classification. Phase G defers every row.
+
+[[field]]
+language = "jsonata"
+name = "Type"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Comment"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Output"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Assign"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Arguments"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Retry"
+status = "deferred"
+
+[[field]]
+language = "jsonata"
+name = "Catch"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Type"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Comment"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "InputPath"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "OutputPath"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Assign"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "ResultPath"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Parameters"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "ResultSelector"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Retry"
+status = "deferred"
+
+[[field]]
+language = "jsonpath"
+name = "Catch"
+status = "deferred"
+
+[[code]]
+name = "States.ALL"
+status = "deferred"
+
+[[code]]
+name = "States.HeartbeatTimeout"
+status = "deferred"
+
+[[code]]
+name = "States.Timeout"
+status = "deferred"
+
+[[code]]
+name = "States.TaskFailed"
+status = "deferred"
+
+[[code]]
+name = "States.Permissions"
+status = "deferred"
+
+[[code]]
+name = "States.ResultPathMatchFailure"
+status = "deferred"
+
+[[code]]
+name = "States.ParameterPathFailure"
+status = "deferred"
+
+[[code]]
+name = "States.QueryEvaluationError"
+status = "deferred"
+
+[[code]]
+name = "States.BranchFailed"
+status = "deferred"
+
+[[code]]
+name = "States.NoChoiceMatched"
+status = "deferred"
+
+[[code]]
+name = "States.IntrinsicFailure"
+status = "deferred"
+
+[[code]]
+name = "States.ExceedToleratedFailureThreshold"
+status = "deferred"
+
+[[code]]
+name = "States.ItemReaderFailed"
+status = "deferred"
+
+[[code]]
+name = "States.ResultWriterFailed"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.Format"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.StringToJson"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.JsonToString"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.Array"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayPartition"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayContains"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayRange"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayGetItem"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayLength"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.ArrayUnique"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.Base64Encode"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.Base64Decode"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.Hash"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.JsonMerge"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.MathRandom"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.MathAdd"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.StringSplit"
+status = "deferred"
+
+[[intrinsic]]
+name = "States.UUID"
+status = "deferred"

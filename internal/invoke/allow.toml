@@ -1,0 +1,345 @@
+# Every SDK integration service. Phase G marks each one unsupported.
+
+[[service]]
+name = "AWS Agent Registry"
+status = "unsupported"
+
+[[service]]
+name = "AWS Agent Registry Control"
+status = "unsupported"
+
+[[service]]
+name = "AWS Backup Search"
+status = "unsupported"
+
+[[service]]
+name = "AWS Backup Storage"
+status = "unsupported"
+
+[[service]]
+name = "AWS Billing Conductor"
+status = "unsupported"
+
+[[service]]
+name = "AWS Billing and Cost Management"
+status = "unsupported"
+
+[[service]]
+name = "AWS Billing and Cost Management Dashboards"
+status = "unsupported"
+
+[[service]]
+name = "AWS Billing and Cost Management Recommended Actions"
+status = "unsupported"
+
+[[service]]
+name = "AWS Chatbot"
+status = "unsupported"
+
+[[service]]
+name = "AWS Compute Optimizer Automation"
+status = "unsupported"
+
+[[service]]
+name = "AWS Deadline Cloud"
+status = "unsupported"
+
+[[service]]
+name = "AWS DevOps Agent Service"
+status = "unsupported"
+
+[[service]]
+name = "AWS Elemental Inference"
+status = "unsupported"
+
+[[service]]
+name = "AWS End User Messaging"
+status = "unsupported"
+
+[[service]]
+name = "AWS IAM Account Access Manager"
+status = "unsupported"
+
+[[service]]
+name = "AWS IAM Toolbox"
+status = "unsupported"
+
+[[service]]
+name = "AWS Interconnect"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT 1-Click Projects Service"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT Events"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT Events Data"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT Fleet Hub"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT Managed Integrations"
+status = "unsupported"
+
+[[service]]
+name = "AWS IoT RoboRunner"
+status = "unsupported"
+
+[[service]]
+name = "AWS Lambda Core"
+status = "unsupported"
+
+[[service]]
+name = "AWS Lambda MicroVMs"
+status = "unsupported"
+
+[[service]]
+name = "AWS Mainframe Modernization Application Testing"
+status = "unsupported"
+
+[[service]]
+name = "AWS Marketplace Discovery"
+status = "unsupported"
+
+[[service]]
+name = "AWS Mobile"
+status = "unsupported"
+
+[[service]]
+name = "AWS Multi-party Approval"
+status = "unsupported"
+
+[[service]]
+name = "AWS Network Security Manager"
+status = "unsupported"
+
+[[service]]
+name = "AWS OpsWorks"
+status = "unsupported"
+
+[[service]]
+name = "AWS Panorama"
+status = "unsupported"
+
+[[service]]
+name = "AWS Parallel Computing Service"
+status = "unsupported"
+
+[[service]]
+name = "AWS Partner Central Account"
+status = "unsupported"
+
+[[service]]
+name = "AWS Partner Central Benefits"
+status = "unsupported"
+
+[[service]]
+name = "AWS Partner Central Channel"
+status = "unsupported"
+
+[[service]]
+name = "AWS Partner Central Revenue Measurement"
+status = "unsupported"
+
+[[service]]
+name = "AWS Pricing Plan Manager"
+status = "unsupported"
+
+[[service]]
+name = "AWS RTB Fabric"
+status = "unsupported"
+
+[[service]]
+name = "AWS Resilience Hub V2"
+status = "unsupported"
+
+[[service]]
+name = "AWS RoboMaker"
+status = "unsupported"
+
+[[service]]
+name = "AWS Security Agent"
+status = "unsupported"
+
+[[service]]
+name = "AWS Security Incident Response"
+status = "unsupported"
+
+[[service]]
+name = "AWS Sign-In Service"
+status = "unsupported"
+
+[[service]]
+name = "AWS Signer Data Plane"
+status = "unsupported"
+
+[[service]]
+name = "AWS Supply Chain"
+status = "unsupported"
+
+[[service]]
+name = "AWS Support Authorization"
+status = "unsupported"
+
+[[service]]
+name = "AWS Sustainability"
+status = "unsupported"
+
+[[service]]
+name = "AWS Systems Manager GUI Connect"
+status = "unsupported"
+
+[[service]]
+name = "AWS User Experience Customization"
+status = "unsupported"
+
+[[service]]
+name = "AWS User Notifications"
+status = "unsupported"
+
+[[service]]
+name = "AWS Wickr"
+status = "unsupported"
+
+[[service]]
+name = "Amazon AI Operations"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Aurora DSQL"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Bedrock AgentCore"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Bedrock AgentCore Control Plane"
+status = "unsupported"
+
+[[service]]
+name = "Amazon CloudWatch Evidently"
+status = "unsupported"
+
+[[service]]
+name = "Amazon CloudWatch Omni"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Connect Health"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Elastic Transcoder"
+status = "unsupported"
+
+[[service]]
+name = "Amazon EventBridge V2"
+status = "unsupported"
+
+[[service]]
+name = "Amazon GameLift Streams"
+status = "unsupported"
+
+[[service]]
+name = "Amazon GameSparks"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Honeycode"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Inspector V1"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Keyspaces CDC Streams"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Lex Model Building V1"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Lex Runtime V1"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Lookout for Metrics"
+status = "unsupported"
+
+[[service]]
+name = "Amazon MWAA Serverless"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Machine Learning"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Nimble Studio"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Nova Act"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Pinpoint SMS and Voice V2"
+status = "unsupported"
+
+[[service]]
+name = "Amazon QLDB"
+status = "unsupported"
+
+[[service]]
+name = "Amazon QLDB Session"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Route 53 ARC Region Switch"
+status = "unsupported"
+
+[[service]]
+name = "Amazon Route 53 Global Resolver"
+status = "unsupported"
+
+[[service]]
+name = "Amazon S3 Files"
+status = "unsupported"
+
+[[service]]
+name = "Amazon S3 Vectors"
+status = "unsupported"
+
+[[service]]
+name = "Amazon SageMaker Job Runtime"
+status = "unsupported"
+
+[[service]]
+name = "Amazon SageMaker Runtime HTTP2"
+status = "unsupported"
+
+[[service]]
+name = "Amazon SimpleDB v2"
+status = "unsupported"
+
+[[service]]
+name = "Amazon WorkLink"
+status = "unsupported"
+
+[[service]]
+name = "Amazon WorkSpaces Instances"
+status = "unsupported"
+
+[[service]]
+name = "Oracle Database@AWS"
+status = "unsupported"

@@ -1,0 +1,165 @@
+# SHA-256 of each behavior page in aws-spec/page-watch.json.
+
+[[page]]
+id = "document-history"
+sha256 = "291ba4234b76b0d2ac9a316a83e35dfa02fd40ad4593a20f579725ef390f811f"
+
+[[page]]
+id = "recent-launches"
+sha256 = "fdf3d41ba4eef4690f55a6d659d1df7076783b74ff2614d858272590fa91fe06"
+
+[[page]]
+id = "awssdk-release-history"
+sha256 = "613a2daea8a977215f33c823efc65e193dbb016c1ecb7c5fe726f80d9e3a02f0"
+
+[[page]]
+id = "concepts-amazon-states-language"
+sha256 = "c9fb686e610d656f03679a9ad5cc6a7bad1f0618a3d7d8dd8ccf3d46dea134ec"
+
+[[page]]
+id = "statemachine-structure"
+sha256 = "88a9ac8a88989283a95c55adf0b5aa90b87c49afd137f5579a433ae57fa3cec2"
+
+[[page]]
+id = "workflow-states"
+sha256 = "b372721888b0e4a4c6c2810e89376e2cb89f810bc73d21161f159ecaa7969b55"
+
+[[page]]
+id = "intrinsic-functions"
+sha256 = "7eecf29123cabab277f268769acb84e429d64f133664d4b43f223dbcf3a04886"
+
+[[page]]
+id = "state-task"
+sha256 = "db94fe6c63eb486379dfeaece7b132660f7fcd22459ade5b6d4d8e20ef40563c"
+
+[[page]]
+id = "state-choice"
+sha256 = "a228974ea14a5344f5aa25f0da2e38e7f58f1eaf67c13c27df0a505f8191e4be"
+
+[[page]]
+id = "state-parallel"
+sha256 = "967d84f0abb2f7432b5b7b70b6472ec9ae762947ef9713767ff90a3464f7efc9"
+
+[[page]]
+id = "state-map"
+sha256 = "54593b5b9b9db7e9cf20492496147d919611a690394d180a9a8c7cba1b33145c"
+
+[[page]]
+id = "state-map-inline"
+sha256 = "629379ce761c1fd59d52fdb97caca44929bf4019f0914ac764e83bcd4ac1c5a6"
+
+[[page]]
+id = "state-map-distributed"
+sha256 = "228d6c4b6ca5ea4c3c8e49096ef7ca61150d2b43b03491b627af930cbb7311a2"
+
+[[page]]
+id = "state-pass"
+sha256 = "a371b2348c8d41c2e88c636f369352bd61bf8fe8f9fc2a96a28f3883b8df0258"
+
+[[page]]
+id = "state-wait"
+sha256 = "4803008cd16f3c00c9bbee1f79d1e68458e86328d137e4587a34c62c5f9cb08b"
+
+[[page]]
+id = "state-succeed"
+sha256 = "bf6eb2771ca0ddd428edaf77c80b896cdef7fd7bc6a1d8210fa3db82b91894a2"
+
+[[page]]
+id = "state-fail"
+sha256 = "cf0a6c6fa97ff0b4d1c2447109c5a9752f5ca943bc175ba833c43afbdbeeb9e5"
+
+[[page]]
+id = "concepts-error-handling"
+sha256 = "94261c6314a07a2fec86a4178622a164c4b0b0ae035a435d17b40ab974bdfff1"
+
+[[page]]
+id = "service-quotas"
+sha256 = "d17924110d1ca42053bb3475512a60197c7195f90f06b99fe6cf7a8c597fc0a0"
+
+[[page]]
+id = "concepts-input-output-filtering"
+sha256 = "f4174bdd5db26bde2250b3f1c5455225efe8a367152187a62468208a63f45786"
+
+[[page]]
+id = "workflow-variables"
+sha256 = "a4b0c40f3cabb3053da7dfd2b9816aad33e851578d97415fdaec7cde768a8a3f"
+
+[[page]]
+id = "transforming-data"
+sha256 = "016e4ef8330ec9ee04218119123feeb13a01343291af52a9fc66bfd3ce9f6874"
+
+[[page]]
+id = "input-output-contextobject"
+sha256 = "3854d4baa914c433da82ac4bf939a4aa8a3000bc37eff470a14e6af7a0d58e41"
+
+[[page]]
+id = "amazon-states-language-paths"
+sha256 = "9a73832b68b5ce5d2008c5a4bb2d905f1c6836098f00a60951be7e59cd730ce6"
+
+[[page]]
+id = "input-output-inputpath-params"
+sha256 = "8d7a5ed45cdcd8e17d473497689525f286eb48edd6b13c4883d41155488e2965"
+
+[[page]]
+id = "input-output-resultpath"
+sha256 = "087861a77cbb09c1d2945199daa8ac0419b6998dcabb16e5f290e86d0e567e2a"
+
+[[page]]
+id = "input-output-itemspath"
+sha256 = "d14374c8e69879d5c41ea088b567233d45ff66f3e1c56419959804eb27c7772a"
+
+[[page]]
+id = "input-output-itemreader"
+sha256 = "ffc11433a4d00415e4c2b40258493e0b206582098fd11b97e05253a920f9628e"
+
+[[page]]
+id = "input-output-itemselector"
+sha256 = "ecf97fd51be4b3f27f752d0d177490faf6abdb1ca1981270c988ec313a448ec6"
+
+[[page]]
+id = "input-output-itembatcher"
+sha256 = "198d9c660eb2fd8245971d1b7ea6233a80605872ffb77b3a30f6eb57a6f3e2dd"
+
+[[page]]
+id = "input-output-resultwriter"
+sha256 = "c50c0652a8d07777b56242340f32a7dd6345bd2629376911a702c0c91b12584f"
+
+[[page]]
+id = "connect-to-resource"
+sha256 = "05513d6998a0e27d841a73120bd3bb480dbf80ab1e188b0d5b42648611862cb7"
+
+[[page]]
+id = "call-https-apis"
+sha256 = "3515460c2c6e7afc6f3ceafd19d85cfd164f4ff7e7c91326f2620146fddae632"
+
+[[page]]
+id = "connect-parameters"
+sha256 = "ef2a348c0fe2f00ab848965d772cd47c462ee3ec9038769fdad10f67b54a84b1"
+
+[[page]]
+id = "concepts-activities"
+sha256 = "60a969cb473ef6a31578dea9e425739608e08120dda8321e0765e81ea70d5595"
+
+[[page]]
+id = "test-state-isolation"
+sha256 = "679cf9738b9508f94b93614ae3c11f3e1bb5f3c4838b72c1ee5e71df57765e24"
+
+[[page]]
+id = "redrive-executions"
+sha256 = "89d736fbb430bdab823b6ebd749efa183a52d97552e909b1690fb1a813f64ab3"
+
+[[page]]
+id = "supported-services-awssdk"
+sha256 = "85089795417392caf7d5c3ac9a04dbc979a4eb13c24aeda17f792f8b286a6c07"
+
+[[page]]
+id = "sfn-local"
+sha256 = "4c530713dc01ea81c99fd60fc82fab15d9ec386a8a4dc489f1e1d64321b5cd55"
+
+[[page]]
+id = "sfn-local-lambda"
+sha256 = "90c37d6263ea58f50e048a21ed4f58b655325c8c1fd202d3db4f871a43edf2a4"
+
+[[page]]
+id = "sfn-local-test-sm-exec"
+sha256 = "cb5f871cfe2bf729613d021c990434389a484335f949d35245d0e7d70a1cb3d0"

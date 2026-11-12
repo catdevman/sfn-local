@@ -20,10 +20,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+
       - name: Fetch AWS Step Functions sources
         run: |
           set -euo pipefail
           python3 aws-spec/tools/sync_aws_spec.py | tee /tmp/aws-spec-sync.txt
+
+      - name: Regenerate Go from the snapshots
+        run: |
+          set -euo pipefail
+          go generate ./...
 
       - name: Open a pull request when snapshots change
         env:
@@ -31,36 +40,26 @@ jobs:
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
-          if ! git status --porcelain -- aws-spec | grep -q .; then
+          if ! git status --porcelain | grep -q .; then
             echo "No AWS spec changes."
             exit 0
           fi
 
-          while IFS= read -r line; do
-            path="${line:3}"
-            case "$path" in
-              aws-spec/*) ;;
-              *)
-                echo "Refusing to commit a path outside aws-spec/: $path"
-                exit 1
-                ;;
-            esac
-          done < <(git status --porcelain -- aws-spec)
+          python3 aws-spec/tools/sync_commit_guard.py --porcelain
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add -- aws-spec
-          while IFS= read -r path; do
-            case "$path" in
-              aws-spec/*) ;;
-              *)
-                echo "Refusing to commit a path outside aws-spec/: $path"
-                exit 1
-                ;;
-            esac
-          done < <(git diff --cached --name-only)
+          git add -- aws-spec internal/api/gen internal/asl/specgen
+          python3 aws-spec/tools/sync_commit_guard.py --cached
 
-          git commit -m "Update AWS Step Functions spec snapshots" -m "Fetched the States API model, the Amazon States Language spec, the release notes, and the changelog tables. docs/spec.md is unchanged."
+          if ! git diff --cached --name-only | grep -q .; then
+            echo "No committable snapshot changes."
+            exit 0
+          fi
+
+          python3 aws-spec/tools/summarize_generated_diff.py --from-git > /tmp/generated-diff.md
+
+          git commit -m "Update AWS Step Functions spec snapshots" -m "Fetched the AWS snapshots and regenerated the Go surface. The bot does not edit handlers, docs/spec.md, surface.toml, or catalog.toml."
 
           branch="aws-spec/sync"
           if git ls-remote --exit-code origin "$branch" >/dev/null 2>&1; then
@@ -73,12 +72,14 @@ jobs:
           {
             echo "## AWS spec snapshots"
             echo
-            echo "Files under \`aws-spec/\` changed. \`docs/spec.md\` was not modified."
-            echo "This records the AWS sources. It does not change a local runner."
+            echo "The fetch ran, then \`go generate ./...\`. The bot commits only \`aws-spec/**\`, \`internal/api/gen/**\`, and \`internal/asl/specgen/**\`."
+            echo "It does not edit handlers, \`docs/spec.md\`, \`surface.toml\`, or \`catalog.toml\`."
             echo
             echo '```'
             cat /tmp/aws-spec-sync.txt
             echo '```'
+            echo
+            cat /tmp/generated-diff.md
           } > /tmp/aws-spec-pr.md
 
           existing="$(gh pr list --head "$branch" --base "$BASE_BRANCH" --state open --json number --jq '.[0].number')"

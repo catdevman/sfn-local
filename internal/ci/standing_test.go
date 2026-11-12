@@ -1,0 +1,471 @@
+package ci
+
+import (
+	"encoding/json"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"regexp"
+	"strings"
+	"testing"
+
+	"github.com/catdevman/sfn-local/internal/asl/specgen"
+	"github.com/catdevman/sfn-local/internal/manifest"
+)
+
+func TestGenerateClean(t *testing.T) {
+	root := moduleRoot(t)
+	before := gitStatus(t, root)
+	cmd := exec.Command("go", "generate", "./...")
+	cmd.Dir = root
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("go generate: %v\n%s", err, out)
+	}
+	after := gitStatus(t, root)
+	if before != after {
+		t.Fatalf("go generate changed the tree\nbefore:\n%s\nafter:\n%s", before, after)
+	}
+}
+
+func TestASLCatalog(t *testing.T) {
+	root := moduleRoot(t)
+	tables := mustParse(t, filepath.Join(root, "internal/asl/catalog.toml"))
+	fields := map[string]string{}
+	codes := map[string]string{}
+	intrinsics := map[string]string{}
+	for _, table := range tables {
+		switch table.Name {
+		case "field":
+			key := table.Values["language"] + "\x00" + table.Values["name"]
+			if _, ok := fields[key]; ok {
+				t.Fatalf("duplicate field %s", key)
+			}
+			fields[key] = table.Values["status"]
+		case "code":
+			codes[table.Values["name"]] = table.Values["status"]
+		case "intrinsic":
+			intrinsics[table.Values["name"]] = table.Values["status"]
+		default:
+			t.Fatalf("unknown catalog table %s", table.Name)
+		}
+	}
+	if len(specgen.Languages) != 2 {
+		t.Fatalf("genasl languages %d", len(specgen.Languages))
+	}
+	seenLang := map[string]bool{}
+	for _, lang := range specgen.Languages {
+		seenLang[lang.Name] = true
+		if len(lang.Fields) == 0 {
+			t.Fatalf("genasl found no fields for %s", lang.Name)
+		}
+		for _, field := range lang.Fields {
+			status, ok := fields[lang.Name+"\x00"+field.Name]
+			if !ok || !classified(status) {
+				t.Fatalf("field %s %s status %q", lang.Name, field.Name, status)
+			}
+			delete(fields, lang.Name+"\x00"+field.Name)
+		}
+	}
+	if !seenLang["jsonata"] || !seenLang["jsonpath"] {
+		t.Fatal("genasl did not find both field tables")
+	}
+	if len(fields) != 0 {
+		t.Fatalf("extra fields %v", fields)
+	}
+	for _, code := range specgen.AppendixA {
+		status, ok := codes[code]
+		if !ok || !classified(status) {
+			t.Fatalf("appendix A %s status %q", code, status)
+		}
+		delete(codes, code)
+	}
+	if len(codes) != 0 || len(specgen.AppendixA) == 0 {
+		t.Fatalf("appendix A extra %v count %d", codes, len(specgen.AppendixA))
+	}
+	for _, name := range specgen.AppendixB {
+		status, ok := intrinsics[name]
+		if !ok || !classified(status) {
+			t.Fatalf("appendix B %s status %q", name, status)
+		}
+		delete(intrinsics, name)
+	}
+	if len(intrinsics) != 0 || len(specgen.AppendixB) == 0 {
+		t.Fatalf("appendix B extra %v count %d", intrinsics, len(specgen.AppendixB))
+	}
+}
+
+func TestPageAcks(t *testing.T) {
+	root := moduleRoot(t)
+	raw, err := os.ReadFile(filepath.Join(root, "aws-spec/page-watch.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Pages []struct {
+			ID     string `json:"id"`
+			SHA256 string `json:"sha256"`
+		} `json:"pages"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	tables := mustParse(t, filepath.Join(root, "internal/asl/page-acks.toml"))
+	acks := map[string]string{}
+	for _, table := range tables {
+		if table.Name != "page" {
+			t.Fatalf("table %s", table.Name)
+		}
+		acks[table.Values["id"]] = table.Values["sha256"]
+	}
+	if len(acks) != len(doc.Pages) {
+		t.Fatalf("acks %d pages %d", len(acks), len(doc.Pages))
+	}
+	for _, page := range doc.Pages {
+		if acks[page.ID] != page.SHA256 {
+			t.Fatalf("page %s hash %s want %s", page.ID, acks[page.ID], page.SHA256)
+		}
+	}
+}
+
+func TestAllowList(t *testing.T) {
+	root := moduleRoot(t)
+	raw, err := os.ReadFile(filepath.Join(root, "aws-spec/sdk-integrations.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Added      []sdkRow `json:"added"`
+		Deprecated []sdkRow `json:"deprecated"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	want := map[string]bool{}
+	for _, row := range append(doc.Added, doc.Deprecated...) {
+		for _, name := range row.Services {
+			want[name] = true
+		}
+	}
+	if len(want) == 0 {
+		t.Fatal("no services")
+	}
+	tables := mustParse(t, filepath.Join(root, "internal/invoke/allow.toml"))
+	got := map[string]string{}
+	for _, table := range tables {
+		if table.Name != "service" {
+			t.Fatalf("table %s", table.Name)
+		}
+		status := table.Values["status"]
+		if status != "unsupported" && status != "endpoint" {
+			t.Fatalf("%s status %s", table.Values["name"], status)
+		}
+		got[table.Values["name"]] = status
+	}
+	if len(got) != len(want) {
+		t.Fatalf("allow %d services %d", len(got), len(want))
+	}
+	for name := range want {
+		if _, ok := got[name]; !ok {
+			t.Fatalf("missing service %s", name)
+		}
+	}
+}
+
+type sdkRow struct {
+	Services []string `json:"services"`
+	Summary  string   `json:"summary"`
+}
+
+func TestSyncWorkflow(t *testing.T) {
+	root := moduleRoot(t)
+	raw, err := os.ReadFile(filepath.Join(root, ".github/workflows/sync-aws-spec.yml"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	text := string(raw)
+	for _, phrase := range []string{
+		"go generate ./...",
+		"sync_commit_guard.py",
+		"summarize_generated_diff.py",
+		"actions/setup-go",
+		"go-version-file: go.mod",
+	} {
+		if !strings.Contains(text, phrase) {
+			t.Fatalf("workflow missing %s", phrase)
+		}
+	}
+	guard := filepath.Join(root, "aws-spec/tools/sync_commit_guard.py")
+	script, err := os.ReadFile(guard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	allow := []string{
+		"aws-spec/states-api/sfn-2016-11-23.json",
+		"internal/api/gen/types.go",
+		"internal/asl/specgen/matrix.go",
+	}
+	refuse := []string{
+		"docs/spec.md",
+		"internal/api/surface.toml",
+		"internal/asl/catalog.toml",
+		"internal/api/server.go",
+		"cmd/sfn-local/main.go",
+		"internal/asl/page-acks.toml",
+		"README.md",
+	}
+	if err := runGuard(t, guard, allow); err != nil {
+		t.Fatal(err)
+	}
+	for _, path := range refuse {
+		if err := runGuard(t, guard, []string{path}); err == nil {
+			t.Fatalf("guard allowed %s", path)
+		}
+	}
+	if !strings.Contains(string(script), "docs/spec.md") || !strings.Contains(string(script), "surface.toml") || !strings.Contains(string(script), "catalog.toml") {
+		t.Fatal("guard does not name the files it must refuse")
+	}
+	summary := exec.Command("python3", filepath.Join(root, "aws-spec/tools/summarize_generated_diff.py"),
+		"--old-surface", filepath.Join(root, "internal/api/gen/surface.gen.json"),
+		"--new-surface", filepath.Join(root, "internal/api/gen/surface.gen.json"),
+		"--old-matrix", filepath.Join(root, "internal/asl/specgen/matrix.json"),
+		"--new-matrix", filepath.Join(root, "internal/asl/specgen/matrix.json"),
+	)
+	out, err := summary.CombinedOutput()
+	if err != nil {
+		t.Fatalf("summarize: %v\n%s", err, out)
+	}
+	for _, heading := range []string{"New operations", "New members", "New ASL fields", "New error names"} {
+		if !strings.Contains(string(out), heading) {
+			t.Fatalf("summary missing %s\n%s", heading, out)
+		}
+	}
+	old := t.TempDir()
+	writeJSON(t, filepath.Join(old, "surface.json"), map[string]any{"operations": []any{}, "errors": []any{}})
+	writeJSON(t, filepath.Join(old, "matrix.json"), map[string]any{"languages": []any{}})
+	diff := exec.Command("python3", filepath.Join(root, "aws-spec/tools/summarize_generated_diff.py"),
+		"--old-surface", filepath.Join(old, "surface.json"),
+		"--new-surface", filepath.Join(root, "internal/api/gen/surface.gen.json"),
+		"--old-matrix", filepath.Join(old, "matrix.json"),
+		"--new-matrix", filepath.Join(root, "internal/asl/specgen/matrix.json"),
+	)
+	out, err = diff.CombinedOutput()
+	if err != nil {
+		t.Fatalf("summarize diff: %v\n%s", err, out)
+	}
+	body := string(out)
+	for _, phrase := range []string{"- ListStateMachines", "- CreateStateMachine input name", "- jsonata Type", "- ValidationException"} {
+		if !strings.Contains(body, phrase) {
+			t.Fatalf("summary missing %s\n%s", phrase, body)
+		}
+	}
+}
+
+func TestLandedSpecFixtures(t *testing.T) {
+	root := moduleRoot(t)
+	checked := checkedPhases(t, root)
+	fixtures := fixturePhases(t, root)
+	var pending []string
+	for _, phase := range checked {
+		if fixtures[phase] > 0 && !runnerRegistered(phase) {
+			pending = append(pending, phase)
+		}
+	}
+	if len(pending) != 0 {
+		t.Fatalf("checked phases have acceptance fixtures and no runner: %s", strings.Join(pending, ", "))
+	}
+	if fixtures["G"] != 0 {
+		t.Fatal("phase G does not execute states and has no acceptance fixture")
+	}
+}
+
+func TestJarOracle(t *testing.T) {
+	root := moduleRoot(t)
+	reason, err := jarOracle(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(reason, "no landed execution fixtures") || !strings.Contains(reason, "amazon/aws-stepfunctions-local:2.0.0") {
+		t.Fatalf("quiet skip: %s", reason)
+	}
+	t.Log(reason)
+}
+
+func TestJSONataPin(t *testing.T) {
+	root := moduleRoot(t)
+	reason, err := jsonataPin(root)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(reason, "phase 6 has not started") {
+		t.Fatalf("%s", reason)
+	}
+	t.Log(reason)
+}
+
+func classified(status string) bool {
+	return status == "implemented" || status == "deferred"
+}
+
+func runnerRegistered(phase string) bool {
+	return false
+}
+
+func jarOracle(root string) (string, error) {
+	if len(landedFixtures(root)) == 0 {
+		return "jar oracle: no landed execution fixtures; not starting amazon/aws-stepfunctions-local:2.0.0", nil
+	}
+	if _, err := exec.LookPath("docker"); err != nil {
+		if os.Getenv("SFN_LOCAL_RELEASE") == "1" {
+			return "", err
+		}
+		return "jar oracle: SKIP Docker is not available. Developer CI may skip with this message. The release pipeline may not skip quietly.", nil
+	}
+	return "", errOracle
+}
+
+var errOracle = oracleError("landed execution fixtures have no jar oracle runner")
+
+type oracleError string
+
+func (e oracleError) Error() string { return string(e) }
+
+func jsonataPin(root string) (string, error) {
+	phase6 := false
+	for _, phase := range checkedPhases(nil, root) {
+		if phase == "6" {
+			phase6 = true
+		}
+	}
+	vendored := filepath.Join(root, "third_party/jsonata/2.0.6")
+	_, statErr := os.Stat(vendored)
+	if !phase6 && os.IsNotExist(statErr) {
+		return "jsonata pin: phase 6 has not started; third_party/jsonata/2.0.6 is not vendored", nil
+	}
+	raw, err := os.ReadFile(filepath.Join(root, "aws-spec/jsonata/2.0.6/upstream.json"))
+	if err != nil {
+		return "", err
+	}
+	var doc struct {
+		Commit string `json:"commit"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		return "", err
+	}
+	if doc.Commit != "6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b" {
+		return "", oracleError("upstream.json commit moved; re-vendor and re-record the Assign example")
+	}
+	if statErr != nil {
+		return "", statErr
+	}
+	return "", oracleError("vendored JSONata is present and the Assign, negative $nextX, and absent $eval checks are not recorded")
+}
+
+func landedFixtures(root string) []string {
+	var out []string
+	checked := map[string]bool{}
+	for _, phase := range checkedPhases(nil, root) {
+		checked[phase] = true
+	}
+	for phase, n := range fixturePhases(nil, root) {
+		if checked[phase] && n > 0 && phase != "G" {
+			out = append(out, phase)
+		}
+	}
+	return out
+}
+
+func checkedPhases(t *testing.T, root string) []string {
+	raw, err := os.ReadFile(filepath.Join(root, "ROADMAP.md"))
+	if err != nil {
+		if t != nil {
+			t.Fatal(err)
+		}
+		return nil
+	}
+	var out []string
+	for _, m := range regexp.MustCompile(`(?m)^## \[x\] Phase ([0-9A-Za-z]+)\b`).FindAllStringSubmatch(string(raw), -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
+
+func fixturePhases(t *testing.T, root string) map[string]int {
+	raw, err := os.ReadFile(filepath.Join(root, "docs/spec.md"))
+	if err != nil {
+		if t != nil {
+			t.Fatal(err)
+		}
+		return nil
+	}
+	counts := map[string]int{}
+	for _, m := range regexp.MustCompile(`(?m)^\*\*Phase ([0-9A-Za-z]+)\b`).FindAllStringSubmatch(string(raw), -1) {
+		counts[m[1]]++
+	}
+	return counts
+}
+
+func gitStatus(t *testing.T, root string) string {
+	t.Helper()
+	cmd := exec.Command("git", "status", "--porcelain")
+	cmd.Dir = root
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("git status: %v\n%s", err, out)
+	}
+	return string(out)
+}
+
+func runGuard(t *testing.T, script string, paths []string) error {
+	t.Helper()
+	args := []string{script}
+	for _, path := range paths {
+		args = append(args, "--path", path)
+	}
+	cmd := exec.Command("python3", args...)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return &guardError{err: err, out: string(out)}
+	}
+	return nil
+}
+
+type guardError struct {
+	err error
+	out string
+}
+
+func (e *guardError) Error() string { return e.err.Error() + "\n" + e.out }
+
+func mustParse(t *testing.T, path string) []manifest.Table {
+	t.Helper()
+	raw, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	tables, err := manifest.Parse(string(raw))
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tables
+}
+
+func moduleRoot(t *testing.T) string {
+	t.Helper()
+	root, err := manifest.ModuleRoot()
+	if err != nil {
+		t.Fatal(err)
+	}
+	return root
+}
+
+func writeJSON(t *testing.T, path string, v any) {
+	t.Helper()
+	raw, err := json.Marshal(v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(path, raw, 0o644); err != nil {
+		t.Fatal(err)
+	}
+}

@@ -1,0 +1,1777 @@
+# Operation, member, and error classification. Phase G defers every operation.
+
+[[operation]]
+name = "CreateActivity"
+status = "deferred"
+error = "ValidationException"
+message = "CreateActivity is not implemented by this local server."
+
+[[operation]]
+name = "CreateStateMachine"
+status = "deferred"
+error = "ValidationException"
+message = "CreateStateMachine is not implemented by this local server."
+
+[[operation]]
+name = "CreateStateMachineAlias"
+status = "deferred"
+error = "ValidationException"
+message = "CreateStateMachineAlias is not implemented by this local server."
+
+[[operation]]
+name = "DeleteActivity"
+status = "deferred"
+error = "ValidationException"
+message = "DeleteActivity is not implemented by this local server."
+
+[[operation]]
+name = "DeleteStateMachine"
+status = "deferred"
+error = "ValidationException"
+message = "DeleteStateMachine is not implemented by this local server."
+
+[[operation]]
+name = "DeleteStateMachineAlias"
+status = "deferred"
+error = "ValidationException"
+message = "DeleteStateMachineAlias is not implemented by this local server."
+
+[[operation]]
+name = "DeleteStateMachineVersion"
+status = "deferred"
+error = "ValidationException"
+message = "DeleteStateMachineVersion is not implemented by this local server."
+
+[[operation]]
+name = "DescribeActivity"
+status = "deferred"
+error = "ValidationException"
+message = "DescribeActivity is not implemented by this local server."
+
+[[operation]]
+name = "DescribeExecution"
+status = "deferred"
+error = "ValidationException"
+message = "DescribeExecution is not implemented by this local server."
+
+[[operation]]
+name = "DescribeMapRun"
+status = "deferred"
+error = "ValidationException"
+message = "Distributed Map is not supported by this local server."
+
+[[operation]]
+name = "DescribeStateMachine"
+status = "deferred"
+error = "ValidationException"
+message = "DescribeStateMachine is not implemented by this local server."
+
+[[operation]]
+name = "DescribeStateMachineAlias"
+status = "deferred"
+error = "ValidationException"
+message = "DescribeStateMachineAlias is not implemented by this local server."
+
+[[operation]]
+name = "DescribeStateMachineForExecution"
+status = "deferred"
+error = "ValidationException"
+message = "DescribeStateMachineForExecution is not implemented by this local server."
+
+[[operation]]
+name = "GetActivityTask"
+status = "deferred"
+error = "ValidationException"
+message = "GetActivityTask is not implemented by this local server."
+
+[[operation]]
+name = "GetExecutionHistory"
+status = "deferred"
+error = "ValidationException"
+message = "GetExecutionHistory is not implemented by this local server."
+
+[[operation]]
+name = "ListActivities"
+status = "deferred"
+error = "ValidationException"
+message = "ListActivities is not implemented by this local server."
+
+[[operation]]
+name = "ListExecutions"
+status = "deferred"
+error = "ValidationException"
+message = "ListExecutions is not implemented by this local server."
+
+[[operation]]
+name = "ListMapRuns"
+status = "deferred"
+error = "ValidationException"
+message = "Distributed Map is not supported by this local server."
+
+[[operation]]
+name = "ListStateMachineAliases"
+status = "deferred"
+error = "ValidationException"
+message = "ListStateMachineAliases is not implemented by this local server."
+
+[[operation]]
+name = "ListStateMachines"
+status = "deferred"
+error = "ValidationException"
+message = "ListStateMachines is not implemented by this local server."
+
+[[operation]]
+name = "ListStateMachineVersions"
+status = "deferred"
+error = "ValidationException"
+message = "ListStateMachineVersions is not implemented by this local server."
+
+[[operation]]
+name = "ListTagsForResource"
+status = "deferred"
+error = "ValidationException"
+message = "ListTagsForResource is not implemented by this local server."
+
+[[operation]]
+name = "PublishStateMachineVersion"
+status = "deferred"
+error = "ValidationException"
+message = "PublishStateMachineVersion is not implemented by this local server."
+
+[[operation]]
+name = "RedriveExecution"
+status = "deferred"
+error = "ValidationException"
+message = "RedriveExecution is not implemented by this local server."
+
+[[operation]]
+name = "SendTaskFailure"
+status = "deferred"
+error = "ValidationException"
+message = "SendTaskFailure is not implemented by this local server."
+
+[[operation]]
+name = "SendTaskHeartbeat"
+status = "deferred"
+error = "ValidationException"
+message = "SendTaskHeartbeat is not implemented by this local server."
+
+[[operation]]
+name = "SendTaskSuccess"
+status = "deferred"
+error = "ValidationException"
+message = "SendTaskSuccess is not implemented by this local server."
+
+[[operation]]
+name = "StartExecution"
+status = "deferred"
+error = "ValidationException"
+message = "StartExecution is not implemented by this local server."
+
+[[operation]]
+name = "StartSyncExecution"
+status = "deferred"
+error = "ValidationException"
+message = "StartSyncExecution is not implemented by this local server."
+
+[[operation]]
+name = "StopExecution"
+status = "deferred"
+error = "ValidationException"
+message = "StopExecution is not implemented by this local server."
+
+[[operation]]
+name = "TagResource"
+status = "deferred"
+error = "ValidationException"
+message = "TagResource is not implemented by this local server."
+
+[[operation]]
+name = "TestState"
+status = "deferred"
+error = "ValidationException"
+message = "TestState is not implemented by this local server."
+
+[[operation]]
+name = "UntagResource"
+status = "deferred"
+error = "ValidationException"
+message = "UntagResource is not implemented by this local server."
+
+[[operation]]
+name = "UpdateMapRun"
+status = "deferred"
+error = "ValidationException"
+message = "Distributed Map is not supported by this local server."
+
+[[operation]]
+name = "UpdateStateMachine"
+status = "deferred"
+error = "ValidationException"
+message = "UpdateStateMachine is not implemented by this local server."
+
+[[operation]]
+name = "UpdateStateMachineAlias"
+status = "deferred"
+error = "ValidationException"
+message = "UpdateStateMachineAlias is not implemented by this local server."
+
+[[operation]]
+name = "ValidateStateMachineDefinition"
+status = "deferred"
+error = "ValidationException"
+message = "ValidateStateMachineDefinition is not implemented by this local server."
+
+[[member]]
+operation = "CreateActivity"
+direction = "input"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "CreateActivity"
+direction = "input"
+name = "tags"
+status = "deferred"
+
+[[member]]
+operation = "CreateActivity"
+direction = "input"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "CreateActivity"
+direction = "output"
+name = "activityArn"
+status = "deferred"
+
+[[member]]
+operation = "CreateActivity"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "roleArn"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "type"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "loggingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "tags"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "tracingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "publish"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "versionDescription"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "input"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "output"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachine"
+direction = "output"
+name = "stateMachineVersionArn"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachineAlias"
+direction = "input"
+name = "description"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachineAlias"
+direction = "input"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachineAlias"
+direction = "input"
+name = "routingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachineAlias"
+direction = "output"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "CreateStateMachineAlias"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "DeleteActivity"
+direction = "input"
+name = "activityArn"
+status = "deferred"
+
+[[member]]
+operation = "DeleteStateMachine"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "DeleteStateMachineAlias"
+direction = "input"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "DeleteStateMachineVersion"
+direction = "input"
+name = "stateMachineVersionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeActivity"
+direction = "input"
+name = "activityArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeActivity"
+direction = "output"
+name = "activityArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeActivity"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "DescribeActivity"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeActivity"
+direction = "output"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "input"
+name = "includedData"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "status"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "startDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "stopDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "inputDetails"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "output"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "outputDetails"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "traceHeader"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "error"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "cause"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "stateMachineVersionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "redriveCount"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "redriveDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "redriveStatus"
+status = "deferred"
+
+[[member]]
+operation = "DescribeExecution"
+direction = "output"
+name = "redriveStatusReason"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "input"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "status"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "startDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "stopDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "maxConcurrency"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "toleratedFailurePercentage"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "toleratedFailureCount"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "itemCounts"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "executionCounts"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "redriveCount"
+status = "deferred"
+
+[[member]]
+operation = "DescribeMapRun"
+direction = "output"
+name = "redriveDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "input"
+name = "includedData"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "status"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "roleArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "type"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "loggingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "tracingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "label"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "revisionId"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "description"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachine"
+direction = "output"
+name = "variableReferences"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "input"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "description"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "routingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineAlias"
+direction = "output"
+name = "updateDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "input"
+name = "includedData"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "roleArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "updateDate"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "loggingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "tracingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "label"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "revisionId"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "DescribeStateMachineForExecution"
+direction = "output"
+name = "variableReferences"
+status = "deferred"
+
+[[member]]
+operation = "GetActivityTask"
+direction = "input"
+name = "activityArn"
+status = "deferred"
+
+[[member]]
+operation = "GetActivityTask"
+direction = "input"
+name = "workerName"
+status = "deferred"
+
+[[member]]
+operation = "GetActivityTask"
+direction = "output"
+name = "taskToken"
+status = "deferred"
+
+[[member]]
+operation = "GetActivityTask"
+direction = "output"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "input"
+name = "reverseOrder"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "input"
+name = "includeExecutionData"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "output"
+name = "events"
+status = "deferred"
+
+[[member]]
+operation = "GetExecutionHistory"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListActivities"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListActivities"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListActivities"
+direction = "output"
+name = "activities"
+status = "deferred"
+
+[[member]]
+operation = "ListActivities"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "statusFilter"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "input"
+name = "redriveFilter"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "output"
+name = "executions"
+status = "deferred"
+
+[[member]]
+operation = "ListExecutions"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListMapRuns"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "ListMapRuns"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListMapRuns"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListMapRuns"
+direction = "output"
+name = "mapRuns"
+status = "deferred"
+
+[[member]]
+operation = "ListMapRuns"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineAliases"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineAliases"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineAliases"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineAliases"
+direction = "output"
+name = "stateMachineAliases"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineAliases"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachines"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachines"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachines"
+direction = "output"
+name = "stateMachines"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachines"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineVersions"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineVersions"
+direction = "input"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineVersions"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineVersions"
+direction = "output"
+name = "stateMachineVersions"
+status = "deferred"
+
+[[member]]
+operation = "ListStateMachineVersions"
+direction = "output"
+name = "nextToken"
+status = "deferred"
+
+[[member]]
+operation = "ListTagsForResource"
+direction = "input"
+name = "resourceArn"
+status = "deferred"
+
+[[member]]
+operation = "ListTagsForResource"
+direction = "output"
+name = "tags"
+status = "deferred"
+
+[[member]]
+operation = "PublishStateMachineVersion"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "PublishStateMachineVersion"
+direction = "input"
+name = "revisionId"
+status = "deferred"
+
+[[member]]
+operation = "PublishStateMachineVersion"
+direction = "input"
+name = "description"
+status = "deferred"
+
+[[member]]
+operation = "PublishStateMachineVersion"
+direction = "output"
+name = "creationDate"
+status = "deferred"
+
+[[member]]
+operation = "PublishStateMachineVersion"
+direction = "output"
+name = "stateMachineVersionArn"
+status = "deferred"
+
+[[member]]
+operation = "RedriveExecution"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "RedriveExecution"
+direction = "input"
+name = "clientToken"
+status = "deferred"
+
+[[member]]
+operation = "RedriveExecution"
+direction = "output"
+name = "redriveDate"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskFailure"
+direction = "input"
+name = "taskToken"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskFailure"
+direction = "input"
+name = "error"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskFailure"
+direction = "input"
+name = "cause"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskHeartbeat"
+direction = "input"
+name = "taskToken"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskSuccess"
+direction = "input"
+name = "taskToken"
+status = "deferred"
+
+[[member]]
+operation = "SendTaskSuccess"
+direction = "input"
+name = "output"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "input"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "input"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "input"
+name = "traceHeader"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "output"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "StartExecution"
+direction = "output"
+name = "startDate"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "input"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "input"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "input"
+name = "traceHeader"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "input"
+name = "includedData"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "name"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "startDate"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "stopDate"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "status"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "error"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "cause"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "inputDetails"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "output"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "outputDetails"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "traceHeader"
+status = "deferred"
+
+[[member]]
+operation = "StartSyncExecution"
+direction = "output"
+name = "billingDetails"
+status = "deferred"
+
+[[member]]
+operation = "StopExecution"
+direction = "input"
+name = "executionArn"
+status = "deferred"
+
+[[member]]
+operation = "StopExecution"
+direction = "input"
+name = "error"
+status = "deferred"
+
+[[member]]
+operation = "StopExecution"
+direction = "input"
+name = "cause"
+status = "deferred"
+
+[[member]]
+operation = "StopExecution"
+direction = "output"
+name = "stopDate"
+status = "deferred"
+
+[[member]]
+operation = "TagResource"
+direction = "input"
+name = "resourceArn"
+status = "deferred"
+
+[[member]]
+operation = "TagResource"
+direction = "input"
+name = "tags"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "roleArn"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "input"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "inspectionLevel"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "revealSecrets"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "variables"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "stateName"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "mock"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "context"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "input"
+name = "stateConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "output"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "error"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "cause"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "inspectionData"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "nextState"
+status = "deferred"
+
+[[member]]
+operation = "TestState"
+direction = "output"
+name = "status"
+status = "deferred"
+
+[[member]]
+operation = "UntagResource"
+direction = "input"
+name = "resourceArn"
+status = "deferred"
+
+[[member]]
+operation = "UntagResource"
+direction = "input"
+name = "tagKeys"
+status = "deferred"
+
+[[member]]
+operation = "UpdateMapRun"
+direction = "input"
+name = "mapRunArn"
+status = "deferred"
+
+[[member]]
+operation = "UpdateMapRun"
+direction = "input"
+name = "maxConcurrency"
+status = "deferred"
+
+[[member]]
+operation = "UpdateMapRun"
+direction = "input"
+name = "toleratedFailurePercentage"
+status = "deferred"
+
+[[member]]
+operation = "UpdateMapRun"
+direction = "input"
+name = "toleratedFailureCount"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "stateMachineArn"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "roleArn"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "loggingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "tracingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "publish"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "versionDescription"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "input"
+name = "encryptionConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "output"
+name = "updateDate"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "output"
+name = "revisionId"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachine"
+direction = "output"
+name = "stateMachineVersionArn"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachineAlias"
+direction = "input"
+name = "stateMachineAliasArn"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachineAlias"
+direction = "input"
+name = "description"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachineAlias"
+direction = "input"
+name = "routingConfiguration"
+status = "deferred"
+
+[[member]]
+operation = "UpdateStateMachineAlias"
+direction = "output"
+name = "updateDate"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "input"
+name = "definition"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "input"
+name = "type"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "input"
+name = "severity"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "input"
+name = "maxResults"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "output"
+name = "result"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "output"
+name = "diagnostics"
+status = "deferred"
+
+[[member]]
+operation = "ValidateStateMachineDefinition"
+direction = "output"
+name = "truncated"
+status = "deferred"
+
+[[error]]
+name = "ActivityAlreadyExists"
+status = "deferred"
+
+[[error]]
+name = "ActivityDoesNotExist"
+status = "deferred"
+
+[[error]]
+name = "ActivityLimitExceeded"
+status = "deferred"
+
+[[error]]
+name = "ActivityWorkerLimitExceeded"
+status = "deferred"
+
+[[error]]
+name = "ConflictException"
+status = "deferred"
+
+[[error]]
+name = "ExecutionAlreadyExists"
+status = "deferred"
+
+[[error]]
+name = "ExecutionDoesNotExist"
+status = "deferred"
+
+[[error]]
+name = "ExecutionLimitExceeded"
+status = "deferred"
+
+[[error]]
+name = "ExecutionNotRedrivable"
+status = "deferred"
+
+[[error]]
+name = "InvalidArn"
+status = "deferred"
+
+[[error]]
+name = "InvalidDefinition"
+status = "deferred"
+
+[[error]]
+name = "InvalidEncryptionConfiguration"
+status = "deferred"
+
+[[error]]
+name = "InvalidExecutionInput"
+status = "deferred"
+
+[[error]]
+name = "InvalidLoggingConfiguration"
+status = "deferred"
+
+[[error]]
+name = "InvalidName"
+status = "deferred"
+
+[[error]]
+name = "InvalidOutput"
+status = "deferred"
+
+[[error]]
+name = "InvalidToken"
+status = "deferred"
+
+[[error]]
+name = "InvalidTracingConfiguration"
+status = "deferred"
+
+[[error]]
+name = "KmsAccessDeniedException"
+status = "deferred"
+
+[[error]]
+name = "KmsInvalidStateException"
+status = "deferred"
+
+[[error]]
+name = "KmsThrottlingException"
+status = "deferred"
+
+[[error]]
+name = "MissingRequiredParameter"
+status = "implemented"
+
+[[error]]
+name = "ResourceNotFound"
+status = "deferred"
+
+[[error]]
+name = "ServiceQuotaExceededException"
+status = "deferred"
+
+[[error]]
+name = "StateMachineAlreadyExists"
+status = "deferred"
+
+[[error]]
+name = "StateMachineDeleting"
+status = "deferred"
+
+[[error]]
+name = "StateMachineDoesNotExist"
+status = "deferred"
+
+[[error]]
+name = "StateMachineLimitExceeded"
+status = "deferred"
+
+[[error]]
+name = "StateMachineTypeNotSupported"
+status = "deferred"
+
+[[error]]
+name = "TaskDoesNotExist"
+status = "deferred"
+
+[[error]]
+name = "TaskTimedOut"
+status = "deferred"
+
+[[error]]
+name = "TooManyTags"
+status = "deferred"
+
+[[error]]
+name = "ValidationException"
+status = "implemented"

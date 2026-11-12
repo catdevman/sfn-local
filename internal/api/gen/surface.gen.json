@@ -1,0 +1,3365 @@
+{
+  "protocol": "aws.protocols#awsJson1_0",
+  "targetPrefix": "AWSStepFunctions",
+  "service": "com.amazonaws.sfn#AWSStepFunctions",
+  "version": "2016-11-23",
+  "operations": [
+    {
+      "name": "CreateActivity",
+      "shape": "com.amazonaws.sfn#CreateActivity",
+      "input": "CreateActivityInput",
+      "output": "CreateActivityOutput",
+      "idempotent": true,
+      "errors": [
+        "ActivityAlreadyExists",
+        "ActivityLimitExceeded",
+        "InvalidEncryptionConfiguration",
+        "InvalidName",
+        "KmsAccessDeniedException",
+        "KmsThrottlingException",
+        "TooManyTags"
+      ],
+      "inputMembers": [
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "kind": "list",
+          "required": false
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "CreateStateMachine",
+      "shape": "com.amazonaws.sfn#CreateStateMachine",
+      "input": "CreateStateMachineInput",
+      "output": "CreateStateMachineOutput",
+      "idempotent": true,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "InvalidDefinition",
+        "InvalidEncryptionConfiguration",
+        "InvalidLoggingConfiguration",
+        "InvalidName",
+        "InvalidTracingConfiguration",
+        "KmsAccessDeniedException",
+        "KmsThrottlingException",
+        "StateMachineAlreadyExists",
+        "StateMachineDeleting",
+        "StateMachineLimitExceeded",
+        "StateMachineTypeNotSupported",
+        "TooManyTags",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "kind": "list",
+          "required": false
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "publish",
+          "target": "Publish",
+          "kind": "boolean",
+          "required": false,
+          "hasDefault": true,
+          "default": false
+        },
+        {
+          "name": "versionDescription",
+          "target": "VersionDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ]
+    },
+    {
+      "name": "CreateStateMachineAlias",
+      "shape": "com.amazonaws.sfn#CreateStateMachineAlias",
+      "input": "CreateStateMachineAliasInput",
+      "output": "CreateStateMachineAliasOutput",
+      "idempotent": false,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "InvalidName",
+        "ResourceNotFound",
+        "ServiceQuotaExceededException",
+        "StateMachineDeleting",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "CharacterRestrictedName",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          },
+          "pattern": "^(?=.*[a-zA-Z_\\-\\.])[a-zA-Z0-9_\\-\\.]+$"
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "kind": "list",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 2
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "DeleteActivity",
+      "shape": "com.amazonaws.sfn#DeleteActivity",
+      "input": "DeleteActivityInput",
+      "output": "DeleteActivityOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn"
+      ],
+      "inputMembers": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "DeleteStateMachine",
+      "shape": "com.amazonaws.sfn#DeleteStateMachine",
+      "input": "DeleteStateMachineInput",
+      "output": "DeleteStateMachineOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "DeleteStateMachineAlias",
+      "shape": "com.amazonaws.sfn#DeleteStateMachineAlias",
+      "input": "DeleteStateMachineAliasInput",
+      "output": "DeleteStateMachineAliasOutput",
+      "idempotent": false,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "ResourceNotFound",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "DeleteStateMachineVersion",
+      "shape": "com.amazonaws.sfn#DeleteStateMachineVersion",
+      "input": "DeleteStateMachineVersionInput",
+      "output": "DeleteStateMachineVersionOutput",
+      "idempotent": false,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineVersionArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "DescribeActivity",
+      "shape": "com.amazonaws.sfn#DescribeActivity",
+      "input": "DescribeActivityInput",
+      "output": "DescribeActivityOutput",
+      "idempotent": false,
+      "errors": [
+        "ActivityDoesNotExist",
+        "InvalidArn"
+      ],
+      "inputMembers": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DescribeExecution",
+      "shape": "com.amazonaws.sfn#DescribeExecution",
+      "input": "DescribeExecutionInput",
+      "output": "DescribeExecutionOutput",
+      "idempotent": false,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "InvalidArn",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "status",
+          "target": "ExecutionStatus",
+          "kind": "enum",
+          "required": true,
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT",
+            "ABORTED",
+            "PENDING_REDRIVE"
+          ]
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "inputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "outputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 0,
+            "max": 256
+          },
+          "pattern": "^\\p{ASCII}*$"
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 32768
+          }
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "redriveCount",
+          "target": "RedriveCount",
+          "kind": "integer",
+          "required": false
+        },
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        },
+        {
+          "name": "redriveStatus",
+          "target": "ExecutionRedriveStatus",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "REDRIVABLE",
+            "NOT_REDRIVABLE",
+            "REDRIVABLE_BY_MAP_RUN"
+          ]
+        },
+        {
+          "name": "redriveStatusReason",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        }
+      ]
+    },
+    {
+      "name": "DescribeMapRun",
+      "shape": "com.amazonaws.sfn#DescribeMapRun",
+      "input": "DescribeMapRunInput",
+      "output": "DescribeMapRunOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound"
+      ],
+      "inputMembers": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        },
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "status",
+          "target": "MapRunStatus",
+          "kind": "enum",
+          "required": true,
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "ABORTED"
+          ]
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        },
+        {
+          "name": "maxConcurrency",
+          "target": "MaxConcurrency",
+          "kind": "integer",
+          "required": true,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0
+          }
+        },
+        {
+          "name": "toleratedFailurePercentage",
+          "target": "ToleratedFailurePercentage",
+          "kind": "float",
+          "required": true,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        {
+          "name": "toleratedFailureCount",
+          "target": "ToleratedFailureCount",
+          "kind": "long",
+          "required": true,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0
+          }
+        },
+        {
+          "name": "itemCounts",
+          "target": "MapRunItemCounts",
+          "kind": "structure",
+          "required": true
+        },
+        {
+          "name": "executionCounts",
+          "target": "MapRunExecutionCounts",
+          "kind": "structure",
+          "required": true
+        },
+        {
+          "name": "redriveCount",
+          "target": "RedriveCount",
+          "kind": "integer",
+          "required": false
+        },
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachine",
+      "shape": "com.amazonaws.sfn#DescribeStateMachine",
+      "input": "DescribeStateMachineInput",
+      "output": "DescribeStateMachineOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "StateMachineDoesNotExist"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "status",
+          "target": "StateMachineStatus",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ACTIVE",
+            "DELETING"
+          ]
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "kind": "enum",
+          "required": true,
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "label",
+          "target": "MapRunLabel",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "target": "VersionDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "variableReferences",
+          "target": "VariableReferences",
+          "kind": "map",
+          "required": false,
+          "sensitive": true
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachineAlias",
+      "shape": "com.amazonaws.sfn#DescribeStateMachineAlias",
+      "input": "DescribeStateMachineAliasInput",
+      "output": "DescribeStateMachineAliasOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "kind": "list",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 2
+          }
+        },
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        },
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "DescribeStateMachineForExecution",
+      "shape": "com.amazonaws.sfn#DescribeStateMachineForExecution",
+      "input": "DescribeStateMachineForExecutionInput",
+      "output": "DescribeStateMachineForExecutionOutput",
+      "idempotent": false,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "InvalidArn",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        },
+        {
+          "name": "label",
+          "target": "MapRunLabel",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "variableReferences",
+          "target": "VariableReferences",
+          "kind": "map",
+          "required": false,
+          "sensitive": true
+        }
+      ]
+    },
+    {
+      "name": "GetActivityTask",
+      "shape": "com.amazonaws.sfn#GetActivityTask",
+      "input": "GetActivityTaskInput",
+      "output": "GetActivityTaskOutput",
+      "idempotent": false,
+      "errors": [
+        "ActivityDoesNotExist",
+        "ActivityWorkerLimitExceeded",
+        "InvalidArn",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException"
+      ],
+      "inputMembers": [
+        {
+          "name": "activityArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "workerName",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 2048
+          }
+        },
+        {
+          "name": "input",
+          "target": "SensitiveDataJobInput",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 1048576
+          }
+        }
+      ]
+    },
+    {
+      "name": "GetExecutionHistory",
+      "shape": "com.amazonaws.sfn#GetExecutionHistory",
+      "input": "GetExecutionHistoryInput",
+      "output": "GetExecutionHistoryOutput",
+      "idempotent": false,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "InvalidArn",
+        "InvalidToken",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "name": "reverseOrder",
+          "target": "ReverseOrder",
+          "kind": "boolean",
+          "required": false,
+          "hasDefault": true,
+          "default": false
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        },
+        {
+          "name": "includeExecutionData",
+          "target": "IncludeExecutionDataGetExecutionHistory",
+          "kind": "boolean",
+          "required": false
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "events",
+          "target": "HistoryEventList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "pagination": {
+        "inputToken": "nextToken",
+        "outputToken": "nextToken",
+        "items": "events",
+        "pageSize": "maxResults"
+      }
+    },
+    {
+      "name": "ListActivities",
+      "shape": "com.amazonaws.sfn#ListActivities",
+      "input": "ListActivitiesInput",
+      "output": "ListActivitiesOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidToken"
+      ],
+      "inputMembers": [
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "activities",
+          "target": "ActivityList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "pagination": {
+        "inputToken": "nextToken",
+        "outputToken": "nextToken",
+        "items": "activities",
+        "pageSize": "maxResults"
+      }
+    },
+    {
+      "name": "ListExecutions",
+      "shape": "com.amazonaws.sfn#ListExecutions",
+      "input": "ListExecutionsInput",
+      "output": "ListExecutionsOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "InvalidToken",
+        "ResourceNotFound",
+        "StateMachineDoesNotExist",
+        "StateMachineTypeNotSupported",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "statusFilter",
+          "target": "ExecutionStatus",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "RUNNING",
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT",
+            "ABORTED",
+            "PENDING_REDRIVE"
+          ]
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "ListExecutionsPageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 3096
+          }
+        },
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        },
+        {
+          "name": "redriveFilter",
+          "target": "ExecutionRedriveFilter",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "REDRIVEN",
+            "NOT_REDRIVEN"
+          ]
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "executions",
+          "target": "ExecutionList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "ListExecutionsPageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 3096
+          }
+        }
+      ],
+      "pagination": {
+        "inputToken": "nextToken",
+        "outputToken": "nextToken",
+        "items": "executions",
+        "pageSize": "maxResults"
+      }
+    },
+    {
+      "name": "ListMapRuns",
+      "shape": "com.amazonaws.sfn#ListMapRuns",
+      "input": "ListMapRunsInput",
+      "output": "ListMapRunsOutput",
+      "idempotent": false,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "InvalidArn",
+        "InvalidToken"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "mapRuns",
+          "target": "MapRunList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "pagination": {
+        "inputToken": "nextToken",
+        "outputToken": "nextToken",
+        "items": "mapRuns",
+        "pageSize": "maxResults"
+      }
+    },
+    {
+      "name": "ListStateMachineAliases",
+      "shape": "com.amazonaws.sfn#ListStateMachineAliases",
+      "input": "ListStateMachineAliasesInput",
+      "output": "ListStateMachineAliasesOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "InvalidToken",
+        "ResourceNotFound",
+        "StateMachineDeleting",
+        "StateMachineDoesNotExist"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineAliases",
+          "target": "StateMachineAliasList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ]
+    },
+    {
+      "name": "ListStateMachines",
+      "shape": "com.amazonaws.sfn#ListStateMachines",
+      "input": "ListStateMachinesInput",
+      "output": "ListStateMachinesOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidToken"
+      ],
+      "inputMembers": [
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachines",
+          "target": "StateMachineList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ],
+      "pagination": {
+        "inputToken": "nextToken",
+        "outputToken": "nextToken",
+        "items": "stateMachines",
+        "pageSize": "maxResults"
+      }
+    },
+    {
+      "name": "ListStateMachineVersions",
+      "shape": "com.amazonaws.sfn#ListStateMachineVersions",
+      "input": "ListStateMachineVersionsInput",
+      "output": "ListStateMachineVersionsOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "InvalidToken",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        },
+        {
+          "name": "maxResults",
+          "target": "PageSize",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 1000
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stateMachineVersions",
+          "target": "StateMachineVersionList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "nextToken",
+          "target": "PageToken",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 1024
+          }
+        }
+      ]
+    },
+    {
+      "name": "ListTagsForResource",
+      "shape": "com.amazonaws.sfn#ListTagsForResource",
+      "input": "ListTagsForResourceInput",
+      "output": "ListTagsForResourceOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound"
+      ],
+      "inputMembers": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "tags",
+          "target": "TagList",
+          "kind": "list",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "PublishStateMachineVersion",
+      "shape": "com.amazonaws.sfn#PublishStateMachineVersion",
+      "input": "PublishStateMachineVersionInput",
+      "output": "PublishStateMachineVersionOutput",
+      "idempotent": true,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "ServiceQuotaExceededException",
+        "StateMachineDeleting",
+        "StateMachineDoesNotExist",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "description",
+          "target": "VersionDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "creationDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ]
+    },
+    {
+      "name": "RedriveExecution",
+      "shape": "com.amazonaws.sfn#RedriveExecution",
+      "input": "RedriveExecutionInput",
+      "output": "RedriveExecutionOutput",
+      "idempotent": true,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "ExecutionLimitExceeded",
+        "ExecutionNotRedrivable",
+        "InvalidArn",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "clientToken",
+          "target": "ClientToken",
+          "kind": "string",
+          "required": false,
+          "idempotencyToken": true,
+          "length": {
+            "min": 1,
+            "max": 64
+          },
+          "pattern": "^[!-~]+$"
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "redriveDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "SendTaskFailure",
+      "shape": "com.amazonaws.sfn#SendTaskFailure",
+      "input": "SendTaskFailureInput",
+      "output": "SendTaskFailureOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidToken",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "TaskDoesNotExist",
+        "TaskTimedOut"
+      ],
+      "inputMembers": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 2048
+          }
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 32768
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "SendTaskHeartbeat",
+      "shape": "com.amazonaws.sfn#SendTaskHeartbeat",
+      "input": "SendTaskHeartbeatInput",
+      "output": "SendTaskHeartbeatOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidToken",
+        "TaskDoesNotExist",
+        "TaskTimedOut"
+      ],
+      "inputMembers": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 2048
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "SendTaskSuccess",
+      "shape": "com.amazonaws.sfn#SendTaskSuccess",
+      "input": "SendTaskSuccessInput",
+      "output": "SendTaskSuccessOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidOutput",
+        "InvalidToken",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "TaskDoesNotExist",
+        "TaskTimedOut"
+      ],
+      "inputMembers": [
+        {
+          "name": "taskToken",
+          "target": "TaskToken",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 2048
+          }
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "StartExecution",
+      "shape": "com.amazonaws.sfn#StartExecution",
+      "input": "StartExecutionInput",
+      "output": "StartExecutionOutput",
+      "idempotent": true,
+      "errors": [
+        "ExecutionAlreadyExists",
+        "ExecutionLimitExceeded",
+        "InvalidArn",
+        "InvalidExecutionInput",
+        "InvalidName",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "StateMachineDeleting",
+        "StateMachineDoesNotExist",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 0,
+            "max": 256
+          },
+          "pattern": "^\\p{ASCII}*$"
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "StartSyncExecution",
+      "shape": "com.amazonaws.sfn#StartSyncExecution",
+      "input": "StartSyncExecutionInput",
+      "output": "StartSyncExecutionOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "InvalidExecutionInput",
+        "InvalidName",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "StateMachineDeleting",
+        "StateMachineDoesNotExist",
+        "StateMachineTypeNotSupported"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 0,
+            "max": 256
+          },
+          "pattern": "^\\p{ASCII}*$"
+        },
+        {
+          "name": "includedData",
+          "target": "IncludedData",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ALL_DATA",
+            "METADATA_ONLY"
+          ]
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "name",
+          "target": "Name",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "startDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "status",
+          "target": "SyncExecutionStatus",
+          "kind": "enum",
+          "required": true,
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "TIMED_OUT"
+          ]
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 32768
+          }
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "inputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "outputDetails",
+          "target": "CloudWatchEventsExecutionDataDetails",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "traceHeader",
+          "target": "TraceHeader",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 0,
+            "max": 256
+          },
+          "pattern": "^\\p{ASCII}*$"
+        },
+        {
+          "name": "billingDetails",
+          "target": "BillingDetails",
+          "kind": "structure",
+          "required": false
+        }
+      ]
+    },
+    {
+      "name": "StopExecution",
+      "shape": "com.amazonaws.sfn#StopExecution",
+      "input": "StopExecutionInput",
+      "output": "StopExecutionOutput",
+      "idempotent": false,
+      "errors": [
+        "ExecutionDoesNotExist",
+        "InvalidArn",
+        "KmsAccessDeniedException",
+        "KmsInvalidStateException",
+        "KmsThrottlingException",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "executionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 32768
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "stopDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "TagResource",
+      "shape": "com.amazonaws.sfn#TagResource",
+      "input": "TagResourceInput",
+      "output": "TagResourceOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound",
+        "TooManyTags"
+      ],
+      "inputMembers": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "tags",
+          "target": "TagList",
+          "kind": "list",
+          "required": true
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "TestState",
+      "shape": "com.amazonaws.sfn#TestState",
+      "input": "TestStateInput",
+      "output": "TestStateOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "InvalidDefinition",
+        "InvalidExecutionInput",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "input",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "inspectionLevel",
+          "target": "InspectionLevel",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "INFO",
+            "DEBUG",
+            "TRACE"
+          ]
+        },
+        {
+          "name": "revealSecrets",
+          "target": "RevealSecrets",
+          "kind": "boolean",
+          "required": false,
+          "hasDefault": true,
+          "default": false
+        },
+        {
+          "name": "variables",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "stateName",
+          "target": "TestStateStateName",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "mock",
+          "target": "MockInput",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "context",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "stateConfiguration",
+          "target": "TestStateConfiguration",
+          "kind": "structure",
+          "required": false
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "output",
+          "target": "SensitiveData",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 262144
+          }
+        },
+        {
+          "name": "error",
+          "target": "SensitiveError",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "cause",
+          "target": "SensitiveCause",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 32768
+          }
+        },
+        {
+          "name": "inspectionData",
+          "target": "InspectionData",
+          "kind": "structure",
+          "required": false,
+          "sensitive": true
+        },
+        {
+          "name": "nextState",
+          "target": "StateName",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 80
+          }
+        },
+        {
+          "name": "status",
+          "target": "TestExecutionStatus",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "SUCCEEDED",
+            "FAILED",
+            "RETRIABLE",
+            "CAUGHT_ERROR"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "UntagResource",
+      "shape": "com.amazonaws.sfn#UntagResource",
+      "input": "UntagResourceInput",
+      "output": "UntagResourceOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound"
+      ],
+      "inputMembers": [
+        {
+          "name": "resourceArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "tagKeys",
+          "target": "TagKeyList",
+          "kind": "list",
+          "required": true
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "UpdateMapRun",
+      "shape": "com.amazonaws.sfn#UpdateMapRun",
+      "input": "UpdateMapRunInput",
+      "output": "UpdateMapRunOutput",
+      "idempotent": false,
+      "errors": [
+        "InvalidArn",
+        "ResourceNotFound",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "mapRunArn",
+          "target": "LongArn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 2000
+          }
+        },
+        {
+          "name": "maxConcurrency",
+          "target": "MaxConcurrency",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": null,
+          "range": {
+            "min": 0
+          }
+        },
+        {
+          "name": "toleratedFailurePercentage",
+          "target": "ToleratedFailurePercentage",
+          "kind": "float",
+          "required": false,
+          "hasDefault": true,
+          "default": null,
+          "range": {
+            "min": 0,
+            "max": 100
+          }
+        },
+        {
+          "name": "toleratedFailureCount",
+          "target": "ToleratedFailureCount",
+          "kind": "long",
+          "required": false,
+          "hasDefault": true,
+          "default": null,
+          "range": {
+            "min": 0
+          }
+        }
+      ],
+      "outputMembers": []
+    },
+    {
+      "name": "UpdateStateMachine",
+      "shape": "com.amazonaws.sfn#UpdateStateMachine",
+      "input": "UpdateStateMachineInput",
+      "output": "UpdateStateMachineOutput",
+      "idempotent": true,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "InvalidDefinition",
+        "InvalidEncryptionConfiguration",
+        "InvalidLoggingConfiguration",
+        "InvalidTracingConfiguration",
+        "KmsAccessDeniedException",
+        "KmsThrottlingException",
+        "MissingRequiredParameter",
+        "ServiceQuotaExceededException",
+        "StateMachineDeleting",
+        "StateMachineDoesNotExist",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "roleArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "loggingConfiguration",
+          "target": "LoggingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "tracingConfiguration",
+          "target": "TracingConfiguration",
+          "kind": "structure",
+          "required": false
+        },
+        {
+          "name": "publish",
+          "target": "Publish",
+          "kind": "boolean",
+          "required": false,
+          "hasDefault": true,
+          "default": false
+        },
+        {
+          "name": "versionDescription",
+          "target": "VersionDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "encryptionConfiguration",
+          "target": "EncryptionConfiguration",
+          "kind": "structure",
+          "required": false
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        },
+        {
+          "name": "revisionId",
+          "target": "RevisionId",
+          "kind": "string",
+          "required": false
+        },
+        {
+          "name": "stateMachineVersionArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        }
+      ]
+    },
+    {
+      "name": "UpdateStateMachineAlias",
+      "shape": "com.amazonaws.sfn#UpdateStateMachineAlias",
+      "input": "UpdateStateMachineAliasInput",
+      "output": "UpdateStateMachineAliasOutput",
+      "idempotent": false,
+      "errors": [
+        "ConflictException",
+        "InvalidArn",
+        "ResourceNotFound",
+        "StateMachineDeleting",
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "stateMachineAliasArn",
+          "target": "Arn",
+          "kind": "string",
+          "required": true,
+          "length": {
+            "min": 1,
+            "max": 256
+          }
+        },
+        {
+          "name": "description",
+          "target": "AliasDescription",
+          "kind": "string",
+          "required": false,
+          "sensitive": true,
+          "length": {
+            "min": 0,
+            "max": 256
+          }
+        },
+        {
+          "name": "routingConfiguration",
+          "target": "RoutingConfigurationList",
+          "kind": "list",
+          "required": false,
+          "length": {
+            "min": 1,
+            "max": 2
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "updateDate",
+          "target": "Timestamp",
+          "kind": "timestamp",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "ValidateStateMachineDefinition",
+      "shape": "com.amazonaws.sfn#ValidateStateMachineDefinition",
+      "input": "ValidateStateMachineDefinitionInput",
+      "output": "ValidateStateMachineDefinitionOutput",
+      "idempotent": false,
+      "errors": [
+        "ValidationException"
+      ],
+      "inputMembers": [
+        {
+          "name": "definition",
+          "target": "Definition",
+          "kind": "string",
+          "required": true,
+          "sensitive": true,
+          "length": {
+            "min": 1,
+            "max": 1048576
+          }
+        },
+        {
+          "name": "type",
+          "target": "StateMachineType",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "STANDARD",
+            "EXPRESS"
+          ]
+        },
+        {
+          "name": "severity",
+          "target": "ValidateStateMachineDefinitionSeverity",
+          "kind": "enum",
+          "required": false,
+          "enum": [
+            "ERROR",
+            "WARNING"
+          ]
+        },
+        {
+          "name": "maxResults",
+          "target": "ValidateStateMachineDefinitionMaxResult",
+          "kind": "integer",
+          "required": false,
+          "hasDefault": true,
+          "default": 0,
+          "range": {
+            "min": 0,
+            "max": 100
+          }
+        }
+      ],
+      "outputMembers": [
+        {
+          "name": "result",
+          "target": "ValidateStateMachineDefinitionResultCode",
+          "kind": "enum",
+          "required": true,
+          "enum": [
+            "OK",
+            "FAIL"
+          ]
+        },
+        {
+          "name": "diagnostics",
+          "target": "ValidateStateMachineDefinitionDiagnosticList",
+          "kind": "list",
+          "required": true
+        },
+        {
+          "name": "truncated",
+          "target": "ValidateStateMachineDefinitionTruncated",
+          "kind": "boolean",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "errors": [
+    {
+      "name": "ActivityAlreadyExists",
+      "shape": "com.amazonaws.sfn#ActivityAlreadyExists",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ActivityDoesNotExist",
+      "shape": "com.amazonaws.sfn#ActivityDoesNotExist",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ActivityLimitExceeded",
+      "shape": "com.amazonaws.sfn#ActivityLimitExceeded",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ActivityWorkerLimitExceeded",
+      "shape": "com.amazonaws.sfn#ActivityWorkerLimitExceeded",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ConflictException",
+      "shape": "com.amazonaws.sfn#ConflictException",
+      "fault": "client",
+      "status": 409,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ExecutionAlreadyExists",
+      "shape": "com.amazonaws.sfn#ExecutionAlreadyExists",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ExecutionDoesNotExist",
+      "shape": "com.amazonaws.sfn#ExecutionDoesNotExist",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ExecutionLimitExceeded",
+      "shape": "com.amazonaws.sfn#ExecutionLimitExceeded",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ExecutionNotRedrivable",
+      "shape": "com.amazonaws.sfn#ExecutionNotRedrivable",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidArn",
+      "shape": "com.amazonaws.sfn#InvalidArn",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidDefinition",
+      "shape": "com.amazonaws.sfn#InvalidDefinition",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidEncryptionConfiguration",
+      "shape": "com.amazonaws.sfn#InvalidEncryptionConfiguration",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidExecutionInput",
+      "shape": "com.amazonaws.sfn#InvalidExecutionInput",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidLoggingConfiguration",
+      "shape": "com.amazonaws.sfn#InvalidLoggingConfiguration",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidName",
+      "shape": "com.amazonaws.sfn#InvalidName",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidOutput",
+      "shape": "com.amazonaws.sfn#InvalidOutput",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidToken",
+      "shape": "com.amazonaws.sfn#InvalidToken",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "InvalidTracingConfiguration",
+      "shape": "com.amazonaws.sfn#InvalidTracingConfiguration",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "KmsAccessDeniedException",
+      "shape": "com.amazonaws.sfn#KmsAccessDeniedException",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "KmsInvalidStateException",
+      "shape": "com.amazonaws.sfn#KmsInvalidStateException",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "kmsKeyState",
+        "message"
+      ]
+    },
+    {
+      "name": "KmsThrottlingException",
+      "shape": "com.amazonaws.sfn#KmsThrottlingException",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "MissingRequiredParameter",
+      "shape": "com.amazonaws.sfn#MissingRequiredParameter",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "ResourceNotFound",
+      "shape": "com.amazonaws.sfn#ResourceNotFound",
+      "fault": "client",
+      "status": 404,
+      "members": [
+        "message",
+        "resourceName"
+      ]
+    },
+    {
+      "name": "ServiceQuotaExceededException",
+      "shape": "com.amazonaws.sfn#ServiceQuotaExceededException",
+      "fault": "client",
+      "status": 402,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "StateMachineAlreadyExists",
+      "shape": "com.amazonaws.sfn#StateMachineAlreadyExists",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "StateMachineDeleting",
+      "shape": "com.amazonaws.sfn#StateMachineDeleting",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "StateMachineDoesNotExist",
+      "shape": "com.amazonaws.sfn#StateMachineDoesNotExist",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "StateMachineLimitExceeded",
+      "shape": "com.amazonaws.sfn#StateMachineLimitExceeded",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "StateMachineTypeNotSupported",
+      "shape": "com.amazonaws.sfn#StateMachineTypeNotSupported",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "TaskDoesNotExist",
+      "shape": "com.amazonaws.sfn#TaskDoesNotExist",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "TaskTimedOut",
+      "shape": "com.amazonaws.sfn#TaskTimedOut",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message"
+      ]
+    },
+    {
+      "name": "TooManyTags",
+      "shape": "com.amazonaws.sfn#TooManyTags",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message",
+        "resourceName"
+      ]
+    },
+    {
+      "name": "ValidationException",
+      "shape": "com.amazonaws.sfn#ValidationException",
+      "fault": "client",
+      "status": 400,
+      "members": [
+        "message",
+        "reason"
+      ]
+    }
+  ],
+  "enums": [
+    {
+      "name": "EncryptionType",
+      "values": [
+        "AWS_OWNED_KEY",
+        "CUSTOMER_MANAGED_KMS_KEY"
+      ]
+    },
+    {
+      "name": "ExecutionRedriveFilter",
+      "values": [
+        "REDRIVEN",
+        "NOT_REDRIVEN"
+      ]
+    },
+    {
+      "name": "ExecutionRedriveStatus",
+      "values": [
+        "REDRIVABLE",
+        "NOT_REDRIVABLE",
+        "REDRIVABLE_BY_MAP_RUN"
+      ]
+    },
+    {
+      "name": "ExecutionStatus",
+      "values": [
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT",
+        "ABORTED",
+        "PENDING_REDRIVE"
+      ]
+    },
+    {
+      "name": "HistoryEventType",
+      "values": [
+        "ActivityFailed",
+        "ActivityScheduled",
+        "ActivityScheduleFailed",
+        "ActivityStarted",
+        "ActivitySucceeded",
+        "ActivityTimedOut",
+        "ChoiceStateEntered",
+        "ChoiceStateExited",
+        "ExecutionAborted",
+        "ExecutionFailed",
+        "ExecutionStarted",
+        "ExecutionSucceeded",
+        "ExecutionTimedOut",
+        "FailStateEntered",
+        "LambdaFunctionFailed",
+        "LambdaFunctionScheduled",
+        "LambdaFunctionScheduleFailed",
+        "LambdaFunctionStarted",
+        "LambdaFunctionStartFailed",
+        "LambdaFunctionSucceeded",
+        "LambdaFunctionTimedOut",
+        "MapIterationAborted",
+        "MapIterationFailed",
+        "MapIterationStarted",
+        "MapIterationSucceeded",
+        "MapStateAborted",
+        "MapStateEntered",
+        "MapStateExited",
+        "MapStateFailed",
+        "MapStateStarted",
+        "MapStateSucceeded",
+        "ParallelStateAborted",
+        "ParallelStateEntered",
+        "ParallelStateExited",
+        "ParallelStateFailed",
+        "ParallelStateStarted",
+        "ParallelStateSucceeded",
+        "PassStateEntered",
+        "PassStateExited",
+        "SucceedStateEntered",
+        "SucceedStateExited",
+        "TaskFailed",
+        "TaskScheduled",
+        "TaskStarted",
+        "TaskStartFailed",
+        "TaskStateAborted",
+        "TaskStateEntered",
+        "TaskStateExited",
+        "TaskSubmitFailed",
+        "TaskSubmitted",
+        "TaskSucceeded",
+        "TaskTimedOut",
+        "WaitStateAborted",
+        "WaitStateEntered",
+        "WaitStateExited",
+        "MapRunAborted",
+        "MapRunFailed",
+        "MapRunStarted",
+        "MapRunSucceeded",
+        "ExecutionRedriven",
+        "MapRunRedriven",
+        "EvaluationFailed"
+      ]
+    },
+    {
+      "name": "IncludedData",
+      "values": [
+        "ALL_DATA",
+        "METADATA_ONLY"
+      ]
+    },
+    {
+      "name": "InspectionLevel",
+      "values": [
+        "INFO",
+        "DEBUG",
+        "TRACE"
+      ]
+    },
+    {
+      "name": "KmsKeyState",
+      "values": [
+        "DISABLED",
+        "PENDING_DELETION",
+        "PENDING_IMPORT",
+        "UNAVAILABLE",
+        "CREATING"
+      ]
+    },
+    {
+      "name": "LogLevel",
+      "values": [
+        "ALL",
+        "ERROR",
+        "FATAL",
+        "OFF"
+      ]
+    },
+    {
+      "name": "MapRunStatus",
+      "values": [
+        "RUNNING",
+        "SUCCEEDED",
+        "FAILED",
+        "ABORTED"
+      ]
+    },
+    {
+      "name": "MockResponseValidationMode",
+      "values": [
+        "STRICT",
+        "PRESENT",
+        "NONE"
+      ]
+    },
+    {
+      "name": "StateMachineStatus",
+      "values": [
+        "ACTIVE",
+        "DELETING"
+      ]
+    },
+    {
+      "name": "StateMachineType",
+      "values": [
+        "STANDARD",
+        "EXPRESS"
+      ]
+    },
+    {
+      "name": "SyncExecutionStatus",
+      "values": [
+        "SUCCEEDED",
+        "FAILED",
+        "TIMED_OUT"
+      ]
+    },
+    {
+      "name": "TestExecutionStatus",
+      "values": [
+        "SUCCEEDED",
+        "FAILED",
+        "RETRIABLE",
+        "CAUGHT_ERROR"
+      ]
+    },
+    {
+      "name": "ValidateStateMachineDefinitionResultCode",
+      "values": [
+        "OK",
+        "FAIL"
+      ]
+    },
+    {
+      "name": "ValidateStateMachineDefinitionSeverity",
+      "values": [
+        "ERROR",
+        "WARNING"
+      ]
+    },
+    {
+      "name": "ValidationExceptionReason",
+      "values": [
+        "API_DOES_NOT_SUPPORT_LABELED_ARNS",
+        "MISSING_REQUIRED_PARAMETER",
+        "CANNOT_UPDATE_COMPLETED_MAP_RUN",
+        "INVALID_ROUTING_CONFIGURATION"
+      ]
+    }
+  ]
+}

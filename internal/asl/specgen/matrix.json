@@ -1,0 +1,301 @@
+{
+  "languages": [
+    {
+      "name": "jsonata",
+      "fields": [
+        {
+          "name": "Type",
+          "states": {
+            "Task": "required",
+            "Parallel": "required",
+            "Map": "required",
+            "Pass": "required",
+            "Wait": "required",
+            "Choice": "required",
+            "Succeed": "required",
+            "Fail": "required"
+          }
+        },
+        {
+          "name": "Comment",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "allowed",
+            "Fail": "allowed"
+          }
+        },
+        {
+          "name": "Output",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "allowed",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Assign",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Arguments",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "absent",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Retry",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Catch",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        }
+      ],
+      "notes": [
+        {
+          "text": "One of: Next or \"End\":true",
+          "states": {
+            "Task": "required",
+            "Parallel": "required",
+            "Map": "required",
+            "Pass": "required",
+            "Wait": "required",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        }
+      ]
+    },
+    {
+      "name": "jsonpath",
+      "fields": [
+        {
+          "name": "Type",
+          "states": {
+            "Task": "required",
+            "Parallel": "required",
+            "Map": "required",
+            "Pass": "required",
+            "Wait": "required",
+            "Choice": "required",
+            "Succeed": "required",
+            "Fail": "required"
+          }
+        },
+        {
+          "name": "Comment",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "allowed",
+            "Fail": "allowed"
+          }
+        },
+        {
+          "name": "InputPath",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "allowed",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "OutputPath",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "allowed",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Assign",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "allowed",
+            "Choice": "allowed",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "ResultPath",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Parameters",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "allowed",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "ResultSelector",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Retry",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        },
+        {
+          "name": "Catch",
+          "states": {
+            "Task": "allowed",
+            "Parallel": "allowed",
+            "Map": "allowed",
+            "Pass": "absent",
+            "Wait": "absent",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        }
+      ],
+      "notes": [
+        {
+          "text": "One of: Next or \"End\":true",
+          "states": {
+            "Task": "required",
+            "Parallel": "required",
+            "Map": "required",
+            "Pass": "required",
+            "Wait": "required",
+            "Choice": "absent",
+            "Succeed": "absent",
+            "Fail": "absent"
+          }
+        }
+      ]
+    }
+  ],
+  "appendixA": [
+    "States.ALL",
+    "States.HeartbeatTimeout",
+    "States.Timeout",
+    "States.TaskFailed",
+    "States.Permissions",
+    "States.ResultPathMatchFailure",
+    "States.ParameterPathFailure",
+    "States.QueryEvaluationError",
+    "States.BranchFailed",
+    "States.NoChoiceMatched",
+    "States.IntrinsicFailure",
+    "States.ExceedToleratedFailureThreshold",
+    "States.ItemReaderFailed",
+    "States.ResultWriterFailed"
+  ],
+  "appendixB": [
+    "States.Format",
+    "States.StringToJson",
+    "States.JsonToString",
+    "States.Array",
+    "States.ArrayPartition",
+    "States.ArrayContains",
+    "States.ArrayRange",
+    "States.ArrayGetItem",
+    "States.ArrayLength",
+    "States.ArrayUnique",
+    "States.Base64Encode",
+    "States.Base64Decode",
+    "States.Hash",
+    "States.JsonMerge",
+    "States.MathRandom",
+    "States.MathAdd",
+    "States.StringSplit",
+    "States.UUID"
+  ]
+}
