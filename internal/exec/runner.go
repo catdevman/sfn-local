@@ -22,8 +22,7 @@ import (
 
 const maxPayload = 262144
 
-// Runner executes Pass, Succeed, Fail, Choice, Wait, and Task.
-// Parallel and Map fail the run until a later phase.
+// Runner executes Pass, Succeed, Fail, Choice, Wait, Task, Parallel, and inline Map.
 type Runner struct {
 	Store *store.Store
 	// Now overrides the clock. Nil means time.Now.
@@ -68,9 +67,7 @@ func (r *Runner) Start(handle *store.RunHandle, arn string) {
 
 // Run drives one execution until it reaches a terminal status.
 func (r *Runner) Run(ctx context.Context, arn string) {
-	if ctx == nil {
-		ctx = context.Background()
-	}
+	ctx = withStop(ctx)
 	defer r.clearAttempts(arn)
 	ex, ok := r.Store.Execution(arn)
 	if !ok {
@@ -107,7 +104,7 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 			return
 		}
 		switch st.Type {
-		case "Pass", "Succeed", "Fail", "Choice", "Wait", "Task":
+		case "Pass", "Succeed", "Fail", "Choice", "Wait", "Task", "Parallel", "Map":
 		default:
 			r.fail(arn, "States.Runtime", "State type "+st.Type+" is not implemented by this local server.")
 			return
@@ -155,6 +152,16 @@ func (r *Runner) fail(arn, errName, cause string) {
 	r.finish(arn, store.ExecFailed, "ExecutionFailed", "", false, errName, cause, true, cause != "")
 }
 
+// failCtx records a nested state failure on the branch frame. At the top
+// level it fails the execution.
+func (r *Runner) failCtx(ctx context.Context, arn, errName, cause string) {
+	if f := nestOf(ctx); f != nil {
+		f.record(errName, cause)
+		return
+	}
+	r.fail(arn, errName, cause)
+}
+
 func (r *Runner) finish(arn, status, event, output string, hasOutput bool, errName, cause string, hasError, hasCause bool) {
 	ev := store.HistoryEvent{Type: event, Time: r.now(), Output: output, HasOutput: hasOutput, Error: errName, HasError: hasError, Cause: cause, HasCause: hasCause}
 	ex, err := r.Store.Complete(arn, status, r.now(), ev, output, hasOutput, errName, cause, hasError, hasCause)
@@ -179,16 +186,26 @@ func (r *Runner) onAppendErr(arn string, err error) {
 }
 
 // halt stops the worker when the execution is no longer RUNNING. A cancelled
-// worker context aborts a run that StopExecution has not already finished.
+// stop context aborts a top-level run that StopExecution has not already
+// finished. A nested frame, including a sibling cancel, returns without
+// writing ExecutionAborted so the Parallel or Map coordinator can finish.
 func (r *Runner) halt(ctx context.Context, arn string) bool {
 	if !r.Store.Running(arn) {
 		return true
 	}
-	if ctx.Err() != nil {
-		r.finish(arn, store.ExecAborted, "ExecutionAborted", "", false, "", "", false, false)
+	if ctx == nil {
+		return false
+	}
+	stopped := stopRequested(ctx)
+	local := ctx.Err() != nil
+	if !stopped && !local {
+		return false
+	}
+	if nestOf(ctx) != nil || !stopped {
 		return true
 	}
-	return false
+	r.finish(arn, store.ExecAborted, "ExecutionAborted", "", false, "", "", false, false)
+	return true
 }
 
 func (r *Runner) alive(machineARN string) bool {

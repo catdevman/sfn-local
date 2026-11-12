@@ -143,72 +143,72 @@ status = "deferred"
 
 [[intrinsic]]
 name = "States.Format"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.StringToJson"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.JsonToString"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.Array"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayPartition"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayContains"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayRange"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayGetItem"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayLength"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.ArrayUnique"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.Base64Encode"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.Base64Decode"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.Hash"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.JsonMerge"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.MathRandom"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.MathAdd"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.StringSplit"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.UUID"
-status = "deferred"
+status = "implemented"

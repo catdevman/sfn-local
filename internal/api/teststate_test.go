@@ -170,18 +170,8 @@ func TestTestStateTaskAndLambda(t *testing.T) {
 func TestTestStateRefusesUnimplemented(t *testing.T) {
 	s := newService()
 	noTestLeak(t, s)
-	parallel := `{"Type":"Parallel","Branches":[{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}}],"End":true}`
-	_, err := s.TestState(context.Background(), &gen.TestStateInput{Definition: sp(parallel)})
-	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "State type Parallel is not implemented") {
-		t.Fatalf("%v", err)
-	}
-	mapDef := `{"Type":"Map","Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}`
-	_, err = s.TestState(context.Background(), &gen.TestStateInput{Definition: sp(mapDef)})
-	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "State type Map is not implemented") {
-		t.Fatalf("%v", err)
-	}
 	activity := `{"Type":"Task","Resource":"arn:aws:states:us-east-1:123456789012:activity:work","End":true}`
-	_, err = s.TestState(context.Background(), &gen.TestStateInput{
+	_, err := s.TestState(context.Background(), &gen.TestStateInput{
 		Definition: sp(activity),
 		Mock:       &gen.MockInput{Result: sp(`{"ok":true}`)},
 	})

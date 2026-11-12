@@ -73,7 +73,14 @@ func TestApply(t *testing.T) {
 	if _, err := Apply(map[string]any{"a": int64(1), "a.$": "$.user.name"}, root, nil); err == nil {
 		t.Fatal("both keys")
 	}
-	if _, err := Apply(map[string]any{"a.$": "States.Format('{}', $.x)"}, root, nil); err == nil || !contains(err.Error(), "intrinsic") {
+	formatted, err := Apply(map[string]any{"a.$": "States.Format('{}', $.user.name)"}, root, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if formatted.(map[string]any)["a"] != "ada" {
+		t.Fatal(formatted)
+	}
+	if _, err := Apply(map[string]any{"a.$": "States.Nope()"}, root, nil); err == nil || !contains(err.Error(), "intrinsic") {
 		t.Fatal(err)
 	}
 	if _, err := Apply(map[string]any{"a.$": "$.missing"}, root, nil); err == nil || !contains(err.Error(), "not found") {

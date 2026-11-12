@@ -4,8 +4,11 @@
 package jsonpath
 
 import (
+	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/catdevman/sfn-local/internal/intrinsic"
 )
 
 // EvalError is a path or template failure the runner records on the execution.
@@ -96,7 +99,7 @@ func Set(root any, path string, value any) (any, error) {
 }
 
 // Apply evaluates a payload template. A key ending in `.$` is a reference
-// path or a States.* call. States.* calls are rejected until a later phase.
+// path or a States.* call.
 func Apply(template, root, ctx any) (any, error) {
 	switch node := template.(type) {
 	case map[string]any:
@@ -149,7 +152,17 @@ func Apply(template, root, ctx any) (any, error) {
 func Eval(expr string, root, ctx any) (any, error) {
 	expr = strings.TrimSpace(expr)
 	if strings.HasPrefix(expr, "States.") {
-		return nil, Runtime("intrinsic functions are not implemented by this local server")
+		val, err := intrinsic.Eval(expr, func(path string) (any, error) {
+			return Eval(path, root, ctx)
+		})
+		if err != nil {
+			var ev *EvalError
+			if errors.As(err, &ev) {
+				return nil, err
+			}
+			return nil, Runtime(err.Error())
+		}
+		return val, nil
 	}
 	val, found, err := Get(expr, root, ctx)
 	if err != nil {

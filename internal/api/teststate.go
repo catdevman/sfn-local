@@ -18,7 +18,7 @@ const testStateLimit = 5 * time.Minute
 
 // TestState runs one state through the execution handlers and stops before
 // the next state. JSONata variables and stateConfiguration are rejected.
-// Parallel, Map, and activity states return a modeled error and do not run.
+// An activity state returns a modeled error and does not schedule.
 func (s *Service) TestState(ctx context.Context, in *gen.TestStateInput) (*gen.TestStateOutput, error) {
 	if in == nil || in.Definition == nil {
 		return nil, modeled("ValidationException", "definition is required")
@@ -56,9 +56,6 @@ func (s *Service) TestState(ctx context.Context, in *gen.TestStateInput) (*gen.T
 	prog, st, text, err := testProgram(*in.Definition, stateName, in.StateName != nil)
 	if err != nil {
 		return nil, err
-	}
-	if st.Type == "Parallel" || st.Type == "Map" {
-		return nil, modeled("ValidationException", "State type "+st.Type+" is not implemented by this local server.")
 	}
 	if activityResource(st.Resource) {
 		return nil, modeled("ValidationException", "Activity tasks are not implemented by this local server.")

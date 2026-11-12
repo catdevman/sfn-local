@@ -93,6 +93,12 @@ type HistoryEvent struct {
 	HasParameters    bool
 	HasTimeout       bool
 	HasHeartbeat     bool
+	// Index and Length are Map iteration and MapStateStarted details.
+	// HasIndex is set even when Index is 0 so the history API emits the number.
+	Index     int32
+	Length    int32
+	HasIndex  bool
+	HasLength bool
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken

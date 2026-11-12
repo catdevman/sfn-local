@@ -81,7 +81,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 	machine := arnName(ex.StateMachineARN, ":stateMachine:")
 	kind, target, mocked, err := r.classify(ex, st, machine)
 	if err != nil {
-		r.fail(arn, "States.Runtime", err.Error())
+		r.failCtx(ctx, arn, "States.Runtime", err.Error())
 		return "", "", false, true
 	}
 	meta := taskMeta{
@@ -90,6 +90,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 	}
 	retries := 0
 	for {
+		setRetryCount(ctxObj, retries)
 		if r.halt(ctx, arn) {
 			return "", "", false, true
 		}
@@ -99,7 +100,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 		}
 		seconds, hasTimeout, err := timeoutSeconds(st, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 		if hasTimeout {
@@ -107,7 +108,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 		}
 		result, failure := r.oneAttempt(ctx, arn, ex, meta, target, mocked, seconds, hasTimeout)
 		if failure == nil {
-			return r.completeTask(arn, st, input, result, ctxObj)
+			return r.completeTask(ctx, arn, st, input, result, ctxObj)
 		}
 		if failure.Halt {
 			if r.halt(ctx, arn) {
@@ -131,12 +132,12 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 		}
 		if catcher, ok := pickCatch(st.Catch, failure.Name); ok {
 			if catcher.HasAssign {
-				r.fail(arn, "States.Runtime", "Assign is not implemented by this local server.")
+				r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
 				return "", "", false, true
 			}
-			return r.catchTask(arn, st, input, catcher, failure, ctxObj)
+			return r.catchTask(ctx, arn, st, input, catcher, failure, ctxObj)
 		}
-		r.fail(arn, failure.Name, failure.Cause)
+		r.failCtx(ctx, arn, failure.Name, failure.Cause)
 		return "", "", false, true
 	}
 }
@@ -247,53 +248,53 @@ func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution,
 	return result, tf
 }
 
-func (r *Runner) completeTask(arn string, st *asl.State, input, result string, ctxObj any) (string, string, bool, bool) {
+func (r *Runner) completeTask(ctx context.Context, arn string, st *asl.State, input, result string, ctxObj any) (string, string, bool, bool) {
 	resultVal, err := parseJSON(result)
 	if err != nil {
-		r.fail(arn, "States.Runtime", "task result is not JSON")
+		r.failCtx(ctx, arn, "States.Runtime", "task result is not JSON")
 		return "", "", false, true
 	}
 	if st.HasResultSelector {
 		resultVal, result, err = evalSelector(st.ResultSelector, resultVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 	}
 	injected, injVal, err := inject(st.ResultPath, input, result, resultVal)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
 	output, _, err := project(st.OutputPath, injected, injVal, ctxObj)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if !r.exit(arn, st, output) {
+	if !r.exit(ctx, arn, st, output) {
 		return "", "", false, true
 	}
 	return transition(st, output)
 }
 
-func (r *Runner) catchTask(arn string, st *asl.State, input string, catcher asl.Catcher, failure *taskFailure, ctxObj any) (string, string, bool, bool) {
+func (r *Runner) catchTask(ctx context.Context, arn string, st *asl.State, input string, catcher asl.Catcher, failure *taskFailure, ctxObj any) (string, string, bool, bool) {
 	doc := errDoc{Error: failure.Name, Cause: failure.Cause}
 	text, err := marshalDoc(doc)
 	if err != nil {
-		r.fail(arn, "States.Runtime", err.Error())
+		r.failCtx(ctx, arn, "States.Runtime", err.Error())
 		return "", "", false, true
 	}
 	injected, injVal, err := inject(catcher.ResultPath, input, text, doc)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
 	output, _, err := project(st.OutputPath, injected, injVal, ctxObj)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if !r.exit(arn, st, output) {
+	if !r.exit(ctx, arn, st, output) {
 		return "", "", false, true
 	}
 	if catcher.Next == "" {
@@ -314,7 +315,7 @@ func (r *Runner) retrySleep(ctx context.Context, arn string, rt asl.Retrier, n i
 		if r.halt(ctx, arn) {
 			return false
 		}
-		r.fail(arn, "States.Runtime", err.Error())
+		r.failCtx(ctx, arn, "States.Runtime", err.Error())
 		return false
 	}
 	if r.halt(ctx, arn) {

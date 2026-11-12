@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, and Phase 3 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel and Map do not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, and Phase 4 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -33,7 +33,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
 | [3](#x-phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
 | [T](#phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
-| [4](#phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
+| [4](#x-phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
 | [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
 | [6](#phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
@@ -173,35 +173,35 @@ Depends on phase 1. Widen it as phases 2, 3, and 6 add state types. The operatio
 - [ ] JSONata states work once phase 6 has landed.
 - [x] `surface.toml` marks `TestState` `implemented` for the state types the current binary runs, and the handler returns a modeled error for a state type the binary does not run yet.
 
-## Phase 4 — Parallel, Map, intrinsics
+## [x] Phase 4 — Parallel, Map, intrinsics
 
 Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` stays in phase 6.
 
-- [ ] Parallel. Concurrent branches, result array in declaration order, cancel siblings on failure. Events `ParallelStateStarted`, `ParallelStateSucceeded`, `ParallelStateFailed`, `ParallelStateExited`. A Catch on Parallel writes `ParallelStateExited`.
-- [ ] History for Parallel is compared as a multiset plus the ordering constraints in docs/spec.md.
-- [ ] Inline Map. `ItemsPath`, `MaxConcurrency` including 0 as unbounded, `Iterator` and `ItemProcessor` with `Mode: INLINE` only. `DISTRIBUTED` fails validation.
-- [ ] `Map.Item.Index` and `Map.Item.Value` are visible on the Map state and inside the iteration.
-- [ ] Iteration events and index-ordered output. Fixture: the two-item Map in docs/spec.md.
-- [ ] Full JSONPath context object. `RedriveCount` is absent on this object. `RetryCount` is present on Task, Parallel, and Map.
-- [ ] `GetExecutionHistory` emits only names on the generated `HistoryEventType` enum. A test fails when the server emits any other string.
-- [ ] Intrinsics. Each box includes the fixture in docs/spec.md.
-  - [ ] `States.Format`
-  - [ ] `States.StringToJson`
-  - [ ] `States.JsonToString`
-  - [ ] `States.Array`
-  - [ ] `States.ArrayPartition`
-  - [ ] `States.ArrayContains`
-  - [ ] `States.ArrayRange`
-  - [ ] `States.ArrayGetItem`
-  - [ ] `States.ArrayLength`
-  - [ ] `States.ArrayUnique` in first-seen order. Jar diffs do not compare that order.
-  - [ ] `States.Base64Encode` and `States.Base64Decode`
-  - [ ] `States.Hash`
-  - [ ] `States.JsonMerge`
-  - [ ] `States.MathAdd`
-  - [ ] `States.MathRandom`, including `States.MathRandom(0, 10, 1)` = `5`
-  - [ ] `States.StringSplit` as a character set
-  - [ ] `States.UUID` checked for shape only
+- [x] Parallel. Concurrent branches, result array in declaration order, cancel siblings on failure. Events `ParallelStateStarted`, `ParallelStateSucceeded`, `ParallelStateFailed`, `ParallelStateExited`. A Catch on Parallel writes `ParallelStateExited`.
+- [x] History for Parallel is compared as a multiset plus the ordering constraints in docs/spec.md.
+- [x] Inline Map. `ItemsPath`, `MaxConcurrency` including 0 as unbounded, `Iterator` and `ItemProcessor` with `Mode: INLINE` only. `DISTRIBUTED` fails validation.
+- [x] `Map.Item.Index` and `Map.Item.Value` are visible on the Map state and inside the iteration.
+- [x] Iteration events and index-ordered output. Fixture: the two-item Map in docs/spec.md.
+- [x] Full JSONPath context object. `RedriveCount` is absent on this object. `RetryCount` is present on Task, Parallel, and Map.
+- [x] `GetExecutionHistory` emits only names on the generated `HistoryEventType` enum. A test fails when the server emits any other string.
+- [x] Intrinsics. Each box includes the fixture in docs/spec.md.
+  - [x] `States.Format`
+  - [x] `States.StringToJson`
+  - [x] `States.JsonToString`
+  - [x] `States.Array`
+  - [x] `States.ArrayPartition`
+  - [x] `States.ArrayContains`
+  - [x] `States.ArrayRange`
+  - [x] `States.ArrayGetItem`
+  - [x] `States.ArrayLength`
+  - [x] `States.ArrayUnique` in first-seen order. Jar diffs do not compare that order.
+  - [x] `States.Base64Encode` and `States.Base64Decode`
+  - [x] `States.Hash`
+  - [x] `States.JsonMerge`
+  - [x] `States.MathAdd`
+  - [x] `States.MathRandom`, including `States.MathRandom(0, 10, 1)` = `5`
+  - [x] `States.StringSplit` as a character set
+  - [x] `States.UUID` checked for shape only
 
 ## Phase 5 — activities and callbacks
 

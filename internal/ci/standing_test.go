@@ -320,7 +320,7 @@ const jarImage = "amazon/aws-stepfunctions-local:2.0.0"
 
 func runnerRegistered(phase string) bool {
 	switch phase {
-	case "1", "2", "3":
+	case "1", "2", "3", "4":
 		return true
 	default:
 		return false

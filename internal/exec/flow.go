@@ -17,7 +17,7 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		return "", "", false, true
 	}
 	if st.HasAssign {
-		r.fail(arn, "States.Runtime", "Assign is not implemented by this local server.")
+		r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
 		return "", "", false, true
 	}
 	ex, ok := r.Store.Execution(arn)
@@ -27,45 +27,45 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 	now := r.now()
 	root, err := parseJSON(input)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	ctxObj := r.contextObject(ex, st, now)
+	ctxObj := r.contextObject(ctx, ex, st, now, 0)
 	effective, effVal, err := project(st.InputPath, input, root, ctxObj)
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if st.HasParameters {
+	if st.HasParameters && st.Type != "Map" {
 		effVal, effective, err = evalParameters(st.Parameters, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 	}
 	switch st.Type {
 	case "Fail":
-		r.failState(arn, st, effVal, ctxObj)
+		r.failState(ctx, arn, st, effVal, ctxObj)
 		return "", "", false, true
 	case "Choice":
 		chosen, err := choose(st, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		if !r.exit(arn, st, output) {
+		if !r.exit(ctx, arn, st, output) {
 			return "", "", false, true
 		}
 		return chosen, output, false, false
 	case "Wait":
 		ms, err := waitMillis(st, effVal, ctxObj, now)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 		delay := scaleWait(ms, r.WaitScale)
@@ -80,7 +80,7 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 			if r.halt(ctx, arn) {
 				return "", "", false, true
 			}
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 		if r.halt(ctx, arn) || r.pastDeadline(arn) {
@@ -91,51 +91,55 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		}
 		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		if !r.exit(arn, st, output) {
+		if !r.exit(ctx, arn, st, output) {
 			return "", "", false, true
 		}
 		return transition(st, output)
 	case "Task":
 		return r.runTask(ctx, arn, st, input, effective, effVal, ctxObj)
+	case "Parallel":
+		return r.runParallel(ctx, arn, st, input, effective, ctxObj)
+	case "Map":
+		return r.runMap(ctx, arn, st, input, effective, effVal, ctxObj)
 	case "Pass":
 		resultText := effective
 		resultVal := effVal
 		if st.HasResult {
 			resultText, err = compactRaw(st.Result)
 			if err != nil {
-				r.failEval(arn, err)
+				r.failEval(ctx, arn, err)
 				return "", "", false, true
 			}
 			resultVal, err = parseJSON(resultText)
 			if err != nil {
-				r.failEval(arn, err)
+				r.failEval(ctx, arn, err)
 				return "", "", false, true
 			}
 		}
 		injected, injVal, err := inject(st.ResultPath, input, resultText, resultVal)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 		output, _, err = project(st.OutputPath, injected, injVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 	case "Succeed":
 		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
 		if err != nil {
-			r.failEval(arn, err)
+			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
 	default:
-		r.fail(arn, "States.Runtime", "State type "+st.Type+" is not implemented by this local server.")
+		r.failCtx(ctx, arn, "States.Runtime", "State type "+st.Type+" is not implemented by this local server.")
 		return "", "", false, true
 	}
-	if !r.exit(arn, st, output) {
+	if !r.exit(ctx, arn, st, output) {
 		return "", "", false, true
 	}
 	return transition(st, output)
@@ -148,9 +152,9 @@ func transition(st *asl.State, output string) (string, string, bool, bool) {
 	return st.Next, output, false, false
 }
 
-func (r *Runner) exit(arn string, st *asl.State, output string) bool {
+func (r *Runner) exit(ctx context.Context, arn string, st *asl.State, output string) bool {
 	if len(output) > maxPayload {
-		r.fail(arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
+		r.failCtx(ctx, arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
 		return false
 	}
 	if err := r.exited(arn, st, output); err != nil {
@@ -160,15 +164,15 @@ func (r *Runner) exit(arn string, st *asl.State, output string) bool {
 	return true
 }
 
-func (r *Runner) failState(arn string, st *asl.State, effective, ctx any) {
-	errName, hasErr, err := resolveText(st.HasErrorPath, st.ErrorPath, st.HasError, st.Error, effective, ctx, "ErrorPath")
+func (r *Runner) failState(ctx context.Context, arn string, st *asl.State, effective, ctxObj any) {
+	errName, hasErr, err := resolveText(st.HasErrorPath, st.ErrorPath, st.HasError, st.Error, effective, ctxObj, "ErrorPath")
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return
 	}
-	cause, hasCause, err := resolveText(st.HasCausePath, st.CausePath, st.HasCause, st.Cause, effective, ctx, "CausePath")
+	cause, hasCause, err := resolveText(st.HasCausePath, st.CausePath, st.HasCause, st.Cause, effective, ctxObj, "CausePath")
 	if err != nil {
-		r.failEval(arn, err)
+		r.failEval(ctx, arn, err)
 		return
 	}
 	if hasErr {
@@ -177,7 +181,31 @@ func (r *Runner) failState(arn string, st *asl.State, effective, ctx any) {
 	if hasCause {
 		cause = clip(cause, 32768)
 	}
+	if nestOf(ctx) != nil {
+		if !hasErr {
+			errName = "States.Runtime"
+		}
+		if !hasErr && !hasCause {
+			cause = "Fail state"
+		}
+		r.failCtx(ctx, arn, errName, cause)
+		return
+	}
 	r.finish(arn, store.ExecFailed, "ExecutionFailed", "", false, errName, cause, hasErr, hasCause)
+}
+
+func setRetryCount(ctxObj any, n int) {
+	obj, ok := ctxObj.(map[string]any)
+	if !ok {
+		return
+	}
+	state, ok := obj["State"].(map[string]any)
+	if !ok {
+		return
+	}
+	if _, ok := state["RetryCount"]; ok {
+		state["RetryCount"] = n
+	}
 }
 
 func resolveText(hasPath bool, path string, hasLit bool, lit string, root, ctx any, label string) (string, bool, error) {
@@ -269,7 +297,7 @@ func evalParameters(raw []byte, root, ctx any) (any, string, error) {
 	return out, text, nil
 }
 
-func (r *Runner) contextObject(ex store.Execution, st *asl.State, now time.Time) map[string]any {
+func (r *Runner) contextObject(ctx context.Context, ex store.Execution, st *asl.State, now time.Time, retries int) map[string]any {
 	input, err := parseJSON(ex.Input)
 	if err != nil {
 		input = map[string]any{}
@@ -282,7 +310,10 @@ func (r *Runner) contextObject(ex store.Execution, st *asl.State, now time.Time)
 		"EnteredTime": isoInstant(now),
 		"Name":        st.Name,
 	}
-	return map[string]any{
+	if st.Type == "Task" || st.Type == "Parallel" || st.Type == "Map" {
+		state["RetryCount"] = retries
+	}
+	obj := map[string]any{
 		"Execution": map[string]any{
 			"Id":        ex.ARN,
 			"Input":     input,
@@ -296,6 +327,14 @@ func (r *Runner) contextObject(ex store.Execution, st *asl.State, now time.Time)
 			"Name": arnName(ex.StateMachineARN, ":stateMachine:"),
 		},
 	}
+	if ctx != nil {
+		if item, ok := ctx.Value(itemKey{}).(mapItem); ok {
+			obj["Map"] = map[string]any{
+				"Item": map[string]any{"Index": item.Index, "Value": item.Value},
+			}
+		}
+	}
+	return obj
 }
 
 func arnName(arn, mark string) string {
@@ -312,7 +351,7 @@ func isoInstant(t time.Time) string {
 	return t.UTC().Format("2006-01-02T15:04:05.000Z")
 }
 
-func (r *Runner) failEval(arn string, err error) {
+func (r *Runner) failEval(ctx context.Context, arn string, err error) {
 	name := "States.Runtime"
 	cause := ""
 	if err != nil {
@@ -323,5 +362,5 @@ func (r *Runner) failEval(arn string, err error) {
 		name = ev.Name
 		cause = ev.Cause
 	}
-	r.fail(arn, name, cause)
+	r.failCtx(ctx, arn, name, cause)
 }

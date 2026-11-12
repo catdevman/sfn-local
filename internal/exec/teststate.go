@@ -106,6 +106,7 @@ func (r *Runner) RunState(ctx context.Context, spec StateRun) (StateResult, erro
 		r.finish(stored.ARN, store.ExecTimedOut, "ExecutionTimedOut", "", false, "States.Timeout", "", true, false)
 		return r.testResult(stored.ARN, "", "", true, true), nil
 	}
+	ctx = withStop(ctx)
 	next, output, terminal, done := r.step(ctx, stored.ARN, spec.State, spec.Input)
 	return r.testResult(stored.ARN, next, output, terminal, done), nil
 }
@@ -153,7 +154,7 @@ func (r *Runner) testResult(arn, next, output string, terminal, done bool) State
 func lastCaught(ex store.Execution) (name, cause string, caught bool) {
 	for _, ev := range ex.History {
 		switch ev.Type {
-		case "TaskFailed", "TaskTimedOut", "LambdaFunctionFailed", "LambdaFunctionTimedOut":
+		case "TaskFailed", "TaskTimedOut", "LambdaFunctionFailed", "LambdaFunctionTimedOut", "ParallelStateFailed", "MapStateFailed":
 			caught = true
 			name, cause = ev.Error, ev.Cause
 		case "TaskSucceeded", "LambdaFunctionSucceeded":

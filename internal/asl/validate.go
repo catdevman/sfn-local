@@ -52,8 +52,8 @@ type Path struct {
 	Text string
 }
 
-// State is one state the runner can read. Nested machines are validated and
-// not copied onto this struct until a later phase executes them.
+// State is one state the runner can read. Nested machines are copied for
+// Parallel branches and inline Map.
 type State struct {
 	Name                 string
 	Type                 string
@@ -69,6 +69,12 @@ type State struct {
 	HasResultSelector    bool
 	Parameters           json.RawMessage
 	ResultSelector       json.RawMessage
+	Branches             []*Program
+	ItemsPath            string
+	MaxConcurrency       *int64
+	HasItemSelector      bool
+	ItemSelector         json.RawMessage
+	Processor            *Program
 	HasError             bool
 	Error                string
 	HasCause             bool
@@ -304,7 +310,7 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 		st.HasCausePath = true
 		st.CausePath = text
 	}
-	if err := checkTypeShape(typ, fields, ptr, express); err != nil {
+	if err := checkTypeShape(st, fields, ptr, express); err != nil {
 		return nil, err
 	}
 	if err := captureRuntime(st, fields, ptr); err != nil {
@@ -521,8 +527,8 @@ func checkTransition(typ string, fields map[string]json.RawMessage, ptr string) 
 	return nil
 }
 
-func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string, express bool) error {
-	switch typ {
+func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, express bool) error {
+	switch st.Type {
 	case "Task":
 		raw, ok := fields["Resource"]
 		if !ok {
@@ -581,9 +587,11 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string, e
 		if !ok {
 			return defErr(codeSchema, "Missing required field 'Branches'", ptr)
 		}
-		if err := checkBranches(raw, join(ptr, "Branches"), express); err != nil {
+		branches, err := checkBranches(raw, join(ptr, "Branches"), express)
+		if err != nil {
 			return err
 		}
+		st.Branches = branches
 	case "Map":
 		if err := atMostOne(fields, "Parameters", "ItemSelector", ptr); err != nil {
 			return err
@@ -594,18 +602,39 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string, e
 			return defErr(codeSchema, "Exactly one of Iterator or ItemProcessor is required", ptr)
 		}
 		if it {
-			if err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), express); err != nil {
+			prog, err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), express)
+			if err != nil {
 				return err
 			}
+			st.Processor = prog
 		}
 		if proc {
-			if err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express); err != nil {
+			prog, err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express)
+			if err != nil {
 				return err
 			}
+			st.Processor = prog
+		}
+		st.ItemsPath = "$"
+		if raw, ok := fields["ItemsPath"]; ok {
+			text, err := asString(raw)
+			if err != nil || text == "" {
+				return defErr(codeSchema, "Field 'ItemsPath' must be a non-empty string", join(ptr, "ItemsPath"))
+			}
+			st.ItemsPath = text
 		}
 		if raw, ok := fields["MaxConcurrency"]; ok {
-			if _, err := asInt(raw, 0, int64(^uint64(0)>>1)); err != nil {
+			n, err := asInt(raw, 0, int64(^uint64(0)>>1))
+			if err != nil {
 				return defErr(codeSchema, "Field 'MaxConcurrency' must be an integer >= 0", join(ptr, "MaxConcurrency"))
+			}
+			st.MaxConcurrency = &n
+		}
+		if raw, ok := fields["ItemSelector"]; ok && !isNull(raw) {
+			st.HasItemSelector = true
+			st.ItemSelector = append(json.RawMessage(nil), raw...)
+			if err := checkPayload(raw, join(ptr, "ItemSelector")); err != nil {
+				return err
 			}
 		}
 	}
@@ -622,47 +651,47 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string, e
 	return nil
 }
 
-func checkBranches(raw json.RawMessage, ptr string, express bool) error {
+func checkBranches(raw json.RawMessage, ptr string, express bool) ([]*Program, error) {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
-		return defErr(codeSchema, "Field 'Branches' must be a non-empty array", ptr)
+		return nil, defErr(codeSchema, "Field 'Branches' must be a non-empty array", ptr)
 	}
+	out := make([]*Program, 0, len(arr))
 	for i, item := range arr {
-		if err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), express); err != nil {
-			return err
+		prog, err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), express)
+		if err != nil {
+			return nil, err
 		}
+		out = append(out, prog)
 	}
-	return nil
+	return out, nil
 }
 
-func checkSubmachine(raw json.RawMessage, ptr string, express bool) error {
+func checkSubmachine(raw json.RawMessage, ptr string, express bool) (*Program, error) {
 	fields, err := decodeObject(raw)
 	if err != nil {
-		return defErr(codeSchema, "Field must be an object", ptr)
+		return nil, defErr(codeSchema, "Field must be an object", ptr)
 	}
 	// Branches and iterators only allow Comment, StartAt, and States.
-	if _, err := validateMachine(fields, ptr, false, express); err != nil {
-		return err
-	}
-	return nil
+	return validateMachine(fields, ptr, false, express)
 }
 
-func checkProcessor(raw json.RawMessage, ptr string, express bool) error {
+func checkProcessor(raw json.RawMessage, ptr string, express bool) (*Program, error) {
 	fields, err := decodeObject(raw)
 	if err != nil {
-		return defErr(codeSchema, "Field must be an object", ptr)
+		return nil, defErr(codeSchema, "Field must be an object", ptr)
 	}
 	allowed := map[string]bool{"Comment": true, "StartAt": true, "States": true, "ProcessorConfig": true, "Retry": true}
 	if err := unknown(fields, allowed, ptr); err != nil {
-		return err
+		return nil, err
 	}
 	if raw, ok := fields["ProcessorConfig"]; ok {
 		cfg, err := decodeObject(raw)
 		if err != nil {
-			return defErr(codeSchema, "Field 'ProcessorConfig' must be an object", join(ptr, "ProcessorConfig"))
+			return nil, defErr(codeSchema, "Field 'ProcessorConfig' must be an object", join(ptr, "ProcessorConfig"))
 		}
 		if err := unknown(cfg, map[string]bool{"Mode": true}, join(ptr, "ProcessorConfig")); err != nil {
-			return err
+			return nil, err
 		}
 		mode, err := asString(cfg["Mode"])
 		if err != nil || mode != "INLINE" {
@@ -670,7 +699,7 @@ func checkProcessor(raw json.RawMessage, ptr string, express bool) error {
 			if err == nil {
 				text = mode
 			}
-			return defErr(codeSchema, "Field 'Mode' value '"+text+"' is not supported", join(ptr, "ProcessorConfig")+"/Mode")
+			return nil, defErr(codeSchema, "Field 'Mode' value '"+text+"' is not supported", join(ptr, "ProcessorConfig")+"/Mode")
 		}
 	}
 	// Validate StartAt and States by reusing the branch rules. Drop the extra keys first.
@@ -680,13 +709,16 @@ func checkProcessor(raw json.RawMessage, ptr string, express bool) error {
 			base[key] = raw
 		}
 	}
-	if _, err := validateMachine(base, ptr, false, express); err != nil {
-		return err
+	prog, err := validateMachine(base, ptr, false, express)
+	if err != nil {
+		return nil, err
 	}
 	if raw, ok := fields["Retry"]; ok {
-		return checkRetry(raw, join(ptr, "Retry"))
+		if err := checkRetry(raw, join(ptr, "Retry")); err != nil {
+			return nil, err
+		}
 	}
-	return nil
+	return prog, nil
 }
 
 func checkRetry(raw json.RawMessage, ptr string) error {

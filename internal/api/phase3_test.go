@@ -478,16 +478,6 @@ func TestMockHashReloadAndIdempotentStart(t *testing.T) {
 	}
 }
 
-func TestParallelStaysUnimplemented(t *testing.T) {
-	s := newService()
-	sm := createMachine(t, s, "par", `{"StartAt":"P","States":{"P":{"Type":"Parallel","Branches":[{"StartAt":"S","States":{"S":{"Type":"Succeed"}}}],"End":true}}}`, roleARN)
-	run := startExec(t, s, *sm.StateMachineArn, "p", `{}`)
-	ex := waitExec(t, s, *run.ExecutionArn)
-	if ex.Status != store.ExecFailed || !strings.Contains(ex.Cause, "State type Parallel is not implemented") || countEvents(ex, "ParallelStateEntered") != 0 {
-		t.Fatalf("%s %s", ex.Error, ex.Cause)
-	}
-}
-
 func typesOf(ex store.Execution) []string {
 	out := make([]string, len(ex.History))
 	for i, ev := range ex.History {

@@ -542,6 +542,29 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 			d.Cause = sp(ev.Cause)
 		}
 		out.LambdaFunctionTimedOutEventDetails = d
+	case "MapStateStarted":
+		d := &gen.MapStateStartedEventDetails{}
+		if ev.HasLength {
+			n := ev.Length
+			d.Length = &n
+		}
+		out.MapStateStartedEventDetails = d
+	case "MapIterationStarted", "MapIterationSucceeded", "MapIterationFailed", "MapIterationAborted":
+		d := &gen.MapIterationEventDetails{Name: sp(ev.Name)}
+		if ev.HasIndex {
+			n := ev.Index
+			d.Index = &n
+		}
+		switch ev.Type {
+		case "MapIterationStarted":
+			out.MapIterationStartedEventDetails = d
+		case "MapIterationSucceeded":
+			out.MapIterationSucceededEventDetails = d
+		case "MapIterationFailed":
+			out.MapIterationFailedEventDetails = d
+		case "MapIterationAborted":
+			out.MapIterationAbortedEventDetails = d
+		}
 	}
 	return out
 }
