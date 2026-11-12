@@ -1,0 +1,16 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ListStateMachines",
+    "body": {}
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachines": []
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#InvalidToken"
+  }
+}

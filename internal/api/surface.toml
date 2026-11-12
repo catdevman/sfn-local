@@ -2,13 +2,13 @@
 
 [[operation]]
 name = "CreateActivity"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "CreateActivity is not implemented by this local server."
 
 [[operation]]
 name = "CreateStateMachine"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "CreateStateMachine is not implemented by this local server."
 
@@ -20,13 +20,13 @@ message = "CreateStateMachineAlias is not implemented by this local server."
 
 [[operation]]
 name = "DeleteActivity"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DeleteActivity is not implemented by this local server."
 
 [[operation]]
 name = "DeleteStateMachine"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DeleteStateMachine is not implemented by this local server."
 
@@ -44,13 +44,13 @@ message = "DeleteStateMachineVersion is not implemented by this local server."
 
 [[operation]]
 name = "DescribeActivity"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DescribeActivity is not implemented by this local server."
 
 [[operation]]
 name = "DescribeExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DescribeExecution is not implemented by this local server."
 
@@ -62,7 +62,7 @@ message = "Distributed Map is not supported by this local server."
 
 [[operation]]
 name = "DescribeStateMachine"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DescribeStateMachine is not implemented by this local server."
 
@@ -74,7 +74,7 @@ message = "DescribeStateMachineAlias is not implemented by this local server."
 
 [[operation]]
 name = "DescribeStateMachineForExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DescribeStateMachineForExecution is not implemented by this local server."
 
@@ -86,19 +86,19 @@ message = "GetActivityTask is not implemented by this local server."
 
 [[operation]]
 name = "GetExecutionHistory"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "GetExecutionHistory is not implemented by this local server."
 
 [[operation]]
 name = "ListActivities"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListActivities is not implemented by this local server."
 
 [[operation]]
 name = "ListExecutions"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListExecutions is not implemented by this local server."
 
@@ -116,7 +116,7 @@ message = "ListStateMachineAliases is not implemented by this local server."
 
 [[operation]]
 name = "ListStateMachines"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListStateMachines is not implemented by this local server."
 
@@ -128,7 +128,7 @@ message = "ListStateMachineVersions is not implemented by this local server."
 
 [[operation]]
 name = "ListTagsForResource"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListTagsForResource is not implemented by this local server."
 
@@ -164,25 +164,25 @@ message = "SendTaskSuccess is not implemented by this local server."
 
 [[operation]]
 name = "StartExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "StartExecution is not implemented by this local server."
 
 [[operation]]
 name = "StartSyncExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "StartSyncExecution is not implemented by this local server."
 
 [[operation]]
 name = "StopExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "StopExecution is not implemented by this local server."
 
 [[operation]]
 name = "TagResource"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "TagResource is not implemented by this local server."
 
@@ -194,7 +194,7 @@ message = "TestState is not implemented by this local server."
 
 [[operation]]
 name = "UntagResource"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "UntagResource is not implemented by this local server."
 
@@ -206,7 +206,7 @@ message = "Distributed Map is not supported by this local server."
 
 [[operation]]
 name = "UpdateStateMachine"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "UpdateStateMachine is not implemented by this local server."
 
@@ -1646,11 +1646,11 @@ status = "deferred"
 
 [[error]]
 name = "ActivityAlreadyExists"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ActivityDoesNotExist"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ActivityLimitExceeded"
@@ -1666,11 +1666,11 @@ status = "deferred"
 
 [[error]]
 name = "ExecutionAlreadyExists"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ExecutionDoesNotExist"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ExecutionLimitExceeded"
@@ -1682,27 +1682,27 @@ status = "deferred"
 
 [[error]]
 name = "InvalidArn"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidDefinition"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidEncryptionConfiguration"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidExecutionInput"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidLoggingConfiguration"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidName"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidOutput"
@@ -1710,11 +1710,11 @@ status = "deferred"
 
 [[error]]
 name = "InvalidToken"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidTracingConfiguration"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "KmsAccessDeniedException"
@@ -1734,7 +1734,7 @@ status = "implemented"
 
 [[error]]
 name = "ResourceNotFound"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ServiceQuotaExceededException"
@@ -1742,15 +1742,15 @@ status = "deferred"
 
 [[error]]
 name = "StateMachineAlreadyExists"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "StateMachineDeleting"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "StateMachineDoesNotExist"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "StateMachineLimitExceeded"
@@ -1758,7 +1758,7 @@ status = "deferred"
 
 [[error]]
 name = "StateMachineTypeNotSupported"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "TaskDoesNotExist"
@@ -1770,7 +1770,7 @@ status = "deferred"
 
 [[error]]
 name = "TooManyTags"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ValidationException"

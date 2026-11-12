@@ -85,10 +85,13 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		s.failError(&acc, w, err)
 		return
 	}
+	restore := relaxCompatRole(s.Profile, name, in)
 	if err := gen.ValidateInput(name, in); err != nil {
+		restore()
 		s.failError(&acc, w, err)
 		return
 	}
+	restore()
 	row, ok := s.Surface.Operation(name)
 	if !ok {
 		s.failError(&acc, w, fmt.Errorf("operation %s is not classified", name))
@@ -125,6 +128,22 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		raw = []byte("{}")
 	}
 	s.ok(&acc, w, raw)
+}
+
+// relaxCompatRole lets --compat=sfn-local omit roleArn. Smithy marks the
+// member required, so a placeholder satisfies ValidateInput and is cleared
+// before the handler. The public profile does not relax.
+func relaxCompatRole(profile Profile, name string, in any) func() {
+	if profile != ProfileSFNLocal || name != "CreateStateMachine" {
+		return func() {}
+	}
+	input, ok := in.(*gen.CreateStateMachineInput)
+	if !ok || input == nil || input.RoleArn != nil {
+		return func() {}
+	}
+	placeholder := "arn:aws:iam::123456789012:role/omitted"
+	input.RoleArn = &placeholder
+	return func() { input.RoleArn = nil }
 }
 
 func (s *Server) failError(acc *access, w http.ResponseWriter, err error) {

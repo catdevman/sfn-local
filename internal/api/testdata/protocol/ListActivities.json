@@ -1,0 +1,16 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ListActivities",
+    "body": {}
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "activities": []
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#InvalidToken"
+  }
+}

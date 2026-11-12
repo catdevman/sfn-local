@@ -1,0 +1,19 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.UntagResource",
+    "body": {
+      "resourceArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "tagKeys": [
+        "env"
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ResourceNotFound"
+  }
+}

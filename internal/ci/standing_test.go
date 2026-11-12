@@ -1,13 +1,16 @@
 package ci
 
 import (
+	"context"
 	"encoding/json"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/catdevman/sfn-local/internal/asl/specgen"
 	"github.com/catdevman/sfn-local/internal/manifest"
@@ -285,7 +288,13 @@ func TestJarOracle(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(reason, "no landed execution fixtures") || !strings.Contains(reason, "amazon/aws-stepfunctions-local:2.0.0") {
+	if !strings.Contains(reason, jarImage) {
+		t.Fatalf("missing image: %s", reason)
+	}
+	quiet := strings.Contains(reason, "no landed execution fixtures")
+	skip := strings.Contains(reason, "SKIP")
+	compared := strings.Contains(reason, "compared")
+	if !quiet && !skip && !compared {
 		t.Fatalf("quiet skip: %s", reason)
 	}
 	t.Log(reason)
@@ -307,24 +316,39 @@ func classified(status string) bool {
 	return status == "implemented" || status == "deferred"
 }
 
+const jarImage = "amazon/aws-stepfunctions-local:2.0.0"
+
 func runnerRegistered(phase string) bool {
-	return false
+	return phase == "1"
 }
 
 func jarOracle(root string) (string, error) {
 	if len(landedFixtures(root)) == 0 {
-		return "jar oracle: no landed execution fixtures; not starting amazon/aws-stepfunctions-local:2.0.0", nil
+		return "jar oracle: no landed execution fixtures; not starting " + jarImage, nil
 	}
 	if _, err := exec.LookPath("docker"); err != nil {
-		if os.Getenv("SFN_LOCAL_RELEASE") == "1" {
-			return "", err
-		}
-		return "jar oracle: SKIP Docker is not available. Developer CI may skip with this message. The release pipeline may not skip quietly.", nil
+		return dockerUnavailable(err)
 	}
-	return "", errOracle
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	cmd := exec.CommandContext(ctx, "docker", "info")
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return dockerUnavailable(fmt.Errorf("%v: %s", err, bytesTrim(out)))
+	}
+	return compareJar(jarImage)
 }
 
-var errOracle = oracleError("landed execution fixtures have no jar oracle runner")
+func dockerUnavailable(err error) (string, error) {
+	if os.Getenv("SFN_LOCAL_RELEASE") == "1" {
+		return "", err
+	}
+	return fmt.Sprintf("jar oracle: SKIP docker is unusable (%v). Developer CI may skip with this message. The release pipeline may not skip quietly. Not starting %s", err, jarImage), nil
+}
+
+func bytesTrim(b []byte) string {
+	return strings.TrimSpace(string(b))
+}
 
 type oracleError string
 

@@ -1,0 +1,21 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.CreateStateMachine",
+    "body": {
+      "name": "rebuild-check",
+      "definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"Type\":\"Pass\",\"End\":true}}}",
+      "roleArn": "arn:aws:iam::123456789012:role/local"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "creationDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#InvalidDefinition"
+  }
+}

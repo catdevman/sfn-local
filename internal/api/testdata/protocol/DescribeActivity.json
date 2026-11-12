@@ -1,0 +1,20 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DescribeActivity",
+    "body": {
+      "activityArn": "arn:aws:states:us-east-1:123456789012:activity:work"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "activityArn": "arn:aws:states:us-east-1:123456789012:activity:work",
+      "name": "work",
+      "creationDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ActivityDoesNotExist"
+  }
+}

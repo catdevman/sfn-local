@@ -1,0 +1,22 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DescribeStateMachineForExecution",
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:rebuild-check:run1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "name": "rebuild-check",
+      "definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"Type\":\"Pass\",\"End\":true}}}",
+      "roleArn": "arn:aws:iam::123456789012:role/local",
+      "updateDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ExecutionDoesNotExist"
+  }
+}

@@ -13,12 +13,14 @@ import (
 	"testing"
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
+	"github.com/catdevman/sfn-local/internal/exec"
+	"github.com/catdevman/sfn-local/internal/store"
 )
 
 func TestDeferredOperationsAreModeled(t *testing.T) {
 	srv := prodServer(t, ProfileSmithy)
-	body := call(t, srv, "AWSStepFunctions.ListStateMachines", `{}`, contentTypeJSON10)
-	if body.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(body.Message, "ListStateMachines is not implemented") {
+	body := call(t, srv, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
+	if body.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(body.Message, "GetActivityTask is not implemented") {
 		t.Fatalf("%+v", body)
 	}
 	if body.Status != 400 || body.Header.Get("Content-Type") != contentTypeJSON10 {
@@ -30,9 +32,9 @@ func TestDeferredOperationsAreModeled(t *testing.T) {
 
 	def := `{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}}`
 	create := `{"name":"rebuild-check","definition":` + jsonString(def) + `,"roleArn":"arn:aws:iam::123456789012:role/local"}`
-	got := call(t, srv, "AWSStepFunctions.CreateStateMachine", create, contentTypeJSON)
-	if got.Code() != "ValidationException" || !strings.Contains(got.Message, "CreateStateMachine is not implemented") {
-		t.Fatalf("%+v", got)
+	code, raw := callRaw(t, srv, "AWSStepFunctions.CreateStateMachine", create)
+	if code != 200 || !strings.Contains(string(raw), "stateMachineArn") {
+		t.Fatalf("create %d %s", code, raw)
 	}
 	valid := call(t, srv, "AWSStepFunctions.ValidateStateMachineDefinition", `{"definition":`+jsonString(def)+`}`, "")
 	if valid.Code() != "ValidationException" || !strings.Contains(valid.Message, "ValidateStateMachineDefinition is not implemented") {
@@ -58,9 +60,9 @@ func TestValidationPrecedesDeferred(t *testing.T) {
 	if got.Code() != "ValidationException" || !strings.Contains(got.Message, "less than or equal to 1000") {
 		t.Fatalf("%+v", got)
 	}
-	got = call(t, srv, "AWSStepFunctions.ListStateMachines", `{"maxResults":0,"unknown":true}`, contentTypeJSON10)
-	if !strings.Contains(got.Message, "not implemented") {
-		t.Fatalf("%+v", got)
+	code, raw := callRaw(t, srv, "AWSStepFunctions.ListStateMachines", `{"maxResults":0,"unknown":true}`)
+	if code != 200 || !strings.Contains(string(raw), `"stateMachines":[]`) {
+		t.Fatalf("list %d %s", code, raw)
 	}
 }
 
@@ -87,17 +89,30 @@ func TestCompatProfile(t *testing.T) {
 	smithy := prodServer(t, ProfileSmithy)
 	compat := prodServer(t, ProfileSFNLocal)
 	forbidden := []string{jarModelPrefix, jarCoralPrefix, jarModelDot}
-	for _, name := range []string{"ListStateMachines", "CreateStateMachine", "TestState", "DescribeMapRun"} {
-		got := call(t, smithy, "AWSStepFunctions."+name, `{}`, contentTypeJSON10)
+	for _, name := range []string{"CreateStateMachine", "TestState", "DescribeMapRun", "GetActivityTask"} {
+		body := `{}`
+		if name == "GetActivityTask" {
+			body = `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`
+		}
+		got := call(t, smithy, "AWSStepFunctions."+name, body, contentTypeJSON10)
 		for _, bad := range forbidden {
 			if strings.Contains(got.Type, bad) || strings.Contains(string(got.Raw), bad) {
 				t.Fatalf("default profile emitted %s in %+v", bad, got)
 			}
 		}
 	}
-	listed := call(t, compat, "AWSStepFunctions.ListStateMachines", `{}`, contentTypeJSON10)
-	if listed.Type != "com.amazonaws.sfn#ValidationException" {
-		t.Fatalf("compat kept an empty jar map, got %+v", listed)
+	code, raw := callRaw(t, compat, "AWSStepFunctions.ListStateMachines", `{}`)
+	if code != 200 {
+		t.Fatalf("compat list %d %s", code, raw)
+	}
+	for _, bad := range forbidden {
+		if strings.Contains(string(raw), bad) {
+			t.Fatalf("compat list emitted %s in %s", bad, raw)
+		}
+	}
+	task := call(t, compat, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
+	if task.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(task.Message, "GetActivityTask is not implemented") {
+		t.Fatalf("compat kept an empty jar map, got %+v", task)
 	}
 	for name := range jarAbsent {
 		got := call(t, compat, "AWSStepFunctions."+name, `{}`, contentTypeJSON10)
@@ -124,11 +139,11 @@ func TestProtocolEdges(t *testing.T) {
 	req.Header.Set("x-amz-target", "AWSStepFunctions.ListStateMachines")
 	rec := httptest.NewRecorder()
 	base.ServeHTTP(rec, req)
-	if rec.Code != 400 {
+	if rec.Code != 200 {
 		t.Fatal(rec.Body)
 	}
 	text := log.String()
-	if !strings.Contains(text, "ListStateMachines => {}") || !strings.Contains(text, "[400] ListStateMachines <= ") {
+	if !strings.Contains(text, "ListStateMachines => {}") || !strings.Contains(text, "[200] ListStateMachines <= ") {
 		t.Fatalf("access log %q", text)
 	}
 	got := call(t, base, "AWSStepFunctions.ListStateMachines", `{}{}`, contentTypeJSON10)
@@ -242,7 +257,7 @@ func TestDeferredDoesNotCallHandler(t *testing.T) {
 	stub := &listStub{}
 	srv := prodServer(t, ProfileSmithy)
 	srv.Handlers = stub
-	call(t, srv, "AWSStepFunctions.ListStateMachines", `{}`, contentTypeJSON10)
+	call(t, srv, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
 	if stub.called {
 		t.Fatal("deferred operation called the handler")
 	}
@@ -267,13 +282,35 @@ func (s *listStub) ListStateMachines(_ context.Context, in *gen.ListStateMachine
 	return s.out, nil
 }
 
+func (s *listStub) GetActivityTask(context.Context, *gen.GetActivityTaskInput) (*gen.GetActivityTaskOutput, error) {
+	s.called = true
+	return nil, errors.New("called")
+}
+
 func prodServer(t *testing.T, profile Profile) *Server {
 	t.Helper()
 	surface, err := LoadSurface()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &Server{Handlers: &Service{}, Surface: surface, Profile: profile, Log: io.Discard}
+	st := store.New()
+	runner := &exec.Runner{Store: st}
+	return &Server{
+		Handlers: &Service{Store: st, Runner: runner, Account: "123456789012", Region: "us-east-1", Profile: profile, Log: io.Discard},
+		Surface:  surface,
+		Profile:  profile,
+		Log:      io.Discard,
+	}
+}
+
+func callRaw(t *testing.T, srv *Server, target, body string) (int, []byte) {
+	t.Helper()
+	req := httptest.NewRequest(http.MethodPost, "/", strings.NewReader(body))
+	req.Header.Set(targetHeader, target)
+	req.Header.Set("Content-Type", contentTypeJSON10)
+	rec := httptest.NewRecorder()
+	srv.ServeHTTP(rec, req)
+	return rec.Code, rec.Body.Bytes()
 }
 
 type wire struct {

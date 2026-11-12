@@ -1,0 +1,22 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DescribeExecution",
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:rebuild-check:run1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:rebuild-check:run1",
+      "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "name": "run1",
+      "status": "SUCCEEDED",
+      "startDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ExecutionDoesNotExist"
+  }
+}

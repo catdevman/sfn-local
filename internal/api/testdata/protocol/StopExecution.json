@@ -1,0 +1,18 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.StopExecution",
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:rebuild-check:run1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stopDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ExecutionDoesNotExist"
+  }
+}

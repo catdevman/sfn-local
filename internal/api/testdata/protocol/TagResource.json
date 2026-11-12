@@ -1,0 +1,22 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.TagResource",
+    "body": {
+      "resourceArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "tags": [
+        {
+          "key": "env",
+          "value": "dev"
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#TooManyTags"
+  }
+}

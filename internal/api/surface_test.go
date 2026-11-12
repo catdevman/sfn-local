@@ -160,10 +160,52 @@ func TestProtocolGolden(t *testing.T) {
 		if golden.Response.Status == 0 || len(golden.Response.Body) == 0 {
 			t.Errorf("%s golden needs a response status and body", name)
 		}
-		if !jsonHasNumber(golden.Response.Body) && !jsonHasNumber(golden.Request.Body) {
+		if operationHasTimestamp(t, root, name) && !jsonHasNumber(golden.Response.Body) && !jsonHasNumber(golden.Request.Body) {
 			t.Errorf("%s golden needs a numeric timestamp", name)
 		}
 	}
+}
+
+// operationHasTimestamp reports whether the operation's own input or output
+// members include a timestamp. Nested list items are not members of the operation.
+func operationHasTimestamp(t *testing.T, root, name string) bool {
+	t.Helper()
+	raw, err := os.ReadFile(filepath.Join(root, "internal/api/gen/surface.gen.json"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var doc struct {
+		Operations []struct {
+			Name         string `json:"name"`
+			InputMembers []struct {
+				Kind string `json:"kind"`
+			} `json:"inputMembers"`
+			OutputMembers []struct {
+				Kind string `json:"kind"`
+			} `json:"outputMembers"`
+		} `json:"operations"`
+	}
+	if err := json.Unmarshal(raw, &doc); err != nil {
+		t.Fatal(err)
+	}
+	for _, op := range doc.Operations {
+		if op.Name != name {
+			continue
+		}
+		for _, m := range op.InputMembers {
+			if m.Kind == "timestamp" {
+				return true
+			}
+		}
+		for _, m := range op.OutputMembers {
+			if m.Kind == "timestamp" {
+				return true
+			}
+		}
+		return false
+	}
+	t.Fatalf("operation %s", name)
+	return false
 }
 
 func memberSet(t *testing.T, root, input string) map[string]bool {

@@ -1,5 +1,15 @@
 # stepfunctions-local
 
+The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 1 runs Pass, Succeed, and Fail.
+
+Listen on `0.0.0.0:8083`. Point the AWS CLI at `--endpoint-url http://127.0.0.1:8083`. SigV4 is not checked. The store is in memory. Bind `127.0.0.1` unless the port is published on purpose, and do not expose the port beyond the host or the compose network.
+
+The default error profile is the public Smithy shape id. `__type` and `X-Amzn-Errortype` are `com.amazonaws.sfn#<ShapeName>`. `--compat=sfn-local` selects the Step Functions Local profile. `MockConfigFile.json` and the `#TestCase` suffix on an execution name stay compatible with Step Functions Local and LocalStack. The process records `SFN_MOCK_CONFIG` and does not read the file yet.
+
+Step Functions Local 2.0.0 constructs API Gateway and EventBridge endpoint options and then leaves them off the list `parseArgs` walks, so `-apiGatewayEndpoint`, `--api-gateway-endpoint`, `API_GATEWAY_ENDPOINT`, and the EventBridge equivalents do nothing in that jar. This server accepts them.
+
+Regenerate the Go surface with `go generate ./...`.
+
 Three specifications sit next to each other. They are not the same document.
 
 | Spec | Path | Who controls it | How it updates |
@@ -14,4 +24,4 @@ Adjacent material lives under `aws-spec/` as well:
 - `aws-spec/page-watch.json` is the SHA-256 of the developer-guide pages for quotas, intrinsics, TestState, redrive, activities, and the other product behavior. Those pages are not copied.
 - `aws-spec/release-notes.json`, `document-history.json`, `recent-launches.json`, and `sdk-integrations.json` are the changelog feeds the same workflow refreshes.
 
-Run the fetch locally with `python3 aws-spec/tools/sync_aws_spec.py`. On GitHub it runs daily and opens a pull request when an AWS-controlled snapshot changes.
+Run the fetch locally with `python3 aws-spec/tools/sync_aws_spec.py`, then `go generate ./...`. On GitHub the same workflow runs daily. After the fetch it regenerates Go and opens a pull request when a snapshot changes. The bot may commit `aws-spec/**`, `internal/api/gen/**`, and `internal/asl/specgen/**`. It refuses every other path, including handlers, `docs/spec.md`, `surface.toml`, and `catalog.toml`. The pull request body lists new operations, members, ASL fields, and error names.

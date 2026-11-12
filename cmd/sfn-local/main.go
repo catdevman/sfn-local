@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/catdevman/sfn-local/internal/api"
+	"github.com/catdevman/sfn-local/internal/exec"
+	"github.com/catdevman/sfn-local/internal/store"
 )
 
 func main() {
@@ -69,12 +71,22 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "Starting server on port %d with account %s, region %s, bind address %s\n",
 		port, cfg.Account, cfg.Region, cfg.BindAddress)
+	st := store.New()
+	go exec.Sweep(ctx, st)
+	runner := &exec.Runner{Store: st, Log: stdout}
 	srv := &http.Server{
 		Handler: &api.Server{
-			Handlers: &api.Service{},
-			Surface:  surface,
-			Profile:  cfg.Profile,
-			Log:      stdout,
+			Handlers: &api.Service{
+				Store:   st,
+				Runner:  runner,
+				Account: cfg.Account,
+				Region:  cfg.Region,
+				Profile: cfg.Profile,
+				Log:     stdout,
+			},
+			Surface: surface,
+			Profile: cfg.Profile,
+			Log:     stdout,
 		},
 		ReadHeaderTimeout: 10 * time.Second,
 	}

@@ -1,0 +1,18 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ListExecutions",
+    "body": {
+      "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "executions": []
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#StateMachineDoesNotExist"
+  }
+}
