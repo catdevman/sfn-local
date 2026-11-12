@@ -66,21 +66,33 @@ type Activity struct {
 
 // HistoryEvent is one history row. Id assignment belongs to Append.
 type HistoryEvent struct {
-	ID         int64
-	PreviousID int64
-	Type       string
-	Time       time.Time
-	Name       string
-	Input      string
-	Output     string
-	RoleArn    string
-	Error      string
-	Cause      string
-	HasInput   bool
-	HasOutput  bool
-	HasRole    bool
-	HasError   bool
-	HasCause   bool
+	ID               int64
+	PreviousID       int64
+	Type             string
+	Time             time.Time
+	Name             string
+	Input            string
+	Output           string
+	RoleArn          string
+	Error            string
+	Cause            string
+	HasInput         bool
+	HasOutput        bool
+	HasRole          bool
+	HasError         bool
+	HasCause         bool
+	Resource         string
+	ResourceType     string
+	Region           string
+	Parameters       string
+	TimeoutSeconds   int64
+	HeartbeatSeconds int64
+	HasResource      bool
+	HasResourceType  bool
+	HasRegion        bool
+	HasParameters    bool
+	HasTimeout       bool
+	HasHeartbeat     bool
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken
@@ -105,6 +117,9 @@ type Execution struct {
 	Stopped         *time.Time
 	Deadline        time.Time
 	History         []HistoryEvent
+	// MockTest is the suffix after one '#' on the start ARN. Empty means the
+	// execution does not read the mock file.
+	MockTest string
 }
 
 // ExistsError is a duplicate name whose definition differs.

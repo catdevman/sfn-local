@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"math"
 	"strconv"
 	"strings"
 
@@ -39,36 +40,61 @@ type Path struct {
 // State is one state the runner can read. Nested machines are validated and
 // not copied onto this struct until a later phase executes them.
 type State struct {
-	Name              string
-	Type              string
-	Next              string
-	End               bool
-	InputPath         Path
-	OutputPath        Path
-	ResultPath        Path
-	HasResult         bool
-	Result            json.RawMessage
-	HasParameters     bool
-	HasAssign         bool
-	HasResultSelector bool
-	Parameters        json.RawMessage
-	ResultSelector    json.RawMessage
-	HasError          bool
-	Error             string
-	HasCause          bool
-	Cause             string
-	HasErrorPath      bool
-	ErrorPath         string
-	HasCausePath      bool
-	CausePath         string
-	Choices           json.RawMessage
-	Default           string
-	HasDefault        bool
-	Seconds           *int64
-	Timestamp         string
-	HasTimestamp      bool
-	SecondsPath       string
-	TimestampPath     string
+	Name                 string
+	Type                 string
+	Next                 string
+	End                  bool
+	InputPath            Path
+	OutputPath           Path
+	ResultPath           Path
+	HasResult            bool
+	Result               json.RawMessage
+	HasParameters        bool
+	HasAssign            bool
+	HasResultSelector    bool
+	Parameters           json.RawMessage
+	ResultSelector       json.RawMessage
+	HasError             bool
+	Error                string
+	HasCause             bool
+	Cause                string
+	HasErrorPath         bool
+	ErrorPath            string
+	HasCausePath         bool
+	CausePath            string
+	Choices              json.RawMessage
+	Default              string
+	HasDefault           bool
+	Seconds              *int64
+	Timestamp            string
+	HasTimestamp         bool
+	SecondsPath          string
+	TimestampPath        string
+	Resource             string
+	TimeoutSeconds       *int64
+	TimeoutSecondsPath   string
+	HeartbeatSeconds     *int64
+	HeartbeatSecondsPath string
+	Retry                []Retrier
+	Catch                []Catcher
+}
+
+// Retrier is one Retry entry. Omitted numeric fields use the ASL defaults.
+type Retrier struct {
+	ErrorEquals     []string
+	IntervalSeconds int64
+	MaxAttempts     int64
+	BackoffRate     float64
+	MaxDelaySeconds int64
+	JitterStrategy  string
+}
+
+// Catcher is one Catch entry. ResultPath defaults to $ when omitted.
+type Catcher struct {
+	ErrorEquals []string
+	Next        string
+	ResultPath  Path
+	HasAssign   bool
 }
 
 // Program is a validated definition.
@@ -292,6 +318,55 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 			return defErr(codeSchema, "Field 'TimestampPath' must be a string", join(ptr, "TimestampPath"))
 		}
 		st.TimestampPath = text
+	}
+	if raw, ok := fields["Resource"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'Resource' must be a string", join(ptr, "Resource"))
+		}
+		st.Resource = text
+	}
+	if raw, ok := fields["TimeoutSeconds"]; ok {
+		n, err := asInt(raw, 0, defaultTimeout)
+		if err != nil {
+			return defErr(codeSchema, "Field 'TimeoutSeconds' must be an integer in 0..99999999", join(ptr, "TimeoutSeconds"))
+		}
+		st.TimeoutSeconds = &n
+	}
+	if raw, ok := fields["TimeoutSecondsPath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'TimeoutSecondsPath' must be a string", join(ptr, "TimeoutSecondsPath"))
+		}
+		st.TimeoutSecondsPath = text
+	}
+	if raw, ok := fields["HeartbeatSeconds"]; ok {
+		n, err := asInt(raw, 0, defaultTimeout)
+		if err != nil {
+			return defErr(codeSchema, "Field 'HeartbeatSeconds' must be an integer in 0..99999999", join(ptr, "HeartbeatSeconds"))
+		}
+		st.HeartbeatSeconds = &n
+	}
+	if raw, ok := fields["HeartbeatSecondsPath"]; ok {
+		text, err := asString(raw)
+		if err != nil {
+			return defErr(codeSchema, "Field 'HeartbeatSecondsPath' must be a string", join(ptr, "HeartbeatSecondsPath"))
+		}
+		st.HeartbeatSecondsPath = text
+	}
+	if raw, ok := fields["Retry"]; ok {
+		list, err := parseRetry(raw, join(ptr, "Retry"))
+		if err != nil {
+			return err
+		}
+		st.Retry = list
+	}
+	if raw, ok := fields["Catch"]; ok {
+		list, err := parseCatch(raw, join(ptr, "Catch"))
+		if err != nil {
+			return err
+		}
+		st.Catch = list
 	}
 	return nil
 }
@@ -574,78 +649,126 @@ func checkProcessor(raw json.RawMessage, ptr string) error {
 }
 
 func checkRetry(raw json.RawMessage, ptr string) error {
+	_, err := parseRetry(raw, ptr)
+	return err
+}
+
+func parseRetry(raw json.RawMessage, ptr string) ([]Retrier, error) {
 	arr, err := decodeArray(raw)
 	if err != nil {
-		return defErr(codeSchema, "Field 'Retry' must be an array", ptr)
+		return nil, defErr(codeSchema, "Field 'Retry' must be an array", ptr)
 	}
 	allowed := map[string]bool{
 		"ErrorEquals": true, "IntervalSeconds": true, "MaxAttempts": true,
 		"BackoffRate": true, "MaxDelaySeconds": true, "JitterStrategy": true, "Comment": true,
 	}
+	out := make([]Retrier, 0, len(arr))
 	for i, item := range arr {
 		ip := fmt.Sprintf("%s[%d]", ptr, i)
 		obj, err := decodeObject(item)
 		if err != nil {
-			return defErr(codeSchema, "Field must be an object", ip)
+			return nil, defErr(codeSchema, "Field must be an object", ip)
 		}
 		if err := unknown(obj, allowed, ip); err != nil {
-			return err
+			return nil, err
 		}
 		if _, ok := obj["ErrorEquals"]; !ok {
-			return defErr(codeSchema, "Missing required field 'ErrorEquals'", ip)
+			return nil, defErr(codeSchema, "Missing required field 'ErrorEquals'", ip)
 		}
-		if err := stringArray(obj["ErrorEquals"], join(ip, "ErrorEquals")); err != nil {
-			return err
+		names, err := stringList(obj["ErrorEquals"], join(ip, "ErrorEquals"))
+		if err != nil {
+			return nil, err
 		}
+		rt := Retrier{ErrorEquals: names, IntervalSeconds: 1, MaxAttempts: 3, BackoffRate: 2}
 		if raw, ok := obj["IntervalSeconds"]; ok {
-			if _, err := asInt(raw, 0, defaultTimeout); err != nil {
-				return defErr(codeSchema, "Field 'IntervalSeconds' must be an integer in 0..99999999", join(ip, "IntervalSeconds"))
+			n, err := asInt(raw, 0, defaultTimeout)
+			if err != nil {
+				return nil, defErr(codeSchema, "Field 'IntervalSeconds' must be an integer in 0..99999999", join(ip, "IntervalSeconds"))
 			}
+			rt.IntervalSeconds = n
 		}
 		if raw, ok := obj["MaxAttempts"]; ok {
-			if _, err := asInt(raw, 0, defaultTimeout); err != nil {
-				return defErr(codeSchema, "Field 'MaxAttempts' must be an integer in 0..99999999", join(ip, "MaxAttempts"))
+			n, err := asInt(raw, 0, defaultTimeout)
+			if err != nil {
+				return nil, defErr(codeSchema, "Field 'MaxAttempts' must be an integer in 0..99999999", join(ip, "MaxAttempts"))
 			}
+			rt.MaxAttempts = n
+		}
+		if raw, ok := obj["BackoffRate"]; ok {
+			n, err := asFloat(raw)
+			if err != nil || math.IsNaN(n) || math.IsInf(n, 0) || n < 1 {
+				return nil, defErr(codeSchema, "Field 'BackoffRate' must be a number >= 1", join(ip, "BackoffRate"))
+			}
+			rt.BackoffRate = n
+		}
+		if raw, ok := obj["MaxDelaySeconds"]; ok {
+			n, err := asInt(raw, 1, 31622400)
+			if err != nil {
+				return nil, defErr(codeSchema, "Field 'MaxDelaySeconds' must be an integer in 1..31622400", join(ip, "MaxDelaySeconds"))
+			}
+			rt.MaxDelaySeconds = n
 		}
 		if raw, ok := obj["JitterStrategy"]; ok {
 			v, err := asString(raw)
 			if err != nil || (v != "NONE" && v != "FULL") {
-				return defErr(codeSchema, "Field 'JitterStrategy' must be NONE or FULL", join(ip, "JitterStrategy"))
+				return nil, defErr(codeSchema, "Field 'JitterStrategy' must be NONE or FULL", join(ip, "JitterStrategy"))
 			}
+			rt.JitterStrategy = v
 		}
+		out = append(out, rt)
 	}
-	return nil
+	return out, nil
 }
 
 func checkCatch(raw json.RawMessage, ptr string) error {
+	_, err := parseCatch(raw, ptr)
+	return err
+}
+
+func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
 	arr, err := decodeArray(raw)
 	if err != nil {
-		return defErr(codeSchema, "Field 'Catch' must be an array", ptr)
+		return nil, defErr(codeSchema, "Field 'Catch' must be an array", ptr)
 	}
 	allowed := map[string]bool{"ErrorEquals": true, "Next": true, "ResultPath": true, "Comment": true, "Assign": true}
+	out := make([]Catcher, 0, len(arr))
 	for i, item := range arr {
 		ip := fmt.Sprintf("%s[%d]", ptr, i)
 		obj, err := decodeObject(item)
 		if err != nil {
-			return defErr(codeSchema, "Field must be an object", ip)
+			return nil, defErr(codeSchema, "Field must be an object", ip)
 		}
 		if err := unknown(obj, allowed, ip); err != nil {
-			return err
+			return nil, err
 		}
 		if _, ok := obj["ErrorEquals"]; !ok {
-			return defErr(codeSchema, "Missing required field 'ErrorEquals'", ip)
+			return nil, defErr(codeSchema, "Missing required field 'ErrorEquals'", ip)
 		}
-		if err := stringArray(obj["ErrorEquals"], join(ip, "ErrorEquals")); err != nil {
-			return err
+		names, err := stringList(obj["ErrorEquals"], join(ip, "ErrorEquals"))
+		if err != nil {
+			return nil, err
 		}
 		if _, ok := obj["Next"]; !ok {
-			return defErr(codeSchema, "Missing required field 'Next'", ip)
+			return nil, defErr(codeSchema, "Missing required field 'Next'", ip)
 		}
-		if _, err := asString(obj["Next"]); err != nil {
-			return defErr(codeSchema, "Field 'Next' must be a string", join(ip, "Next"))
+		next, err := asString(obj["Next"])
+		if err != nil {
+			return nil, defErr(codeSchema, "Field 'Next' must be a string", join(ip, "Next"))
 		}
+		c := Catcher{ErrorEquals: names, Next: next, ResultPath: Path{Kind: PathDefault}}
+		if raw, ok := obj["ResultPath"]; ok {
+			path, err := parsePath(raw, join(ip, "ResultPath"))
+			if err != nil {
+				return nil, err
+			}
+			c.ResultPath = path
+		}
+		if _, ok := obj["Assign"]; ok {
+			c.HasAssign = true
+		}
+		out = append(out, c)
 	}
-	return nil
+	return out, nil
 }
 
 func checkChoices(raw json.RawMessage, ptr string) error {
@@ -936,6 +1059,20 @@ func asString(raw json.RawMessage) (string, error) {
 	return s, nil
 }
 
+func asFloat(raw json.RawMessage) (float64, error) {
+	dec := json.NewDecoder(bytes.NewReader(raw))
+	dec.UseNumber()
+	var n json.Number
+	if err := dec.Decode(&n); err != nil {
+		return 0, err
+	}
+	var extra any
+	if err := dec.Decode(&extra); err != io.EOF {
+		return 0, fmt.Errorf("trailing")
+	}
+	return n.Float64()
+}
+
 func asInt(raw json.RawMessage, min, max int64) (int64, error) {
 	text := strings.TrimSpace(string(raw))
 	if text == "" || strings.ContainsAny(text, ".eE+") {
@@ -949,16 +1086,24 @@ func asInt(raw json.RawMessage, min, max int64) (int64, error) {
 }
 
 func stringArray(raw json.RawMessage, ptr string) error {
+	_, err := stringList(raw, ptr)
+	return err
+}
+
+func stringList(raw json.RawMessage, ptr string) ([]string, error) {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
-		return defErr(codeSchema, "Field 'ErrorEquals' must be a non-empty array of strings", ptr)
+		return nil, defErr(codeSchema, "Field 'ErrorEquals' must be a non-empty array of strings", ptr)
 	}
-	for _, item := range arr {
-		if _, err := asString(item); err != nil {
-			return defErr(codeSchema, "Field 'ErrorEquals' must be a non-empty array of strings", ptr)
+	out := make([]string, len(arr))
+	for i, item := range arr {
+		text, err := asString(item)
+		if err != nil {
+			return nil, defErr(codeSchema, "Field 'ErrorEquals' must be a non-empty array of strings", ptr)
 		}
+		out[i] = text
 	}
-	return nil
+	return out, nil
 }
 
 func checkJSON(raw json.RawMessage, ptr string) error {

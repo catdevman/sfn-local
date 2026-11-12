@@ -23,8 +23,12 @@ const (
 func newService() *Service {
 	st := store.New()
 	return &Service{
-		Store:   st,
-		Runner:  &exec.Runner{Store: st},
+		Store: st,
+		Runner: &exec.Runner{
+			Store:   st,
+			Region:  "us-east-1",
+			Account: "123456789012",
+		},
 		Account: "123456789012",
 		Region:  "us-east-1",
 		Profile: ProfileSmithy,

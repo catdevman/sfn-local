@@ -17,7 +17,7 @@ var (
 )
 
 // Config is the process configuration. Flags override environment variables.
-// Phase G stores endpoint and mock-file settings and does not open the mock file.
+// The server reads MockConfig when a StartExecution ARN contains one # test suffix.
 type Config struct {
 	Account       string
 	Region        string
@@ -191,7 +191,7 @@ SigV4 is not checked. The default error profile is the public Smithy shape id co
 
 Step Functions Local 2.0.0 leaves API Gateway and EventBridge endpoint options off the list that parseArgs walks, so those flags and variables do nothing in that jar. This server accepts -apiGatewayEndpoint, --api-gateway-endpoint, API_GATEWAY_ENDPOINT, and the EventBridge equivalents.
 
-The mock file defaults to ./MockConfigFile.json (SFN_MOCK_CONFIG). An execution name may end in #TestCase, the same suffix Step Functions Local and LocalStack use. This process records the path and does not read the file.
+The mock file defaults to ./MockConfigFile.json (SFN_MOCK_CONFIG). An execution name may end in #TestCase, the same suffix Step Functions Local and LocalStack use. This process reads the file when a StartExecution state machine ARN contains one # test suffix.
 
 Flags override environment variables.
 

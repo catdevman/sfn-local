@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 1, and Phase 2 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Tasks do not. |
+| Status | Phase 0, Phase 1, Phase 2, and Phase 3 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Parallel and Map do not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -31,7 +31,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [V](#phase-v--validate-versions-aliases) | `validate-state-machine-definition`, publish, and alias. | 1–2 |
 | [1](#x-phase-1--pass-succeed-fail) | Smallest useful runner. Pass, Succeed, Fail. | 1.5–2.5 |
 | [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
-| [3](#phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
+| [3](#x-phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
 | [T](#phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
 | [4](#phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
 | [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
@@ -148,20 +148,20 @@ Depends on phase 1. No variable writes. A `$name` that is not `$.` or `$$` fails
 - [x] Wait. `Seconds` is multiplied by 1000 before scaling. The scale multiply is float32, then cast toward zero. A negative `WAIT_TIME_SCALE` is stored as its absolute value. Retry sleep is not scaled.
 - [x] Fixtures: Choice, type mismatch, `IsTimestamp` false, `And` short-circuit, Parameters `.$`, Wait scale, `InputPath` null, `ResultPath` null, `OutputPath` null.
 
-## Phase 3 — mocks, Lambda, Retry, Catch
+## [x] Phase 3 — mocks, Lambda, Retry, Catch
 
 Depends on phase 2.
 
-- [ ] `internal/mock`. `SFN_MOCK_CONFIG`, default `./MockConfigFile.json`, cap 1_000_000 bytes, reload when the SHA-256 changes.
-- [ ] Test name is the suffix after one `#` on `stateMachineArn`. More than one `#` is HTTP 400 `InvalidArn`. A missing file or unknown test is HTTP 400 `InvalidDefinition`.
-- [ ] Attempt keys and inclusive ranges. Overlapping selectors are rejected at load. The mock attempt counter is per state name for the life of the execution. The Retry backoff counter clears on transition.
-- [ ] `Return` and `Throw`. A missing attempt is `States.Runtime` and does not call the network.
-- [ ] Direct Lambda function ARN against `LAMBDA_ENDPOINT`. A `Return` without `Payload` is the payload. An `Error` containing `timeout` is `LambdaFunctionTimedOut` / `States.Timeout`.
-- [ ] Any other resource that passed create-time checks fails at execution with `States.Runtime` and a cause that contains the resource and `unsupported resource`.
-- [ ] Retry backoff, `FULL` jitter, `States.TaskFailed` and `States.ALL` matchers. Interruptible sleep, not scaled by `WAIT_TIME_SCALE`.
-- [ ] Catch `ResultPath` into the original state input. Task catches append `TaskStateExited`.
-- [ ] Task timeout.
-- [ ] Fixtures: RetryOnce and Catch from docs/spec.md.
+- [x] `internal/mock`. `SFN_MOCK_CONFIG`, default `./MockConfigFile.json`, cap 1_000_000 bytes, reload when the SHA-256 changes.
+- [x] Test name is the suffix after one `#` on `stateMachineArn`. More than one `#` is HTTP 400 `InvalidArn`. A missing file or unknown test is HTTP 400 `InvalidDefinition`.
+- [x] Attempt keys and inclusive ranges. Overlapping selectors are rejected at load. The mock attempt counter is per state name for the life of the execution. The Retry backoff counter clears on transition.
+- [x] `Return` and `Throw`. A missing attempt is `States.Runtime` and does not call the network.
+- [x] Direct Lambda function ARN against `LAMBDA_ENDPOINT`. A `Return` without `Payload` is the payload. An `Error` containing `timeout` is `LambdaFunctionTimedOut` / `States.Timeout`.
+- [x] Any other resource that passed create-time checks fails at execution with `States.Runtime` and a cause that contains the resource and `unsupported resource`.
+- [x] Retry backoff, `FULL` jitter, `States.TaskFailed` and `States.ALL` matchers. Interruptible sleep, not scaled by `WAIT_TIME_SCALE`.
+- [x] Catch `ResultPath` into the original state input. Task catches append `TaskStateExited`.
+- [x] Task timeout.
+- [x] Fixtures: RetryOnce and Catch from docs/spec.md.
 
 ## Phase T — TestState
 

@@ -66,4 +66,23 @@ func TestValidateOtherStateTypes(t *testing.T) {
 	if err == nil || !strings.Contains(err.Error(), "Iterator") {
 		t.Fatal(err)
 	}
+	prog, err := Validate(`{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:lambda:us-east-1:123456789012:function:f","Retry":[{"ErrorEquals":["E"]}],"Catch":[{"ErrorEquals":["E"],"Next":"T"}],"End":true}}}`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	rt := prog.States["T"].Retry[0]
+	if rt.IntervalSeconds != 1 || rt.MaxAttempts != 3 || rt.BackoffRate != 2 || rt.MaxDelaySeconds != 0 || rt.JitterStrategy != "" {
+		t.Fatalf("%+v", rt)
+	}
+	if prog.States["T"].Catch[0].ResultPath.Kind != PathDefault || prog.States["T"].Catch[0].Next != "T" {
+		t.Fatalf("%+v", prog.States["T"].Catch[0])
+	}
+	for _, def := range []string{
+		`{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"r","Retry":[{"ErrorEquals":["E"],"MaxDelaySeconds":0}],"End":true}}}`,
+		`{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"r","Retry":[{"ErrorEquals":["E"],"BackoffRate":0.5}],"End":true}}}`,
+	} {
+		if _, err := Validate(def); err == nil || !strings.Contains(err.Error(), "SCHEMA_VALIDATION_FAILED") {
+			t.Fatalf("%s -> %v", def, err)
+		}
+	}
 }

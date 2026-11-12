@@ -12,6 +12,7 @@ import (
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
 	"github.com/catdevman/sfn-local/internal/asl"
+	"github.com/catdevman/sfn-local/internal/mock"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -203,12 +204,15 @@ func (s *Service) StopExecution(_ context.Context, in *gen.StopExecutionInput) (
 
 func (s *Service) beginExecution(machineARN, name string, nameSet bool, input string, inputSet, sync bool) (store.Execution, *store.RunHandle, error) {
 	base := machineARN
+	test := ""
+	hashed := false
 	if !sync {
 		var err error
-		base, _, err = SplitMockSuffix(machineARN)
+		base, test, err = SplitMockSuffix(machineARN)
 		if err != nil {
 			return store.Execution{}, nil, modeled("InvalidArn", "Invalid Arn: '"+machineARN+"'")
 		}
+		hashed = strings.Contains(machineARN, "#")
 	}
 	if !ValidStateMachineARN(base) {
 		return store.Execution{}, nil, modeled("InvalidArn", "Invalid Arn: '"+base+"'")
@@ -245,6 +249,15 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 		}
 		return store.Execution{}, nil, modeled("ExecutionAlreadyExists", "Execution Already Exists: '"+existing.ARN+"'")
 	}
+	if hashed {
+		var repo *mock.Repo
+		if s.Runner != nil {
+			repo = s.Runner.Mocks
+		}
+		if err := repo.Check(m.Name, test); err != nil {
+			return store.Execution{}, nil, modeled("InvalidDefinition", err.Error())
+		}
+	}
 	now := s.now()
 	ex := store.Execution{
 		ARN:             arn,
@@ -258,6 +271,7 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 		Express:         express,
 		Started:         now,
 		Deadline:        executionDeadline(now, prog.TimeoutSeconds, express),
+		MockTest:        test,
 	}
 	stored, handle, existed := s.Store.PutExecution(ex)
 	if existed {
@@ -451,6 +465,128 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 			}
 			out.StateExitedEventDetails = d
 		}
+	case "TaskScheduled":
+		d := &gen.TaskScheduledEventDetails{}
+		fillTaskResource(d, ev)
+		if ev.HasRegion {
+			d.Region = sp(ev.Region)
+		}
+		if include && ev.HasParameters {
+			d.Parameters = sp(ev.Parameters)
+		}
+		if ev.HasTimeout {
+			d.TimeoutInSeconds = i64p(ev.TimeoutSeconds)
+		}
+		if ev.HasHeartbeat {
+			d.HeartbeatInSeconds = i64p(ev.HeartbeatSeconds)
+		}
+		out.TaskScheduledEventDetails = d
+	case "TaskStarted":
+		d := &gen.TaskStartedEventDetails{}
+		if ev.HasResourceType {
+			d.ResourceType = sp(ev.ResourceType)
+		}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		out.TaskStartedEventDetails = d
+	case "TaskSucceeded":
+		d := &gen.TaskSucceededEventDetails{}
+		if ev.HasResourceType {
+			d.ResourceType = sp(ev.ResourceType)
+		}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		if include && ev.HasOutput {
+			d.Output = sp(ev.Output)
+		}
+		out.TaskSucceededEventDetails = d
+	case "TaskFailed":
+		out.TaskFailedEventDetails = taskFailedDetails(ev)
+	case "TaskTimedOut":
+		out.TaskTimedOutEventDetails = taskTimedOutDetails(ev)
+	case "LambdaFunctionScheduled":
+		d := &gen.LambdaFunctionScheduledEventDetails{}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		if include && ev.HasInput {
+			d.Input = sp(ev.Input)
+		}
+		if ev.HasTimeout {
+			d.TimeoutInSeconds = i64p(ev.TimeoutSeconds)
+		}
+		out.LambdaFunctionScheduledEventDetails = d
+	case "LambdaFunctionSucceeded":
+		d := &gen.LambdaFunctionSucceededEventDetails{}
+		if include && ev.HasOutput {
+			d.Output = sp(ev.Output)
+		}
+		out.LambdaFunctionSucceededEventDetails = d
+	case "LambdaFunctionFailed":
+		d := &gen.LambdaFunctionFailedEventDetails{}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.LambdaFunctionFailedEventDetails = d
+	case "LambdaFunctionTimedOut":
+		d := &gen.LambdaFunctionTimedOutEventDetails{}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.LambdaFunctionTimedOutEventDetails = d
 	}
 	return out
 }
+
+func fillTaskResource(d *gen.TaskScheduledEventDetails, ev store.HistoryEvent) {
+	if ev.HasResourceType {
+		d.ResourceType = sp(ev.ResourceType)
+	}
+	if ev.HasResource {
+		d.Resource = sp(ev.Resource)
+	}
+}
+
+func taskFailedDetails(ev store.HistoryEvent) *gen.TaskFailedEventDetails {
+	d := &gen.TaskFailedEventDetails{}
+	if ev.HasResourceType {
+		d.ResourceType = sp(ev.ResourceType)
+	}
+	if ev.HasResource {
+		d.Resource = sp(ev.Resource)
+	}
+	if ev.HasError {
+		d.Error = sp(ev.Error)
+	}
+	if ev.HasCause {
+		d.Cause = sp(ev.Cause)
+	}
+	return d
+}
+
+func taskTimedOutDetails(ev store.HistoryEvent) *gen.TaskTimedOutEventDetails {
+	d := &gen.TaskTimedOutEventDetails{}
+	if ev.HasResourceType {
+		d.ResourceType = sp(ev.ResourceType)
+	}
+	if ev.HasResource {
+		d.Resource = sp(ev.Resource)
+	}
+	if ev.HasError {
+		d.Error = sp(ev.Error)
+	}
+	if ev.HasCause {
+		d.Cause = sp(ev.Cause)
+	}
+	return d
+}
+
+func i64p(n int64) *int64 { return &n }

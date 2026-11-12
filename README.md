@@ -1,10 +1,10 @@
 # stepfunctions-local
 
-The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait.
+The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait. Phase 3 runs mocked tasks, direct Lambda invoke, Retry, and Catch.
 
 Listen on `0.0.0.0:8083`. Point the AWS CLI at `--endpoint-url http://127.0.0.1:8083`. SigV4 is not checked. The store is in memory. Bind `127.0.0.1` unless the port is published on purpose, and do not expose the port beyond the host or the compose network.
 
-The default error profile is the public Smithy shape id. `__type` and `X-Amzn-Errortype` are `com.amazonaws.sfn#<ShapeName>`. `--compat=sfn-local` selects the Step Functions Local profile. `MockConfigFile.json` and the `#TestCase` suffix on an execution name stay compatible with Step Functions Local and LocalStack. The process records `SFN_MOCK_CONFIG` and does not read the file yet.
+The default error profile is the public Smithy shape id. `__type` and `X-Amzn-Errortype` are `com.amazonaws.sfn#<ShapeName>`. `--compat=sfn-local` selects the Step Functions Local profile. `MockConfigFile.json` and the `#TestCase` suffix on an execution name stay compatible with Step Functions Local and LocalStack. The process reads `SFN_MOCK_CONFIG` when a StartExecution state machine ARN contains one `#` test suffix.
 
 Step Functions Local 2.0.0 constructs API Gateway and EventBridge endpoint options and then leaves them off the list `parseArgs` walks, so `-apiGatewayEndpoint`, `--api-gateway-endpoint`, `API_GATEWAY_ENDPOINT`, and the EventBridge equivalents do nothing in that jar. This server accepts them.
 

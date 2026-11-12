@@ -15,6 +15,7 @@ import (
 
 	"github.com/catdevman/sfn-local/internal/api"
 	"github.com/catdevman/sfn-local/internal/exec"
+	"github.com/catdevman/sfn-local/internal/mock"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -82,7 +83,15 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		port, cfg.Account, cfg.Region, cfg.BindAddress)
 	st := store.New()
 	go exec.Sweep(ctx, st)
-	runner := &exec.Runner{Store: st, Log: stdout, WaitScale: waitScale(cfg.WaitTimeScale)}
+	runner := &exec.Runner{
+		Store:          st,
+		Log:            stdout,
+		WaitScale:      waitScale(cfg.WaitTimeScale),
+		Mocks:          &mock.Repo{Path: cfg.MockConfig},
+		LambdaEndpoint: cfg.LambdaEndpoint,
+		Region:         cfg.Region,
+		Account:        cfg.Account,
+	}
 	srv := &http.Server{
 		Handler: &api.Server{
 			Handlers: &api.Service{

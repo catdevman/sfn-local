@@ -10,17 +10,19 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
 	"unicode/utf8"
 
 	"github.com/catdevman/sfn-local/internal/asl"
+	"github.com/catdevman/sfn-local/internal/mock"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
 const maxPayload = 262144
 
-// Runner executes Pass, Succeed, Fail, Choice, and Wait.
-// Task, Parallel, and Map fail the run until a later phase.
+// Runner executes Pass, Succeed, Fail, Choice, Wait, and Task.
+// Parallel and Map fail the run until a later phase.
 type Runner struct {
 	Store *store.Store
 	// Now overrides the clock. Nil means time.Now.
@@ -31,8 +33,22 @@ type Runner struct {
 	// WaitScale is the absolute WAIT_TIME_SCALE. Nil means Wait is not scaled.
 	// Retry sleeps do not read this field.
 	WaitScale *float32
-	// Sleep replaces the interruptible Wait. Nil sleeps on the wall clock.
+	// Sleep replaces the interruptible Wait and Retry delay. Nil sleeps on the wall clock.
 	Sleep func(ctx context.Context, d time.Duration) error
+	// Mocks is the SFN_MOCK_CONFIG file. Nil reports the file as missing.
+	Mocks *mock.Repo
+	// LambdaEndpoint is LAMBDA_ENDPOINT. Empty means a direct function ARN
+	// that is not mocked fails as an unsupported resource.
+	LambdaEndpoint string
+	Region         string
+	Account        string
+	// Invoke replaces the Lambda HTTP call. Nil uses LambdaEndpoint.
+	Invoke func(ctx context.Context, call LambdaCall) LambdaReply
+	// Rand returns a FULL-jitter delay in 0..max inclusive. Nil uses math/rand.
+	Rand func(max int64) int64
+
+	mu       sync.Mutex
+	attempts map[string]map[string]int
 }
 
 // Start runs the execution on a new goroutine. The handle is finished when
@@ -52,6 +68,7 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 	if ctx == nil {
 		ctx = context.Background()
 	}
+	defer r.clearAttempts(arn)
 	ex, ok := r.Store.Execution(arn)
 	if !ok {
 		return
@@ -87,7 +104,7 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 			return
 		}
 		switch st.Type {
-		case "Pass", "Succeed", "Fail", "Choice", "Wait":
+		case "Pass", "Succeed", "Fail", "Choice", "Wait", "Task":
 		default:
 			r.fail(arn, "States.Runtime", "State type "+st.Type+" is not implemented by this local server.")
 			return

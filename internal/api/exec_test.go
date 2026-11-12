@@ -4,12 +4,15 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"time"
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
+	"github.com/catdevman/sfn-local/internal/mock"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -282,6 +285,11 @@ func TestStopIdempotencyAndUnimplementedStates(t *testing.T) {
 	if mustAPI(t, err).ErrorName() != "InvalidArn" {
 		t.Fatal(err)
 	}
+	mockPath := filepath.Join(t.TempDir(), "MockConfigFile.json")
+	if err := os.WriteFile(mockPath, []byte(`{"StateMachines":{"hold":{"TestCases":{"Case":{}}}},"MockedResponses":{}}`), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	s.Runner.Mocks = &mock.Repo{Path: mockPath}
 	mocked := startExec(t, s, *sm.StateMachineArn+"#Case", "mock", `{}`)
 	if !strings.Contains(*mocked.ExecutionArn, ":execution:hold:mock") {
 		t.Fatal(*mocked.ExecutionArn)

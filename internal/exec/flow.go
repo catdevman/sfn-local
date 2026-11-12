@@ -20,10 +20,6 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		r.fail(arn, "States.Runtime", "Assign is not implemented by this local server.")
 		return "", "", false, true
 	}
-	if st.HasResultSelector {
-		r.fail(arn, "States.Runtime", "ResultSelector is not implemented by this local server.")
-		return "", "", false, true
-	}
 	ex, ok := r.Store.Execution(arn)
 	if !ok {
 		return "", "", false, true
@@ -102,6 +98,8 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 			return "", "", false, true
 		}
 		return transition(st, output)
+	case "Task":
+		return r.runTask(ctx, arn, st, input, effective, effVal, ctxObj)
 	case "Pass":
 		resultText := effective
 		resultVal := effVal
