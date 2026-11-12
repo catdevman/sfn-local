@@ -1,0 +1,20 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.TestState",
+    "body": {
+      "definition": "{\"Type\":\"Pass\",\"End\":true}",
+      "input": "{}"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "output": "{}",
+      "status": "SUCCEEDED"
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#InvalidDefinition"
+  }
+}

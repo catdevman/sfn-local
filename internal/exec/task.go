@@ -142,6 +142,15 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 }
 
 func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (taskKind, lambdaTarget, bool, error) {
+	if _, ok := r.stateMock(ex.ARN); ok {
+		if isActivityARN(st.Resource) {
+			return 0, lambdaTarget{}, false, errors.New("activity state " + st.Name + " cannot be mocked")
+		}
+		if fn, ok := parseLambdaARN(st.Resource, r.Region, r.Account); ok {
+			return kindLambda, fn, true, nil
+		}
+		return kindGeneric, lambdaTarget{}, true, nil
+	}
 	if isActivityARN(st.Resource) {
 		if ex.MockTest != "" {
 			on, err := r.Mocks.Mocked(machine, ex.MockTest, st.Name)
@@ -535,6 +544,24 @@ func httpInvoke(ctx context.Context, call LambdaCall) LambdaReply {
 }
 
 func (r *Runner) readMock(arn, machine, test, state string, kind taskKind) (string, *taskFailure) {
+	if m, ok := r.stateMock(arn); ok {
+		// Advance the attempt counter. The document is the same on every attempt.
+		r.takeAttempt(arn, state)
+		if m.HasThrow {
+			if m.Error == "" {
+				return "", &taskFailure{Name: "States.Runtime", Cause: "mock Throw is missing Error"}
+			}
+			return "", throwFailure(mock.Attempt{Error: m.Error, Cause: m.Cause, HasThrow: true})
+		}
+		if m.HasResult {
+			text, err := compactRaw(m.Result)
+			if err != nil {
+				return "", asTaskFailure(err)
+			}
+			return text, nil
+		}
+		return "", &taskFailure{Name: "States.Runtime", Cause: "mock response is missing Return or Throw"}
+	}
 	n := r.takeAttempt(arn, state)
 	att, err := r.Mocks.Lookup(machine, test, state, n)
 	if err != nil {

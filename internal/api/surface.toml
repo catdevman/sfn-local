@@ -188,7 +188,7 @@ message = "TagResource is not implemented by this local server."
 
 [[operation]]
 name = "TestState"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "TestState is not implemented by this local server."
 

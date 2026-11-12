@@ -40,9 +40,9 @@ func TestDeferredOperationsAreModeled(t *testing.T) {
 	if valid.Code() != "ValidationException" || !strings.Contains(valid.Message, "ValidateStateMachineDefinition is not implemented") {
 		t.Fatalf("%+v", valid)
 	}
-	testState := call(t, srv, "AWSStepFunctions.TestState", `{"definition":`+jsonString(def)+`}`, contentTypeJSON10)
-	if testState.Code() != "ValidationException" || !strings.Contains(testState.Message, "TestState is not implemented") {
-		t.Fatalf("%+v", testState)
+	code, raw = callRaw(t, srv, "AWSStepFunctions.TestState", `{"definition":`+jsonString(def)+`}`)
+	if code != 200 || !strings.Contains(string(raw), `"status":"SUCCEEDED"`) || !strings.Contains(string(raw), `"output":"{}"`) {
+		t.Fatalf("test state %d %s", code, raw)
 	}
 	mapRun := call(t, srv, "AWSStepFunctions.DescribeMapRun", `{"mapRunArn":"arn:aws:states:us-east-1:123456789012:mapRun:sm:1"}`, contentTypeJSON10)
 	if mapRun.Code() != "ValidationException" || mapRun.Message != "Distributed Map is not supported by this local server." {
@@ -120,8 +120,20 @@ func TestCompatProfile(t *testing.T) {
 			t.Fatalf("%s %+v", name, got)
 		}
 	}
-	if len(jarAbsent) != 14 {
+	if len(jarAbsent) != 13 {
 		t.Fatalf("jar-absent set %d", len(jarAbsent))
+	}
+	if JarAbsent("TestState") {
+		t.Fatal("TestState is implemented and must not be short-circuited")
+	}
+	tested := call(t, compat, "AWSStepFunctions.TestState", `{}`, contentTypeJSON10)
+	if tested.Status != 400 || tested.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(tested.Message, "Member must not be null") {
+		t.Fatalf("compat TestState %+v", tested)
+	}
+	for _, bad := range forbidden {
+		if strings.Contains(tested.Type, bad) || strings.Contains(string(tested.Raw), bad) {
+			t.Fatalf("compat TestState emitted %s in %+v", bad, tested)
+		}
 	}
 	missing := httptest.NewRecorder()
 	compat.ServeHTTP(missing, httptest.NewRequest(http.MethodPost, "/", strings.NewReader(`{}`)))

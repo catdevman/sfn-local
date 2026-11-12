@@ -1,6 +1,7 @@
 // Package exec runs one execution at a time on a worker. The HTTP accept
 // loop never calls Run on its own goroutine's request path except to wait
-// for StartSyncExecution.
+// for StartSyncExecution. TestState calls RunState on the request path and
+// stops after that one state.
 package exec
 
 import (
@@ -47,8 +48,10 @@ type Runner struct {
 	// Rand returns a FULL-jitter delay in 0..max inclusive. Nil uses math/rand.
 	Rand func(max int64) int64
 
-	mu       sync.Mutex
-	attempts map[string]map[string]int
+	mu         sync.Mutex
+	attempts   map[string]map[string]int
+	stateMocks map[string]*StateMock
+	testSeq    uint64
 }
 
 // Start runs the execution on a new goroutine. The handle is finished when

@@ -167,11 +167,11 @@ Depends on phase 2.
 
 Depends on phase 1. Widen it as phases 2, 3, and 6 add state types. The operation is registered in phase G and becomes real here.
 
-- [ ] `TestState` runs one state through the same state handlers as an execution.
-- [ ] The first cut supports Pass, Succeed, Fail, and the Choice and Wait behavior phase 2 has.
-- [ ] Mocked Task and Lambda Invoke work once phase 3 has landed.
+- [x] `TestState` runs one state through the same state handlers as an execution.
+- [x] The first cut supports Pass, Succeed, Fail, and the Choice and Wait behavior phase 2 has.
+- [x] Mocked Task and Lambda Invoke work once phase 3 has landed.
 - [ ] JSONata states work once phase 6 has landed.
-- [ ] `surface.toml` marks `TestState` `implemented` for the state types the current binary runs, and the handler returns a modeled error for a state type the binary does not run yet.
+- [x] `surface.toml` marks `TestState` `implemented` for the state types the current binary runs, and the handler returns a modeled error for a state type the binary does not run yet.
 
 ## Phase 4 — Parallel, Map, intrinsics
 

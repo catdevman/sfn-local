@@ -5,9 +5,9 @@ import "github.com/catdevman/sfn-local/internal/api/gen"
 // Profile selects the error __type strings written on the wire.
 // smithy is the default and emits the public Smithy shape id.
 // sfn-local selects the Step Functions Local profile. The jar __type map
-// stays empty until a later phase has fixtures. The 14 operations the jar
-// never shipped are the exception: that profile returns HTTP 500
-// UnsupportedOperation for them.
+// stays empty until a later phase has fixtures. The jar never shipped 14
+// operations. This profile returns HTTP 500 UnsupportedOperation for each
+// of them before decode, except TestState, which this server implements.
 type Profile string
 
 const (
@@ -33,8 +33,9 @@ const (
 // It is empty on purpose. Add a row only after a jar fixture captures the string.
 var jarErrorTypes = map[string]string{}
 
-// jarAbsent is the operation set Step Functions Local 2.0.0 did not ship.
-// They are still modeled, so the default profile returns their deferred error.
+// jarAbsent is the Step Functions Local 2.0.0 operation set that this process
+// still refuses before decode. TestState is implemented, so it is not in the set.
+// The other names stay deferred. The default profile returns their deferred error.
 var jarAbsent = map[string]bool{
 	"CreateStateMachineAlias":        true,
 	"DeleteStateMachineAlias":        true,
@@ -46,7 +47,6 @@ var jarAbsent = map[string]bool{
 	"ListStateMachineVersions":       true,
 	"PublishStateMachineVersion":     true,
 	"RedriveExecution":               true,
-	"TestState":                      true,
 	"UpdateMapRun":                   true,
 	"UpdateStateMachineAlias":        true,
 	"ValidateStateMachineDefinition": true,
