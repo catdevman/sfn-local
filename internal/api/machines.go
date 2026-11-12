@@ -23,20 +23,20 @@ func (s *Service) CreateStateMachine(_ context.Context, in *gen.CreateStateMachi
 	if err != nil {
 		return nil, err
 	}
-	logging, err := normalizeLogging(in.LoggingConfiguration)
+	typ := store.TypeStandard
+	if in.Type != nil && string(*in.Type) != "" {
+		typ = string(*in.Type)
+	}
+	logging, err := normalizeLogging(in.LoggingConfiguration, typ == store.TypeExpress)
 	if err != nil {
 		return nil, err
 	}
-	if _, err := asl.Validate(*in.Definition); err != nil {
+	if _, err := asl.ValidateType(*in.Definition, typ); err != nil {
 		return nil, modeled("InvalidDefinition", err.Error())
 	}
 	tags, err := tagsFrom(in.Tags)
 	if err != nil {
 		return nil, err
-	}
-	typ := store.TypeStandard
-	if in.Type != nil && string(*in.Type) != "" {
-		typ = string(*in.Type)
 	}
 	machine := store.Machine{
 		ARN:        StateMachineARN(s.region(), s.account(), name),
@@ -107,14 +107,14 @@ func (s *Service) UpdateStateMachine(_ context.Context, in *gen.UpdateStateMachi
 		return nil, err
 	}
 	if in.Definition != nil {
-		if _, err := asl.Validate(*in.Definition); err != nil {
+		if _, err := asl.ValidateType(*in.Definition, m.Type); err != nil {
 			return nil, modeled("InvalidDefinition", err.Error())
 		}
 	}
 	if in.RoleArn != nil && !RoleARNValid(*in.RoleArn) {
 		return nil, modeled("InvalidArn", "Invalid Role Arn: '"+*in.RoleArn+"'")
 	}
-	logging, err := normalizeLogging(in.LoggingConfiguration)
+	logging, err := normalizeLogging(in.LoggingConfiguration, in.LoggingConfiguration != nil)
 	if err != nil {
 		return nil, err
 	}

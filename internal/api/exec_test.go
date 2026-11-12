@@ -311,12 +311,11 @@ func TestStopIdempotencyAndUnimplementedStates(t *testing.T) {
 		t.Fatalf("%s %s %s", choiceEx.Status, choiceEx.Output, choiceEx.Cause)
 	}
 	assertTypes(t, choiceEx, "ExecutionStarted", "ChoiceStateEntered", "ChoiceStateExited", "PassStateEntered", "PassStateExited", "ExecutionSucceeded")
-	missing := createMachine(t, s, "missing", `{"StartAt":"P","States":{"P":{"Type":"Pass","Next":"Gone"}}}`, roleARN)
-	missingRun := startExec(t, s, *missing.StateMachineArn, "run", `{}`)
-	missingEx := waitExec(t, s, *missingRun.ExecutionArn)
-	assertTypes(t, missingEx, "ExecutionStarted", "PassStateEntered", "PassStateExited", "ExecutionFailed")
-	if !strings.Contains(missingEx.Cause, "Missing 'Next' target: Gone") {
-		t.Fatal(missingEx.Cause)
+	_, err = s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
+		Name: sp("missing"), Definition: sp(`{"StartAt":"P","States":{"P":{"Type":"Pass","Next":"Gone"}}}`), RoleArn: sp(roleARN),
+	})
+	if api := mustAPI(t, err); api.ErrorName() != "InvalidDefinition" || !strings.Contains(api.Error(), "MISSING_TRANSITION_TARGET") || !strings.Contains(api.Error(), "Missing 'Next' target: Gone") {
+		t.Fatal(api)
 	}
 	params := createMachine(t, s, "params", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"a":1},"End":true}}}`, roleARN)
 	paramsRun := startExec(t, s, *params.StateMachineArn, "run", `{}`)

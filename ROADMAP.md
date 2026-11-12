@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 1, Phase 2, and Phase 3 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Parallel and Map do not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, and Phase 3 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel and Map do not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -27,7 +27,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 |---|---|---|
 | [G](#x-phase-g--protocol-shell) | Every modeled call parses. Nothing executes yet. | 1.5–2.5 |
 | [0](#x-phase-0--control-plane) | Create, describe, list, update, and delete machines and activities. | 1.5–2.5 |
-| [0b](#phase-0b--validator-messages) | Create-time messages match the jar fixtures. Can land beside phase 1. | 1–2 |
+| [0b](#x-phase-0b--validator-messages) | Create-time messages match the jar fixtures. Can land beside phase 1. | 1–2 |
 | [V](#phase-v--validate-versions-aliases) | `validate-state-machine-definition`, publish, and alias. | 1–2 |
 | [1](#x-phase-1--pass-succeed-fail) | Smallest useful runner. Pass, Succeed, Fail. | 1.5–2.5 |
 | [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
@@ -94,17 +94,17 @@ Depends on phase G. `QueryLanguage` and JSONata-only fields fail validation with
 - [x] Execution operations stayed deferred through the control plane. `StartExecution` idempotency is specified and tested in phase 1.
 - [x] Tests: Create response shape, duplicate name, bad definition, deleting status, role path `role/service-role/MyRole`.
 
-## Phase 0b — validator messages
+## [x] Phase 0b — validator messages
 
 Depends on phase 0. Phase 1 does not wait on this.
 
-- [ ] EXPRESS rejects an activity ARN, a resource ending in `.sync`, and a resource ending in `.waitForTaskToken`, including the trailing space on the callback sentence.
-- [ ] `Parameters` is required for the registered `arn:aws:states:::` connectors the jar fixtures list.
-- [ ] `StartAt`, `Next`, Choice `Next`, Choice `Default`, and Catch `Next` name a state in the same `States` object. Message `Missing 'Next' target`.
-- [ ] Unreachable state and missing terminal state use the codes in docs/spec.md.
-- [ ] Logging configuration: exactly one destination when the level is not `OFF`, and the destination has a CloudWatch log-group ARN.
-- [ ] `States.ALL` is alone in `ErrorEquals` and that Retry or Catch object is the last entry. Message `States.ALL must appear alone and at end of list`.
-- [ ] Tag length failures use `Member must have length less than or equal to 80` in `--compat=sfn-local`.
+- [x] EXPRESS rejects an activity ARN, a resource ending in `.sync`, and a resource ending in `.waitForTaskToken`, including the trailing space on the callback sentence.
+- [x] `Parameters` is required for the registered `arn:aws:states:::` connectors the jar fixtures list.
+- [x] `StartAt`, `Next`, Choice `Next`, Choice `Default`, and Catch `Next` name a state in the same `States` object. Message `Missing 'Next' target`.
+- [x] Unreachable state and missing terminal state use the codes in docs/spec.md.
+- [x] Logging configuration: exactly one destination when the level is not `OFF`, and the destination has a CloudWatch log-group ARN.
+- [x] `States.ALL` is alone in `ErrorEquals` and that Retry or Catch object is the last entry. Message `States.ALL must appear alone and at end of list`.
+- [x] Tag length failures use `Member must have length less than or equal to 80` in `--compat=sfn-local`.
 
 ## Phase V — validate, versions, aliases
 

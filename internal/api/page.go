@@ -1,6 +1,7 @@
 package api
 
 import (
+	"regexp"
 	"strconv"
 	"time"
 	"unicode"
@@ -9,6 +10,9 @@ import (
 	"github.com/catdevman/sfn-local/internal/api/gen"
 	"github.com/catdevman/sfn-local/internal/store"
 )
+
+// logGroupARNPattern is the CloudWatch log-group ARN accepted as a logging destination.
+var logGroupARNPattern = regexp.MustCompile(`^arn:[A-Za-z0-9-]+:logs:[A-Za-z0-9-]*:[0-9]{12}:log-group:.+`)
 
 func sp(s string) *string { return &s }
 
@@ -120,7 +124,11 @@ func toGenTags(tags []store.Tag) *gen.TagList {
 	return &list
 }
 
-func normalizeLogging(in *gen.LoggingConfiguration) (*store.Logging, error) {
+// normalizeLogging stores a logging configuration. enforce is true for an
+// EXPRESS create and for every update that includes logging. OFF with no
+// destinations is valid. Any other level needs exactly one destination.
+// More than one destination fails even when the level is OFF. Nothing is written.
+func normalizeLogging(in *gen.LoggingConfiguration, enforce bool) (*store.Logging, error) {
 	if in == nil {
 		return nil, nil
 	}
@@ -130,6 +138,11 @@ func normalizeLogging(in *gen.LoggingConfiguration) (*store.Logging, error) {
 			return nil, modeled("InvalidLoggingConfiguration", "Invalid Logging Configuration: '"+string(*in.Level)+"'")
 		}
 		level = *in.Level
+	}
+	if enforce {
+		if err := checkLogDestinations(in.Destinations, level); err != nil {
+			return nil, err
+		}
 	}
 	out := &store.Logging{Level: string(level)}
 	if in.IncludeExecutionData != nil {
@@ -146,6 +159,28 @@ func normalizeLogging(in *gen.LoggingConfiguration) (*store.Logging, error) {
 		}
 	}
 	return out, nil
+}
+
+func checkLogDestinations(list *gen.LogDestinationList, level gen.LogLevel) error {
+	n := 0
+	if list != nil {
+		n = len(*list)
+	}
+	if n > 1 || (n == 0 && level != gen.LogLevelOFF) {
+		return modeled("InvalidLoggingConfiguration", "Invalid Logging Configuration: 'Must specify exactly one Log Destination'")
+	}
+	if n != 1 {
+		return nil
+	}
+	dest := (*list)[0]
+	arn := ""
+	if dest.CloudWatchLogsLogGroup != nil && dest.CloudWatchLogsLogGroup.LogGroupArn != nil {
+		arn = *dest.CloudWatchLogsLogGroup.LogGroupArn
+	}
+	if !logGroupARNPattern.MatchString(arn) {
+		return modeled("InvalidLoggingConfiguration", "Invalid Logging Configuration: 'Must set valid CloudWatch Log Group ARN'")
+	}
+	return nil
 }
 
 func toGenLogging(in *store.Logging) *gen.LoggingConfiguration {

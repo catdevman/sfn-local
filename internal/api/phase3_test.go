@@ -250,7 +250,7 @@ func TestMockBehaviors(t *testing.T) {
 
 	s.Runner.LambdaEndpoint = ""
 	s.Runner.Mocks = nil
-	bad := createMachine(t, s, "badres", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","End":true}}}`, roleARN)
+	bad := createMachine(t, s, "badres", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"End":true}}}`, roleARN)
 	brun := startExec(t, s, *bad.StateMachineArn, "b", `{}`)
 	bex := waitExec(t, s, *brun.ExecutionArn)
 	if bex.Status != store.ExecFailed || !strings.Contains(bex.Cause, "arn:aws:states:::sqs:sendMessage") || !strings.Contains(bex.Cause, "unsupported resource") {
@@ -270,13 +270,13 @@ func TestMockBehaviors(t *testing.T) {
 			"Slow": {"0": {"Throw": {"Error": "connection timeout", "Cause": "slow"}}, "1": {"Return": {"ok": true}}}
 		}
 	}`)
-	gen := createMachine(t, s, "gen", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","End":true}}}`, roleARN)
+	gen := createMachine(t, s, "gen", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"End":true}}}`, roleARN)
 	grun := startExec(t, s, *gen.StateMachineArn+"#G", "g", `{}`)
 	gex := waitExec(t, s, *grun.ExecutionArn)
 	if gex.Status != store.ExecSucceeded || gex.Output != `{"Payload":{"n":1}}` {
 		t.Fatalf("%s %s %s", gex.Status, gex.Output, gex.Cause)
 	}
-	timed := createMachine(t, s, "timed", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Retry":[{"ErrorEquals":["States.TaskFailed"],"IntervalSeconds":0,"MaxAttempts":2}],"End":true}}}`, roleARN)
+	timed := createMachine(t, s, "timed", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"Retry":[{"ErrorEquals":["States.TaskFailed"],"IntervalSeconds":0,"MaxAttempts":2}],"End":true}}}`, roleARN)
 	s.Runner.Mocks = writeMock(t, `{
 		"StateMachines": {"timed": {"TestCases": {"T": {"Call": "Slow"}}}},
 		"MockedResponses": {"Slow": {"0": {"Throw": {"Error": "connection timeout", "Cause": "slow"}}, "1": {"Return": {"ok": true}}}}
@@ -286,7 +286,7 @@ func TestMockBehaviors(t *testing.T) {
 	if tex.Status != store.ExecFailed || tex.Error != "States.Timeout" || countEvents(tex, "TaskTimedOut") != 1 || countEvents(tex, "TaskStateExited") != 0 {
 		t.Fatalf("%s %s %v", tex.Error, tex.Cause, typesOf(tex))
 	}
-	all := createMachine(t, s, "all", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":0,"MaxAttempts":2}],"End":true}}}`, roleARN)
+	all := createMachine(t, s, "all", `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":0,"MaxAttempts":2}],"End":true}}}`, roleARN)
 	s.Runner.Mocks = writeMock(t, `{
 		"StateMachines": {"all": {"TestCases": {"T": {"Call": "Slow"}}}},
 		"MockedResponses": {"Slow": {"0": {"Throw": {"Error": "connection timeout", "Cause": "slow"}}, "1": {"Return": {"ok": true}}}}

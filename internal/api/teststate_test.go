@@ -86,13 +86,13 @@ func TestTestStateOneState(t *testing.T) {
 func TestTestStateTaskAndLambda(t *testing.T) {
 	s := newService()
 	noTestLeak(t, s)
-	task := `{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","End":true}`
+	task := `{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"End":true}`
 	out := mustTest(t, s, task, `{}`)
 	if statusOf(out) != "FAILED" || str(out.Error) != "States.Runtime" || !strings.Contains(str(out.Cause), "unsupported resource") || !strings.Contains(str(out.Cause), "sqs:sendMessage") {
 		t.Fatalf("%+v", out)
 	}
 	mocked, err := s.TestState(context.Background(), &gen.TestStateInput{
-		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","ResultSelector":{"id.$":"$.MessageId"},"End":true}`),
+		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"ResultSelector":{"id.$":"$.MessageId"},"End":true}`),
 		Input:      sp(`{}`),
 		Mock:       &gen.MockInput{Result: sp(`{"MessageId":"abc"}`)},
 	})
@@ -109,7 +109,7 @@ func TestTestStateTaskAndLambda(t *testing.T) {
 		return nil
 	}
 	retried, err := s.TestState(context.Background(), &gen.TestStateInput{
-		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":1,"MaxAttempts":1}],"End":true}`),
+		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":1,"MaxAttempts":1}],"End":true}`),
 		Input:      sp(`{}`),
 		Mock:       &gen.MockInput{ErrorOutput: &gen.MockErrorOutput{Error: sp("Boom"), Cause: sp("once")}},
 	})
@@ -121,7 +121,7 @@ func TestTestStateTaskAndLambda(t *testing.T) {
 	}
 
 	caught, err := s.TestState(context.Background(), &gen.TestStateInput{
-		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":0,"MaxAttempts":0}],"Catch":[{"ErrorEquals":["CustomError"],"Next":"Later","ResultPath":"$.err"}],"End":true}`),
+		Definition: sp(`{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"Retry":[{"ErrorEquals":["States.ALL"],"IntervalSeconds":0,"MaxAttempts":0}],"Catch":[{"ErrorEquals":["CustomError"],"Next":"Later","ResultPath":"$.err"}],"End":true},"Later":{"Type":"Pass","Result":{"ran":true},"End":true}}}`),
 		Input:      sp(`{"a":1}`),
 		Mock:       &gen.MockInput{ErrorOutput: &gen.MockErrorOutput{Error: sp("CustomError"), Cause: sp("once")}},
 	})
@@ -130,6 +130,9 @@ func TestTestStateTaskAndLambda(t *testing.T) {
 	}
 	if statusOf(caught) != "CAUGHT_ERROR" || str(caught.Error) != "CustomError" || str(caught.Cause) != "once" || str(caught.NextState) != "Later" || str(caught.Output) != `{"a":1,"err":{"Error":"CustomError","Cause":"once"}}` {
 		t.Fatalf("%+v", caught)
+	}
+	if str(caught.Output) == `{"ran":true}` {
+		t.Fatalf("successor ran: %+v", caught)
 	}
 
 	called := 0
@@ -207,7 +210,7 @@ func TestTestStateRefusesUnimplemented(t *testing.T) {
 		t.Fatalf("%v", err)
 	}
 	_, err = s.TestState(context.Background(), &gen.TestStateInput{
-		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","End":true}`),
+		Definition: sp(`{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{},"End":true}`),
 		Mock:       &gen.MockInput{Result: sp(`{}`)},
 		Context:    sp(`{}`),
 	})

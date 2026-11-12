@@ -237,7 +237,7 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 	} else if err := checkExecutionInput(input); err != nil {
 		return store.Execution{}, nil, err
 	}
-	prog, err := asl.Validate(m.Definition)
+	prog, err := asl.ValidateType(m.Definition, m.Type)
 	if err != nil {
 		return store.Execution{}, nil, modeled("InvalidDefinition", err.Error())
 	}

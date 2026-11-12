@@ -8,6 +8,7 @@ import (
 	"io"
 	"mime"
 	"net/http"
+	"regexp"
 	"strings"
 	"sync"
 
@@ -86,8 +87,21 @@ func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	restore := relaxCompatRole(s.Profile, name, in)
+	if level, bad := unknownLogLevel(in); bad {
+		restore()
+		apiErr, ok := gen.NewModeledError("InvalidLoggingConfiguration", "Invalid Logging Configuration: '"+level+"'")
+		if !ok {
+			s.failError(&acc, w, fmt.Errorf("InvalidLoggingConfiguration"))
+			return
+		}
+		s.failError(&acc, w, apiErr)
+		return
+	}
 	if err := gen.ValidateInput(name, in); err != nil {
 		restore()
+		if s.Profile == ProfileSFNLocal {
+			err = rewriteCompatTagLength(err)
+		}
 		s.failError(&acc, w, err)
 		return
 	}
@@ -198,6 +212,62 @@ func validation(message string) gen.APIError {
 		panic("ValidationException missing from generated errors")
 	}
 	return err
+}
+
+// tagLengthPath is tags[N].key or tags[N].value from generated Validate.
+var tagLengthPath = regexp.MustCompile(`^tags\[\d+\]\.(?:key|value)$`)
+
+// unknownLogLevel reports a logging level the generated enum would reject.
+// The HTTP adapter answers that as InvalidLoggingConfiguration before Validate.
+func unknownLogLevel(in any) (string, bool) {
+	var cfg *gen.LoggingConfiguration
+	switch v := in.(type) {
+	case *gen.CreateStateMachineInput:
+		if v != nil {
+			cfg = v.LoggingConfiguration
+		}
+	case *gen.UpdateStateMachineInput:
+		if v != nil {
+			cfg = v.LoggingConfiguration
+		}
+	}
+	if cfg == nil || cfg.Level == nil || cfg.Level.Valid() {
+		return "", false
+	}
+	return string(*cfg.Level), true
+}
+
+// rewriteCompatTagLength keeps the Smithy __type and replaces the tag
+// key/value length sentence with the jar's hardcoded 80-character text.
+func rewriteCompatTagLength(err error) error {
+	var apiErr gen.APIError
+	if !errors.As(err, &apiErr) || apiErr.ErrorName() != "ValidationException" {
+		return err
+	}
+	msg := messageOf(apiErr)
+	const marker = " failed to satisfy constraint: "
+	i := strings.LastIndex(msg, marker)
+	if i < 0 {
+		return err
+	}
+	head, constraint := msg[:i], msg[i+len(marker):]
+	if !strings.HasPrefix(constraint, "Member must have length ") {
+		return err
+	}
+	const at = " at '"
+	j := strings.LastIndex(head, at)
+	if j < 0 || !strings.HasSuffix(head, "'") {
+		return err
+	}
+	path := head[j+len(at) : len(head)-1]
+	if !tagLengthPath.MatchString(path) {
+		return err
+	}
+	rewritten, ok := gen.NewModeledError("ValidationException", head+marker+"Member must have length less than or equal to 80")
+	if !ok {
+		return err
+	}
+	return rewritten
 }
 
 func messageOf(err gen.APIError) string {

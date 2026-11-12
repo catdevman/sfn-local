@@ -1,7 +1,7 @@
 // Package asl validates a JSONPath state machine against the generated field
-// matrix. QueryLanguage and JSONata-only fields fail. Phase 0b message parity
-// (missing transition targets, States.ALL placement, express resource rules)
-// is not this package.
+// matrix. QueryLanguage and JSONata-only fields fail. Create-time messages
+// for transitions, States.ALL, registered connectors, and EXPRESS resources
+// live here. Logging configuration and tag length stay in the API.
 package asl
 
 import (
@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -17,9 +19,22 @@ import (
 )
 
 const (
-	codeSchema     = "SCHEMA_VALIDATION_FAILED"
-	defaultTimeout = int64(99999999)
+	codeSchema        = "SCHEMA_VALIDATION_FAILED"
+	codeMissingTarget = "MISSING_TRANSITION_TARGET"
+	codeMissingEnd    = "MISSING_END_STATE"
+	defaultTimeout    = int64(99999999)
 )
+
+// activityARNPattern is the activity resource shape. It does not require Parameters.
+var activityARNPattern = regexp.MustCompile(`^arn:aws:states:[a-z0-9-]+:[0-9]{12}:activity:.+$`)
+
+// registeredConnectors are the arn:aws:states::: resources the spec names as
+// known to the jar. Suffixes .sync, .sync:2, and .waitForTaskToken use the same base.
+var registeredConnectors = map[string]bool{
+	"arn:aws:states:::lambda:invoke":         true,
+	"arn:aws:states:::sqs:sendMessage":       true,
+	"arn:aws:states:::states:startExecution": true,
+}
 
 // PathKind is how a path field was written.
 type PathKind int
@@ -105,15 +120,26 @@ type Program struct {
 }
 
 // Validate parses a JSONPath definition. The error text is the InvalidDefinition message.
+// EXPRESS resource bans are not applied. Use ValidateType when the machine type is known.
 func Validate(definition string) (*Program, error) {
+	return validateDefinition(definition, false)
+}
+
+// ValidateType is Validate, and for an EXPRESS machine it also rejects activity,
+// .sync, and .waitForTaskToken resources.
+func ValidateType(definition, machineType string) (*Program, error) {
+	return validateDefinition(definition, machineType == "EXPRESS")
+}
+
+func validateDefinition(definition string, express bool) (*Program, error) {
 	fields, err := decodeObject([]byte(definition))
 	if err != nil {
 		return nil, defErr(codeSchema, err.Error(), "/")
 	}
-	return validateMachine(fields, "/", true)
+	return validateMachine(fields, "/", true, express)
 }
 
-func validateMachine(fields map[string]json.RawMessage, ptr string, top bool) (*Program, error) {
+func validateMachine(fields map[string]json.RawMessage, ptr string, top, express bool) (*Program, error) {
 	allowed := map[string]bool{"Comment": true, "StartAt": true, "States": true}
 	if top {
 		allowed["TimeoutSeconds"] = true
@@ -125,6 +151,9 @@ func validateMachine(fields map[string]json.RawMessage, ptr string, top bool) (*
 	startRaw, ok := fields["StartAt"]
 	if !ok {
 		return nil, defErr(codeSchema, "Missing required field 'StartAt'", ptr)
+	}
+	if isNull(startRaw) {
+		return nil, defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "StartAt"))
 	}
 	start, err := asString(startRaw)
 	if err != nil || start == "" {
@@ -164,16 +193,19 @@ func validateMachine(fields map[string]json.RawMessage, ptr string, top bool) (*
 		if err != nil {
 			return nil, defErr(codeSchema, "Field must be an object", stPtr)
 		}
-		st, err := validateState(name, obj, stPtr)
+		st, err := validateState(name, obj, stPtr, express)
 		if err != nil {
 			return nil, err
 		}
 		prog.States[name] = st
 	}
+	if err := checkGraph(prog, ptr); err != nil {
+		return nil, err
+	}
 	return prog, nil
 }
 
-func validateState(name string, fields map[string]json.RawMessage, ptr string) (*State, error) {
+func validateState(name string, fields map[string]json.RawMessage, ptr string, express bool) (*State, error) {
 	typeRaw, ok := fields["Type"]
 	if !ok {
 		return nil, defErr(codeSchema, "Missing required field 'Type'", ptr)
@@ -204,6 +236,9 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string) (
 	}
 	st := &State{Name: name, Type: typ, InputPath: Path{Kind: PathDefault}, OutputPath: Path{Kind: PathDefault}, ResultPath: Path{Kind: PathDefault}}
 	if raw, ok := fields["Next"]; ok {
+		if isNull(raw) {
+			return nil, defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "Next"))
+		}
 		next, err := asString(raw)
 		if err != nil || next == "" {
 			return nil, defErr(codeSchema, "Field 'Next' must be a non-empty string", join(ptr, "Next"))
@@ -220,7 +255,7 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string) (
 		st.HasResult = true
 		st.Result = append(json.RawMessage(nil), raw...)
 	}
-	if raw, ok := fields["Parameters"]; ok {
+	if raw, ok := fields["Parameters"]; ok && !isNull(raw) {
 		st.HasParameters = true
 		st.Parameters = append(json.RawMessage(nil), raw...)
 		if err := checkPayload(raw, join(ptr, "Parameters")); err != nil {
@@ -269,10 +304,13 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string) (
 		st.HasCausePath = true
 		st.CausePath = text
 	}
-	if err := checkTypeShape(typ, fields, ptr); err != nil {
+	if err := checkTypeShape(typ, fields, ptr, express); err != nil {
 		return nil, err
 	}
 	if err := captureRuntime(st, fields, ptr); err != nil {
+		return nil, err
+	}
+	if err := checkTaskResource(st, express, ptr); err != nil {
 		return nil, err
 	}
 	return st, nil
@@ -283,6 +321,9 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		st.Choices = append(json.RawMessage(nil), raw...)
 	}
 	if raw, ok := fields["Default"]; ok {
+		if isNull(raw) {
+			return defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "Default"))
+		}
 		text, err := asString(raw)
 		if err != nil {
 			return defErr(codeSchema, "Field 'Default' must be a string", join(ptr, "Default"))
@@ -480,7 +521,7 @@ func checkTransition(typ string, fields map[string]json.RawMessage, ptr string) 
 	return nil
 }
 
-func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string) error {
+func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string, express bool) error {
 	switch typ {
 	case "Task":
 		raw, ok := fields["Resource"]
@@ -519,9 +560,13 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string) e
 		if err := checkChoices(raw, join(ptr, "Choices")); err != nil {
 			return err
 		}
-		if raw, ok := fields["Default"]; ok {
-			if _, err := asString(raw); err != nil {
+		if raw, ok := fields["Default"]; ok && !isNull(raw) {
+			text, err := asString(raw)
+			if err != nil {
 				return defErr(codeSchema, "Field 'Default' must be a string", join(ptr, "Default"))
+			}
+			if text == "" {
+				return defErr(codeSchema, "Field 'Default' must be a non-empty string", join(ptr, "Default"))
 			}
 		}
 	case "Fail":
@@ -536,7 +581,7 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string) e
 		if !ok {
 			return defErr(codeSchema, "Missing required field 'Branches'", ptr)
 		}
-		if err := checkBranches(raw, join(ptr, "Branches")); err != nil {
+		if err := checkBranches(raw, join(ptr, "Branches"), express); err != nil {
 			return err
 		}
 	case "Map":
@@ -549,12 +594,12 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string) e
 			return defErr(codeSchema, "Exactly one of Iterator or ItemProcessor is required", ptr)
 		}
 		if it {
-			if err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), false); err != nil {
+			if err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), express); err != nil {
 				return err
 			}
 		}
 		if proc {
-			if err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor")); err != nil {
+			if err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express); err != nil {
 				return err
 			}
 		}
@@ -577,36 +622,32 @@ func checkTypeShape(typ string, fields map[string]json.RawMessage, ptr string) e
 	return nil
 }
 
-func checkBranches(raw json.RawMessage, ptr string) error {
+func checkBranches(raw json.RawMessage, ptr string, express bool) error {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
 		return defErr(codeSchema, "Field 'Branches' must be a non-empty array", ptr)
 	}
 	for i, item := range arr {
-		if err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), false); err != nil {
+		if err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), express); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkSubmachine(raw json.RawMessage, ptr string, processor bool) error {
+func checkSubmachine(raw json.RawMessage, ptr string, express bool) error {
 	fields, err := decodeObject(raw)
 	if err != nil {
 		return defErr(codeSchema, "Field must be an object", ptr)
 	}
-	if _, err := validateMachine(fields, ptr, false); err != nil {
-		if processor {
-			return err
-		}
-		// validateMachine rejects ProcessorConfig and Retry. Iterators and
-		// branches only allow Comment, StartAt, and States.
+	// Branches and iterators only allow Comment, StartAt, and States.
+	if _, err := validateMachine(fields, ptr, false, express); err != nil {
 		return err
 	}
 	return nil
 }
 
-func checkProcessor(raw json.RawMessage, ptr string) error {
+func checkProcessor(raw json.RawMessage, ptr string, express bool) error {
 	fields, err := decodeObject(raw)
 	if err != nil {
 		return defErr(codeSchema, "Field must be an object", ptr)
@@ -639,7 +680,7 @@ func checkProcessor(raw json.RawMessage, ptr string) error {
 			base[key] = raw
 		}
 	}
-	if _, err := validateMachine(base, ptr, false); err != nil {
+	if _, err := validateMachine(base, ptr, false, express); err != nil {
 		return err
 	}
 	if raw, ok := fields["Retry"]; ok {
@@ -717,6 +758,13 @@ func parseRetry(raw json.RawMessage, ptr string) ([]Retrier, error) {
 		}
 		out = append(out, rt)
 	}
+	groups := make([][]string, len(out))
+	for i, rt := range out {
+		groups[i] = rt.ErrorEquals
+	}
+	if err := statesAllPlacement(groups, ptr); err != nil {
+		return nil, err
+	}
 	return out, nil
 }
 
@@ -748,12 +796,19 @@ func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
 		if err != nil {
 			return nil, err
 		}
-		if _, ok := obj["Next"]; !ok {
+		nextRaw, ok := obj["Next"]
+		if !ok {
 			return nil, defErr(codeSchema, "Missing required field 'Next'", ip)
 		}
-		next, err := asString(obj["Next"])
+		if isNull(nextRaw) {
+			return nil, defErr(codeMissingTarget, "Missing transition pointer", join(ip, "Next"))
+		}
+		next, err := asString(nextRaw)
 		if err != nil {
 			return nil, defErr(codeSchema, "Field 'Next' must be a string", join(ip, "Next"))
+		}
+		if next == "" {
+			return nil, defErr(codeSchema, "Field 'Next' must be a non-empty string", join(ip, "Next"))
 		}
 		c := Catcher{ErrorEquals: names, Next: next, ResultPath: Path{Kind: PathDefault}}
 		if raw, ok := obj["ResultPath"]; ok {
@@ -767,6 +822,13 @@ func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
 			c.HasAssign = true
 		}
 		out = append(out, c)
+	}
+	groups := make([][]string, len(out))
+	for i, c := range out {
+		groups[i] = c.ErrorEquals
+	}
+	if err := statesAllPlacement(groups, ptr); err != nil {
+		return nil, err
 	}
 	return out, nil
 }
@@ -832,11 +894,19 @@ func checkRule(raw json.RawMessage, ptr string, top bool) error {
 		}
 	}
 	if top {
-		if _, ok := obj["Next"]; !ok {
+		raw, ok := obj["Next"]
+		if !ok {
 			return defErr(codeSchema, "Missing required field 'Next'", ptr)
 		}
-		if _, err := asString(obj["Next"]); err != nil {
+		if isNull(raw) {
+			return defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "Next"))
+		}
+		text, err := asString(raw)
+		if err != nil {
 			return defErr(codeSchema, "Field 'Next' must be a string", join(ptr, "Next"))
+		}
+		if text == "" {
+			return defErr(codeSchema, "Field 'Next' must be a non-empty string", join(ptr, "Next"))
 		}
 	}
 	if raw, ok := obj["And"]; ok {
@@ -963,6 +1033,174 @@ func transitionNote(typ string) specgen.Presence {
 		}
 	}
 	return specgen.PresenceAbsent
+}
+
+func isNull(raw json.RawMessage) bool {
+	return bytes.Equal(bytes.TrimSpace(raw), []byte("null"))
+}
+
+func checkTaskResource(st *State, express bool, ptr string) error {
+	if st == nil || st.Type != "Task" || st.Resource == "" {
+		return nil
+	}
+	if express {
+		switch {
+		case activityARNPattern.MatchString(st.Resource):
+			return defErr(codeSchema, "Express state machine does not support Activity ARN", join(ptr, "Resource"))
+		case strings.HasSuffix(st.Resource, ".waitForTaskToken"):
+			return defErr(codeSchema, "Express state machine does not support '.waitForTaskToken' service integration ", join(ptr, "Resource"))
+		case strings.HasSuffix(st.Resource, ".sync") || strings.HasSuffix(st.Resource, ".sync:2"):
+			return defErr(codeSchema, "Express state machine does not support '.sync' service integration", join(ptr, "Resource"))
+		}
+	}
+	if registeredConnectors[connectorBase(st.Resource)] && !st.HasParameters {
+		return defErr(codeSchema, "Parameters field is required for resource ARN: "+st.Resource, join(ptr, "Resource"))
+	}
+	return nil
+}
+
+func connectorBase(resource string) string {
+	switch {
+	case strings.HasSuffix(resource, ".waitForTaskToken"):
+		return strings.TrimSuffix(resource, ".waitForTaskToken")
+	case strings.HasSuffix(resource, ".sync:2"):
+		return strings.TrimSuffix(resource, ".sync:2")
+	case strings.HasSuffix(resource, ".sync"):
+		return strings.TrimSuffix(resource, ".sync")
+	default:
+		return resource
+	}
+}
+
+type transitionEdge struct {
+	name string
+	ptr  string
+}
+
+func checkGraph(prog *Program, ptr string) error {
+	if _, ok := prog.States[prog.StartAt]; !ok {
+		return defErr(codeMissingTarget, "Missing 'Next' target: "+prog.StartAt, join(ptr, "StartAt"))
+	}
+	names := make([]string, 0, len(prog.States))
+	for name := range prog.States {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	edgesByState := make(map[string][]transitionEdge, len(names))
+	for _, name := range names {
+		st := prog.States[name]
+		stPtr := join(ptr, "States") + "/" + escape(name)
+		edges, err := stateEdges(st, stPtr)
+		if err != nil {
+			return err
+		}
+		edgesByState[name] = edges
+		for _, edge := range edges {
+			if _, ok := prog.States[edge.name]; !ok {
+				return defErr(codeMissingTarget, "Missing 'Next' target: "+edge.name, edge.ptr)
+			}
+		}
+	}
+	seen := map[string]bool{prog.StartAt: true}
+	queue := []string{prog.StartAt}
+	for len(queue) > 0 {
+		cur := queue[0]
+		queue = queue[1:]
+		for _, edge := range edgesByState[cur] {
+			if seen[edge.name] {
+				continue
+			}
+			seen[edge.name] = true
+			queue = append(queue, edge.name)
+		}
+	}
+	terminal := false
+	for _, st := range prog.States {
+		if st.Type == "Succeed" || st.Type == "Fail" || st.End {
+			terminal = true
+			break
+		}
+	}
+	if !terminal {
+		return defErr(codeMissingEnd, "Workflow has no terminal state", ptr)
+	}
+	for _, name := range names {
+		if seen[name] {
+			continue
+		}
+		return defErr(codeMissingTarget, `State "`+name+`" is not reachable.`, join(ptr, "States")+"/"+escape(name))
+	}
+	return nil
+}
+
+func stateEdges(st *State, stPtr string) ([]transitionEdge, error) {
+	var out []transitionEdge
+	if st.Next != "" {
+		out = append(out, transitionEdge{name: st.Next, ptr: join(stPtr, "Next")})
+	}
+	if st.Type == "Choice" {
+		nexts, err := choiceNexts(st.Choices)
+		if err != nil {
+			return nil, err
+		}
+		for i, next := range nexts {
+			out = append(out, transitionEdge{name: next, ptr: fmt.Sprintf("%s/Choices[%d]/Next", stPtr, i)})
+		}
+		if st.HasDefault {
+			out = append(out, transitionEdge{name: st.Default, ptr: join(stPtr, "Default")})
+		}
+	}
+	for i, catcher := range st.Catch {
+		out = append(out, transitionEdge{name: catcher.Next, ptr: fmt.Sprintf("%s/Catch[%d]/Next", stPtr, i)})
+	}
+	return out, nil
+}
+
+func choiceNexts(raw json.RawMessage) ([]string, error) {
+	arr, err := decodeArray(raw)
+	if err != nil {
+		return nil, defErr(codeSchema, "Field 'Choices' must be a non-empty array", "/Choices")
+	}
+	out := make([]string, 0, len(arr))
+	for i, item := range arr {
+		obj, err := decodeObject(item)
+		if err != nil {
+			return nil, defErr(codeSchema, "Field must be an object", fmt.Sprintf("/Choices[%d]", i))
+		}
+		rawNext, ok := obj["Next"]
+		if !ok {
+			out = append(out, "")
+			continue
+		}
+		next, err := asString(rawNext)
+		if err != nil {
+			return nil, defErr(codeSchema, "Field 'Next' must be a string", fmt.Sprintf("/Choices[%d]/Next", i))
+		}
+		out = append(out, next)
+	}
+	return out, nil
+}
+
+func statesAllPlacement(groups [][]string, ptr string) error {
+	for i, names := range groups {
+		if !hasStatesAll(names) {
+			continue
+		}
+		if len(names) == 1 && i == len(groups)-1 {
+			continue
+		}
+		return defErr(codeSchema, "States.ALL must appear alone and at end of list", fmt.Sprintf("%s[%d]", ptr, i))
+	}
+	return nil
+}
+
+func hasStatesAll(names []string) bool {
+	for _, name := range names {
+		if name == "States.ALL" {
+			return true
+		}
+	}
+	return false
 }
 
 func defErr(code, message, ptr string) error {
