@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 5, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 5, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map runs, including Map Run redrive. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -292,8 +292,9 @@ These stay deferred for the life of this plan.
 - [x] `DescribeMapRun`, `ListMapRuns`, `UpdateMapRun`, `ListExecutions` by `mapRunArn`, and child `DescribeExecution` and `DescribeStateMachineForExecution`.
 - [x] `ItemReader` from S3: JSON with `ItemsPointer`, JSONL, CSV, `ListObjectsV2` with `LOAD_AND_FLATTEN`, S3 inventory manifests, gzip, and `MaxItems`.
 - [x] `ResultWriter` export to S3: `manifest.json` and the `SUCCEEDED`, `FAILED`, and `PENDING` files.
+- [x] Map Run redrive through the parent's `RedriveExecution`: succeeded children kept, STANDARD children redriven in place, EXPRESS children and unstarted items started again, `MapRunRedriven`, and the run's redrive counts.
 - [ ] Parquet, Athena manifests, and zstd input.
-- [ ] Check the parent event sequence, the threshold cause, and the manifest layout against AWS.
+- [ ] Check the parent event sequence, the threshold cause, the manifest layout, and the redrive counts against AWS.
 
 ## Standing CI
 
@@ -494,7 +495,6 @@ docs/spec.md's security section is the requirement. Generation adds these:
 - Persistence, clustering, and durability across process exit.
 - SigV4 verification.
 - A reflective AWS SDK. Phase S tables are written by hand.
-- Map Run redrive.
 - CloudWatch log delivery, X-Ray, and `traceHeader`.
 - LocalStack's CLI, gateway, and configuration file.
 - An interpreter generated from the prose of spec.html.
