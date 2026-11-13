@@ -19,8 +19,8 @@ import (
 
 func TestDeferredOperationsAreModeled(t *testing.T) {
 	srv := prodServer(t, ProfileSmithy)
-	body := call(t, srv, "AWSStepFunctions.RedriveExecution", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
-	if body.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(body.Message, "RedriveExecution is not implemented") {
+	body := call(t, srv, "AWSStepFunctions.ListMapRuns", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
+	if body.Type != "com.amazonaws.sfn#ValidationException" || body.Message != "Distributed Map is not supported by this local server." {
 		t.Fatalf("%+v", body)
 	}
 	if body.Status != 400 || body.Header.Get("Content-Type") != contentTypeJSON10 {
@@ -272,7 +272,7 @@ func TestDeferredDoesNotCallHandler(t *testing.T) {
 	stub := &listStub{}
 	srv := prodServer(t, ProfileSmithy)
 	srv.Handlers = stub
-	call(t, srv, "AWSStepFunctions.RedriveExecution", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
+	call(t, srv, "AWSStepFunctions.ListMapRuns", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
 	if stub.called {
 		t.Fatal("deferred operation called the handler")
 	}
@@ -295,11 +295,6 @@ func (s *listStub) ListStateMachines(_ context.Context, in *gen.ListStateMachine
 		return nil, s.err
 	}
 	return s.out, nil
-}
-
-func (s *listStub) RedriveExecution(context.Context, *gen.RedriveExecutionInput) (*gen.RedriveExecutionOutput, error) {
-	s.called = true
-	return nil, errors.New("called")
 }
 
 func prodServer(t *testing.T, profile Profile) *Server {

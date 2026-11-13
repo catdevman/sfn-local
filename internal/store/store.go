@@ -110,6 +110,10 @@ type HistoryEvent struct {
 	// Worker is activityStartedEventDetails.workerName.
 	Worker    string
 	HasWorker bool
+	// RedriveCount is executionRedrivenEventDetails.redriveCount.
+	// HasRedrive is set even when the count is 0 so the history API emits it.
+	RedriveCount int32
+	HasRedrive   bool
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken
@@ -144,6 +148,11 @@ type Execution struct {
 	// RedriveCount is how many times RedriveExecution has resumed this run.
 	// JSONPath context objects omit it. JSONata context includes it, including 0.
 	RedriveCount int32
+	// RedriveDate is the time of the latest accepted redrive. Nil means never.
+	RedriveDate *time.Time
+	// RedriveToken is the client token of the latest accepted redrive.
+	// An empty token matches only while that redrive is still RUNNING.
+	RedriveToken string
 }
 
 // ExistsError is a duplicate name whose definition differs.
@@ -268,6 +277,10 @@ func (e Execution) snapshot() Execution {
 	if e.Stopped != nil {
 		s := *e.Stopped
 		e.Stopped = &s
+	}
+	if e.RedriveDate != nil {
+		d := *e.RedriveDate
+		e.RedriveDate = &d
 	}
 	return e
 }

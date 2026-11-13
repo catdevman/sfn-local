@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, and Phase 6 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 6, and Phase R checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -36,7 +36,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [4](#x-phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
 | [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
 | [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
-| [R](#phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
+| [R](#x-phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
 | [I](#phase-i--service-integrations) | One integration per change. Distributed Map stays deferred. | unbounded |
 
 Cuts: G is the protocol-compatible process. G + 0 + 1 is the smallest useful runner. V on top of 0 is the definition check. Through 4 is the jar-shaped JSONPath runner. 6 on top of that is the JSONata runner. Phase 5 after 3 is activity workers.
@@ -248,13 +248,13 @@ Depends on phase 4 for the context object, and on phase 4's Map for the scope fi
 - [x] JSONPath variable-read fixture from docs/spec.md, output `{"label":"id=A"}`. No live AWS or LocalStack run was available. The jar rejects `Assign`, so this fixture is not compared to 2.0.0. A later live run wins if it disagrees.
 - [x] `catalog.toml` marks the JSONata fields `implemented`.
 
-## Phase R — redrive
+## [x] Phase R — redrive
 
 Depends on phase 1 history, and on phase 6 for the JSONata context count.
 
-- [ ] `RedriveExecution` resumes a failed Standard execution from the history this server stored.
-- [ ] `RedriveCount` on the JSONata context is the real count. The JSONPath context still omits it.
-- [ ] A redrive of an execution that cannot be redriven returns the modeled `ExecutionNotRedrivable`.
+- [x] `RedriveExecution` resumes a failed Standard execution from the history this server stored. The resume point is the outermost state that was entered and not exited. States that already exited are not run again.
+- [x] `RedriveCount` on the JSONata context is the real count. The JSONPath context still omits it.
+- [x] A redrive of an execution that cannot be redriven returns the modeled `ExecutionNotRedrivable`.
 
 ## Phase I — service integrations
 

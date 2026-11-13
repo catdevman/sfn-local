@@ -60,7 +60,7 @@ Drop-in replacement for clients that already point `aws stepfunctions --endpoint
 
 - Persistence, clustering, or durability across process restart.
 - SigV4. Credentials are not required to call the local API.
-- Inventing jar behavior for `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, aliases, and versions. The jar returns these as absent. `--compat=sfn-local` still returns `UnsupportedOperation` for that set, except `TestState`. The default profile implements validate, versions, and aliases. `RedriveExecution` stays deferred. Do not invent jar fixtures for them.
+- Inventing jar behavior for `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, aliases, and versions. The jar returns these as absent. `--compat=sfn-local` still returns `UnsupportedOperation` for that set, except `TestState`. The default profile implements validate, versions, aliases, and `RedriveExecution`. Do not invent jar fixtures for them.
 - Distributed Map (`ProcessorConfig.Mode` other than `INLINE`).
 - The reflective `AwsSdkConnector` path and `service-list.json`.
 - Optimized integrations (SQS, SNS, DynamoDB, ECS, Batch, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, EventBridge, EMR on EKS, nested Step Functions, `.sync`, `.sync:2`) before the phase that names them. `.waitForTaskToken` is Phase 5, not Phase 3.
@@ -243,7 +243,9 @@ Runtime failures inside an execution are not HTTP errors. They end the execution
 
 All 23. Names are the simple handler names: `CreateActivity`, `CreateStateMachine`, `DeleteActivity`, `DeleteStateMachine`, `DescribeActivity`, `DescribeExecution`, `DescribeStateMachine`, `DescribeStateMachineForExecution`, `GetActivityTask`, `GetExecutionHistory`, `ListActivities`, `ListExecutions`, `ListStateMachines`, `ListTagsForResource`, `SendTaskFailure`, `SendTaskHeartbeat`, `SendTaskSuccess`, `StartExecution`, `StartSyncExecution`, `StopExecution`, `TagResource`, `UntagResource`, `UpdateStateMachine`.
 
-Not registered on the jar, and returned as `UnsupportedOperation` by `--compat=sfn-local`: `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, alias and version operations. `TestState` is implemented in both profiles. The default profile implements validate, versions, and aliases. `RedriveExecution` stays deferred.
+Not registered on the jar, and returned as `UnsupportedOperation` by `--compat=sfn-local`: `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, alias and version operations. `TestState` is implemented in both profiles. The default profile implements validate, versions, aliases, and `RedriveExecution`.
+
+`RedriveExecution` resumes a failed, aborted, or timed-out STANDARD execution from the history this server stored. It appends `ExecutionRedriven`, increments `RedriveCount`, and continues at the outermost state that was entered and not exited, using that state's entered input. States that already exited are not run again. An inline Map or Parallel that is still open runs again as a whole. A retry while that redrive is `RUNNING` returns the same `redriveDate` when the client token matches, and `ExecutionNotRedrivable` when it does not. EXPRESS, `SUCCEEDED`, and an original `RUNNING` execution return `ExecutionNotRedrivable`. The JSONPath context still omits `RedriveCount`. The JSONata context reports the stored count. Variable values and mock attempt counters from the failed run stay in memory for the redrive. Do not invent jar fixtures for this operation.
 
 #### Names, ARNs, pagination
 
@@ -765,7 +767,7 @@ On state entry:
 
 `$states.errorOutput` is the error document. It is legal only in a Catch `Output` or Catch `Assign`.
 
-`$states.context` is the context object. For JSONata, include `Execution.RedriveCount` as `0`. Do not include `RedriveCount` on the JSONPath `$$` object (jar parity). `RedriveTime` stays omitted. This split is intentional.
+`$states.context` is the context object. For JSONata, include `Execution.RedriveCount` from the execution. It is `0` until `RedriveExecution` resumes the run, then the number of accepted redrives. Do not include `RedriveCount` on the JSONPath `$$` object (jar parity). `RedriveTime` stays omitted. This split is intentional.
 
 #### Assign and Output are one snapshot
 
@@ -1399,7 +1401,7 @@ Closed, so they are not questions for the implementer: Map `Items` as a JSON obj
 18. **`$eval` is not installed.** `$parse` is the JSON parser.
 19. **Child scopes for inline Map and Parallel; Catch on the Map or Parallel state writes to the parent scope; inner Assign cannot reuse an outer name.** Distributed Map is rejected rather than half-implemented.
 20. **Omitted JSONata `Output` follows the table in this document**, with Succeed and Catch called out as needing one live confirmation.
-21. **`RedriveCount` is 0 on the JSONata context and absent on the JSONPath context.**
+21. **`RedriveCount` on the JSONata context is the stored count, `0` until a redrive, and it stays absent on the JSONPath context.**
 22. **State names are unique per `States` object, not globally.** The jar's flattened map is not copied.
 23. **`States.ArrayUnique` keeps first-seen order.** The jar's hash-set iteration order is not a language-neutral contract. Jar diffs do not compare that order. JSON equality, not the collection's identity equality, decides duplicates.
 24. **`States.StringSplit` is the jar's character-set split**, and empty tokens are dropped. AWS literal-delimiter cases are excluded from the JSONPath diff. `$random` is a unit interval with an optional seed. It is not `States.MathRandom`, even though the AWS page uses the word "equivalent."

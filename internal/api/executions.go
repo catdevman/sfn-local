@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"sort"
@@ -207,6 +208,13 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 		if row.AliasARN != "" {
 			item.StateMachineAliasArn = sp(row.AliasARN)
 		}
+		if row.RedriveCount > 0 {
+			n := row.RedriveCount
+			item.RedriveCount = &n
+		}
+		if row.RedriveDate != nil {
+			item.RedriveDate = ts(*row.RedriveDate)
+		}
 		list = append(list, item)
 	}
 	return &gen.ListExecutionsOutput{Executions: &list, NextToken: next}, nil
@@ -245,6 +253,80 @@ func (s *Service) StopExecution(_ context.Context, in *gen.StopExecutionInput) (
 		return &gen.StopExecutionOutput{StopDate: ts(when)}, nil
 	}
 	return &gen.StopExecutionOutput{StopDate: ts(*done.Stopped)}, nil
+}
+
+func (s *Service) RedriveExecution(ctx context.Context, in *gen.RedriveExecutionInput) (*gen.RedriveExecutionOutput, error) {
+	arn := valueOf(in.ExecutionArn)
+	ex, err := s.redriveTarget(arn)
+	if err != nil {
+		return nil, err
+	}
+	if ex.Status != store.ExecRunning {
+		select {
+		case <-s.Store.Finished(arn):
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		}
+		ex, err = s.redriveTarget(arn)
+		if err != nil {
+			return nil, err
+		}
+	}
+	if ex.Status != store.ExecRunning {
+		m, ok := s.Store.Machine(ex.StateMachineARN)
+		if !ok || m.Status == store.StatusDeleting {
+			return nil, notRedrivable(arn, "State machine is in DELETING status")
+		}
+	}
+	prog, err := asl.Validate(ex.Definition)
+	if err != nil {
+		return nil, notRedrivable(arn, "Execution has no state to redrive")
+	}
+	token := ""
+	if in != nil && in.ClientToken != nil {
+		token = *in.ClientToken
+	}
+	when := s.now()
+	next, handle, err := s.Store.BeginRedrive(arn, when, token, executionDeadline(when, prog.TimeoutSeconds, ex.Express))
+	if err != nil {
+		var refused store.RedriveRefusal
+		if errors.As(err, &refused) {
+			return nil, notRedrivable(arn, refused.Reason)
+		}
+		if errors.Is(err, store.ErrNotRunning) {
+			return nil, modeled("ExecutionDoesNotExist", "Execution Does Not Exist: '"+arn+"'")
+		}
+		return nil, err
+	}
+	if next.RedriveDate == nil {
+		return nil, notRedrivable(arn, "Execution is not redrivable")
+	}
+	if handle != nil && s.Runner != nil {
+		s.Runner.Start(handle, next.ARN)
+	}
+	return &gen.RedriveExecutionOutput{RedriveDate: ts(*next.RedriveDate)}, nil
+}
+
+func notRedrivable(arn, reason string) error {
+	return modeled("ExecutionNotRedrivable", "Execution Not Redrivable: '"+arn+"' "+reason)
+}
+
+// redriveTarget accepts a standard or express execution ARN. Express rows are
+// looked up so RedriveExecution can return ExecutionNotRedrivable. Describe
+// and Stop still reject that ARN shape.
+func (s *Service) redriveTarget(arn string) (store.Execution, error) {
+	switch ExecutionARNKind(arn) {
+	case "placeholder":
+		return store.Execution{}, modeled("InvalidArn", "Invalid Arn: '"+expressPlaceholderMessage+"'")
+	case "standard", "express":
+		ex, ok := s.Store.Execution(arn)
+		if !ok {
+			return store.Execution{}, modeled("ExecutionDoesNotExist", "Execution Does Not Exist: '"+arn+"'")
+		}
+		return ex, nil
+	default:
+		return store.Execution{}, modeled("InvalidArn", "Invalid Arn: '"+arn+"'")
+	}
 }
 
 func (s *Service) beginExecution(machineARN, name string, nameSet bool, input string, inputSet, sync bool) (store.Execution, *store.RunHandle, error) {
@@ -425,6 +507,13 @@ func describeExecution(ex store.Execution) *gen.DescribeExecutionOutput {
 	if ex.AliasARN != "" {
 		out.StateMachineAliasArn = sp(ex.AliasARN)
 	}
+	if ex.RedriveCount > 0 {
+		n := ex.RedriveCount
+		out.RedriveCount = &n
+	}
+	if ex.RedriveDate != nil {
+		out.RedriveDate = ts(*ex.RedriveDate)
+	}
 	return out
 }
 
@@ -518,6 +607,13 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 			d.Cause = sp(ev.Cause)
 		}
 		out.ExecutionTimedOutEventDetails = d
+	case "ExecutionRedriven":
+		d := &gen.ExecutionRedrivenEventDetails{}
+		if ev.HasRedrive {
+			n := ev.RedriveCount
+			d.RedriveCount = &n
+		}
+		out.ExecutionRedrivenEventDetails = d
 	default:
 		if strings.HasSuffix(ev.Type, "StateEntered") {
 			d := &gen.StateEnteredEventDetails{Name: sp(ev.Name)}

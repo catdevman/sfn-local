@@ -67,13 +67,16 @@ func (r *Runner) Start(handle *store.RunHandle, arn string) {
 }
 
 // Run drives one execution until it reaches a terminal status.
+// A redrive starts at the outermost state that was entered and not exited.
+// Mock attempt counters and the variable root stay until the run succeeds,
+// so a later redrive continues both.
 func (r *Runner) Run(ctx context.Context, arn string) {
 	ctx = withStop(ctx)
-	defer r.clearAttempts(arn)
 	defer func() {
 		ex, ok := r.Store.Execution(arn)
 		if !ok || ex.Status == store.ExecSucceeded {
 			r.dropScope(arn)
+			r.clearAttempts(arn)
 		}
 	}()
 	ex, ok := r.Store.Execution(arn)
@@ -87,6 +90,15 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 	}
 	input := ex.Input
 	name := prog.StartAt
+	if ex.RedriveCount > 0 {
+		state, resumed, open := store.OpenState(ex.History)
+		if !open {
+			r.fail(arn, "States.Runtime", "the execution has no state to redrive")
+			return
+		}
+		name = state
+		input = resumed
+	}
 	for {
 		if r.halt(ctx, arn) {
 			return

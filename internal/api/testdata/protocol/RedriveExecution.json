@@ -1,0 +1,19 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.RedriveExecution",
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:rebuild-check:run1",
+      "clientToken": "again"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "redriveDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ExecutionNotRedrivable"
+  }
+}

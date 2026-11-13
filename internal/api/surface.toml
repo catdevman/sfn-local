@@ -140,7 +140,7 @@ message = "PublishStateMachineVersion is not implemented by this local server."
 
 [[operation]]
 name = "RedriveExecution"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "RedriveExecution is not implemented by this local server."
 

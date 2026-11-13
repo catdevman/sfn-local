@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"sync"
 	"time"
 )
 
@@ -39,15 +40,20 @@ func (s *Store) PutExecution(ex Execution) (Execution, *RunHandle, bool) {
 		return cur.snapshot(), nil, true
 	}
 	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	var once sync.Once
 	rec := &execRec{
 		Execution: ex.snapshot(),
 		cancel:    cancel,
-		done:      make(chan struct{}),
+		done:      done,
+		once:      once,
 	}
 	rec.History = copyHistory(ex.History)
 	s.execs[ex.ARN] = rec
-	handle := &RunHandle{Ctx: ctx, Done: rec.done, finish: func() {
-		rec.once.Do(func() { close(rec.done) })
+	// Capture the channel locally. BeginRedrive replaces rec.done, and a late
+	// Finish from this worker must not close the redrive's channel.
+	handle := &RunHandle{Ctx: ctx, Done: done, finish: func() {
+		once.Do(func() { close(done) })
 	}}
 	return rec.snapshot(), handle, false
 }
