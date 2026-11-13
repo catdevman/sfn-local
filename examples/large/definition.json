@@ -1,0 +1,413 @@
+{
+  "Comment": "Large. A fulfillment decision. Each choice writes a piece of $.work, and the last Pass publishes a flat result.",
+  "StartAt": "OpenWork",
+  "States": {
+    "OpenWork": {
+      "Type": "Pass",
+      "Parameters": {
+        "requestId.$": "$.requestId",
+        "channel.$": "$.channel",
+        "customerId.$": "$.customer.id",
+        "tier.$": "$.customer.tier",
+        "country.$": "$.customer.country",
+        "coupon.$": "$.cart.coupon",
+        "method.$": "$.ship.method",
+        "gift.$": "$.flags.gift",
+        "hold.$": "$.flags.hold"
+      },
+      "ResultPath": "$.work",
+      "Next": "CountItems"
+    },
+    "CountItems": {
+      "Type": "Pass",
+      "Parameters": {
+        "n.$": "States.ArrayLength($.cart.items)",
+        "firstSku.$": "States.ArrayGetItem($.cart.items, 0)"
+      },
+      "ResultPath": "$.work.cart",
+      "Next": "HasItems"
+    },
+    "HasItems": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.cart.n",
+          "NumericEquals": 0,
+          "Next": "EmptyCart"
+        }
+      ],
+      "Default": "ChooseCoupon"
+    },
+    "EmptyCart": {
+      "Type": "Pass",
+      "Parameters": {
+        "requestId.$": "$.work.requestId",
+        "status": "rejected",
+        "reason": "cart is empty"
+      },
+      "Next": "RejectEmpty"
+    },
+    "RejectEmpty": {
+      "Type": "Fail",
+      "Error": "EmptyCart",
+      "Cause": "cart is empty"
+    },
+    "ChooseCoupon": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.coupon",
+          "StringEquals": "SAVE10",
+          "Next": "CouponSave"
+        },
+        {
+          "Variable": "$.work.coupon",
+          "StringEquals": "FREESHIP",
+          "Next": "CouponShip"
+        }
+      ],
+      "Default": "CouponNone"
+    },
+    "CouponSave": {
+      "Type": "Pass",
+      "Parameters": {
+        "code": "SAVE10",
+        "cents": 1000
+      },
+      "ResultPath": "$.work.discount",
+      "Next": "ChooseTier"
+    },
+    "CouponShip": {
+      "Type": "Pass",
+      "Parameters": {
+        "code": "FREESHIP",
+        "cents": 0
+      },
+      "ResultPath": "$.work.discount",
+      "Next": "ChooseTier"
+    },
+    "CouponNone": {
+      "Type": "Pass",
+      "Parameters": {
+        "code": "none",
+        "cents": 0
+      },
+      "ResultPath": "$.work.discount",
+      "Next": "ChooseTier"
+    },
+    "ChooseTier": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.tier",
+          "StringEquals": "gold",
+          "Next": "TierGold"
+        },
+        {
+          "Variable": "$.work.tier",
+          "StringEquals": "silver",
+          "Next": "TierSilver"
+        }
+      ],
+      "Default": "TierStandard"
+    },
+    "TierGold": {
+      "Type": "Pass",
+      "Parameters": {
+        "name": "gold",
+        "cents": 500
+      },
+      "ResultPath": "$.work.tierDiscount",
+      "Next": "ChooseMethod"
+    },
+    "TierSilver": {
+      "Type": "Pass",
+      "Parameters": {
+        "name": "silver",
+        "cents": 200
+      },
+      "ResultPath": "$.work.tierDiscount",
+      "Next": "ChooseMethod"
+    },
+    "TierStandard": {
+      "Type": "Pass",
+      "Parameters": {
+        "name": "standard",
+        "cents": 0
+      },
+      "ResultPath": "$.work.tierDiscount",
+      "Next": "ChooseMethod"
+    },
+    "ChooseMethod": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.method",
+          "StringEquals": "express",
+          "Next": "ShipExpress"
+        },
+        {
+          "Variable": "$.work.method",
+          "StringEquals": "pickup",
+          "Next": "ShipPickup"
+        }
+      ],
+      "Default": "ShipGround"
+    },
+    "ShipExpress": {
+      "Type": "Pass",
+      "Parameters": {
+        "method": "express",
+        "shipCents": 1500
+      },
+      "ResultPath": "$.work.shipping",
+      "Next": "ChooseCountry"
+    },
+    "ShipPickup": {
+      "Type": "Pass",
+      "Parameters": {
+        "method": "pickup",
+        "shipCents": 0
+      },
+      "ResultPath": "$.work.shipping",
+      "Next": "ChooseCountry"
+    },
+    "ShipGround": {
+      "Type": "Pass",
+      "Parameters": {
+        "method": "ground",
+        "shipCents": 700
+      },
+      "ResultPath": "$.work.shipping",
+      "Next": "ChooseCountry"
+    },
+    "ChooseCountry": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.country",
+          "StringEquals": "CA",
+          "Next": "DutyCA"
+        },
+        {
+          "Variable": "$.work.country",
+          "StringEquals": "US",
+          "Next": "DutyUS"
+        }
+      ],
+      "Default": "DutyOther"
+    },
+    "DutyCA": {
+      "Type": "Pass",
+      "Parameters": {
+        "country": "CA",
+        "dutyCents": 300
+      },
+      "ResultPath": "$.work.duty",
+      "Next": "ChooseGift"
+    },
+    "DutyUS": {
+      "Type": "Pass",
+      "Parameters": {
+        "country": "US",
+        "dutyCents": 0
+      },
+      "ResultPath": "$.work.duty",
+      "Next": "ChooseGift"
+    },
+    "DutyOther": {
+      "Type": "Pass",
+      "Parameters": {
+        "country.$": "$.work.country",
+        "dutyCents": 800
+      },
+      "ResultPath": "$.work.duty",
+      "Next": "ChooseGift"
+    },
+    "ChooseGift": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.gift",
+          "BooleanEquals": true,
+          "Next": "GiftYes"
+        }
+      ],
+      "Default": "GiftNo"
+    },
+    "GiftYes": {
+      "Type": "Pass",
+      "Parameters": {
+        "giftCents": 250
+      },
+      "ResultPath": "$.work.giftWrap",
+      "Next": "ChooseHold"
+    },
+    "GiftNo": {
+      "Type": "Pass",
+      "Parameters": {
+        "giftCents": 0
+      },
+      "ResultPath": "$.work.giftWrap",
+      "Next": "ChooseHold"
+    },
+    "ChooseHold": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "And": [
+            {
+              "Variable": "$.work.hold",
+              "BooleanEquals": true
+            },
+            {
+              "Not": {
+                "Variable": "$.work.tier",
+                "StringEquals": "gold"
+              }
+            }
+          ],
+          "Next": "MarkHold"
+        }
+      ],
+      "Default": "MarkRelease"
+    },
+    "MarkHold": {
+      "Type": "Pass",
+      "Parameters": {
+        "held": true,
+        "reason": "held"
+      },
+      "ResultPath": "$.work.release",
+      "Next": "ChooseChannel"
+    },
+    "MarkRelease": {
+      "Type": "Pass",
+      "Parameters": {
+        "held": false,
+        "reason": "clear"
+      },
+      "ResultPath": "$.work.release",
+      "Next": "ChooseChannel"
+    },
+    "ChooseChannel": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.channel",
+          "StringEquals": "web",
+          "Next": "ChannelWeb"
+        },
+        {
+          "Variable": "$.work.channel",
+          "StringEquals": "phone",
+          "Next": "ChannelPhone"
+        }
+      ],
+      "Default": "ChannelStore"
+    },
+    "ChannelWeb": {
+      "Type": "Pass",
+      "Parameters": {
+        "channel": "web",
+        "feeCents": 0
+      },
+      "ResultPath": "$.work.channelFee",
+      "Next": "MergeFees"
+    },
+    "ChannelPhone": {
+      "Type": "Pass",
+      "Parameters": {
+        "channel": "phone",
+        "feeCents": 200
+      },
+      "ResultPath": "$.work.channelFee",
+      "Next": "MergeFees"
+    },
+    "ChannelStore": {
+      "Type": "Pass",
+      "Parameters": {
+        "channel": "store",
+        "feeCents": 100
+      },
+      "ResultPath": "$.work.channelFee",
+      "Next": "MergeFees"
+    },
+    "MergeFees": {
+      "Type": "Pass",
+      "Parameters": {
+        "detail.$": "States.JsonMerge($.work.shipping, $.work.duty, false)"
+      },
+      "ResultPath": "$.work.merged",
+      "Next": "SumShipDuty"
+    },
+    "SumShipDuty": {
+      "Type": "Pass",
+      "Parameters": {
+        "shipAndDuty.$": "States.MathAdd($.work.shipping.shipCents, $.work.duty.dutyCents)"
+      },
+      "ResultPath": "$.work.partial",
+      "Next": "SumExtras"
+    },
+    "SumExtras": {
+      "Type": "Pass",
+      "Parameters": {
+        "shipAndDuty.$": "$.work.partial.shipAndDuty",
+        "extras.$": "States.MathAdd($.work.giftWrap.giftCents, $.work.channelFee.feeCents)",
+        "amount.$": "States.MathAdd($.work.partial.shipAndDuty, States.MathAdd($.work.giftWrap.giftCents, $.work.channelFee.feeCents))"
+      },
+      "ResultPath": "$.work.fees",
+      "Next": "ChooseReview"
+    },
+    "ChooseReview": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.work.fees.amount",
+          "NumericGreaterThan": 2000,
+          "Next": "MarkManual"
+        }
+      ],
+      "Default": "MarkAuto"
+    },
+    "MarkManual": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "review",
+        "queue": "floor"
+      },
+      "ResultPath": "$.work.decision",
+      "Next": "ShapeResult"
+    },
+    "MarkAuto": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "release",
+        "queue": "auto"
+      },
+      "ResultPath": "$.work.decision",
+      "Next": "ShapeResult"
+    },
+    "ShapeResult": {
+      "Type": "Pass",
+      "Comment": "Drop the raw request and $.work scratch. Keep the decision the choices made.",
+      "Parameters": {
+        "requestId.$": "$.work.requestId",
+        "customerId.$": "$.work.customerId",
+        "decision.$": "$.work.decision.status",
+        "queue.$": "$.work.decision.queue",
+        "held.$": "$.work.release.held",
+        "coupon.$": "$.work.discount.code",
+        "discountCents.$": "$.work.discount.cents",
+        "tierDiscountCents.$": "$.work.tierDiscount.cents",
+        "feeCents.$": "$.work.fees.amount",
+        "shipMethod.$": "$.work.shipping.method",
+        "dutyCountry.$": "$.work.duty.country",
+        "firstSku.$": "$.work.cart.firstSku.sku",
+        "itemCount.$": "$.work.cart.n",
+        "summary.$": "States.Format('{} {} via {}', $.work.requestId, $.work.decision.status, $.work.method)"
+      },
+      "End": true
+    }
+  }
+}

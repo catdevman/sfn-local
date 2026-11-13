@@ -1,0 +1,215 @@
+{
+  "Comment": "Medium. Build an invoice by adding fields onto the input, then publish a flat document.",
+  "StartAt": "NameCustomer",
+  "States": {
+    "NameCustomer": {
+      "Type": "Pass",
+      "Parameters": {
+        "id.$": "$.account.id",
+        "name.$": "$.account.name",
+        "email.$": "$.account.email",
+        "region.$": "$.account.region"
+      },
+      "ResultPath": "$.customer",
+      "Next": "CheckEmail"
+    },
+    "CheckEmail": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.customer.email",
+          "IsPresent": true,
+          "Next": "ChoosePlan"
+        }
+      ],
+      "Default": "MissingEmail"
+    },
+    "MissingEmail": {
+      "Type": "Pass",
+      "Parameters": {
+        "accountId.$": "$.account.id",
+        "reason": "email is required"
+      },
+      "Next": "Reject"
+    },
+    "Reject": {
+      "Type": "Fail",
+      "Error": "MissingEmail",
+      "CausePath": "$.reason"
+    },
+    "ChoosePlan": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.account.plan",
+          "StringEquals": "enterprise",
+          "Next": "EnterprisePrice"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.account.plan",
+              "StringEquals": "pro"
+            },
+            {
+              "Variable": "$.seats",
+              "NumericGreaterThan": 0
+            }
+          ],
+          "Next": "ProPrice"
+        }
+      ],
+      "Default": "FreePrice"
+    },
+    "EnterprisePrice": {
+      "Type": "Pass",
+      "Parameters": {
+        "plan": "enterprise",
+        "seats.$": "$.seats",
+        "base": 50000,
+        "addon": 0
+      },
+      "ResultPath": "$.quote",
+      "Next": "TotalQuote"
+    },
+    "ProPrice": {
+      "Type": "Pass",
+      "Parameters": {
+        "plan": "pro",
+        "seats.$": "$.seats",
+        "base": 10000,
+        "addon": 1500
+      },
+      "ResultPath": "$.quote",
+      "Next": "TotalQuote"
+    },
+    "FreePrice": {
+      "Type": "Pass",
+      "Parameters": {
+        "plan": "free",
+        "seats.$": "$.seats",
+        "base": 0,
+        "addon": 0
+      },
+      "ResultPath": "$.quote",
+      "Next": "TotalQuote"
+    },
+    "TotalQuote": {
+      "Type": "Pass",
+      "Parameters": {
+        "plan.$": "$.quote.plan",
+        "seats.$": "$.quote.seats",
+        "base.$": "$.quote.base",
+        "addon.$": "$.quote.addon",
+        "amount.$": "States.MathAdd($.quote.base, $.quote.addon)"
+      },
+      "ResultPath": "$.quote",
+      "Next": "ChooseTax"
+    },
+    "ChooseTax": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.customer.region",
+          "StringEquals": "eu",
+          "Next": "EuTax"
+        },
+        {
+          "Variable": "$.customer.region",
+          "StringEquals": "us",
+          "Next": "UsTax"
+        }
+      ],
+      "Default": "NoTax"
+    },
+    "EuTax": {
+      "Type": "Pass",
+      "Parameters": {
+        "region": "eu",
+        "cents": 2000
+      },
+      "ResultPath": "$.tax",
+      "Next": "AddonFlags"
+    },
+    "UsTax": {
+      "Type": "Pass",
+      "Parameters": {
+        "region": "us",
+        "cents": 800
+      },
+      "ResultPath": "$.tax",
+      "Next": "AddonFlags"
+    },
+    "NoTax": {
+      "Type": "Pass",
+      "Parameters": {
+        "region.$": "$.customer.region",
+        "cents": 0
+      },
+      "ResultPath": "$.tax",
+      "Next": "AddonFlags"
+    },
+    "AddonFlags": {
+      "Type": "Pass",
+      "Parameters": {
+        "hasAudit.$": "States.ArrayContains($.addons, 'audit')",
+        "count.$": "States.ArrayLength($.addons)"
+      },
+      "ResultPath": "$.addonInfo",
+      "Next": "ChooseReview"
+    },
+    "ChooseReview": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.addonInfo.hasAudit",
+          "BooleanEquals": true,
+          "Next": "MarkReview"
+        }
+      ],
+      "Default": "MarkAuto"
+    },
+    "MarkReview": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "review"
+      },
+      "ResultPath": "$.review",
+      "Next": "Greet"
+    },
+    "MarkAuto": {
+      "Type": "Pass",
+      "Parameters": {
+        "status": "auto"
+      },
+      "ResultPath": "$.review",
+      "Next": "Greet"
+    },
+    "Greet": {
+      "Type": "Pass",
+      "Comment": "InputPath narrows what the template sees. ResultPath writes the greeting back onto the whole document.",
+      "InputPath": "$.customer",
+      "Parameters": {
+        "text.$": "States.Format('Hello, {}', $.name)"
+      },
+      "ResultPath": "$.greeting",
+      "Next": "ShapeInvoice"
+    },
+    "ShapeInvoice": {
+      "Type": "Pass",
+      "Comment": "The published output drops account, addons, and the scratch quote fields.",
+      "Parameters": {
+        "accountId.$": "$.customer.id",
+        "greeting.$": "$.greeting.text",
+        "plan.$": "$.quote.plan",
+        "seats.$": "$.quote.seats",
+        "amountCents.$": "$.quote.amount",
+        "taxCents.$": "$.tax.cents",
+        "region.$": "$.tax.region",
+        "review.$": "$.review.status",
+        "addonCount.$": "$.addonInfo.count"
+      },
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "orderId": "o-1",
+  "items": [
+    {"sku": "pen", "qty": 2, "cents": 300, "backorder": false},
+    {"sku": "desk", "qty": 1, "cents": 9000, "backorder": true},
+    {"sku": "book", "qty": 1, "cents": 1200, "backorder": false}
+  ]
+}

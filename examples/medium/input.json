@@ -1,0 +1,11 @@
+{
+  "account": {
+    "id": "acct-9",
+    "name": "Northwind",
+    "email": "billing@northwind.example",
+    "region": "eu",
+    "plan": "pro"
+  },
+  "seats": 4,
+  "addons": ["audit", "sso"]
+}

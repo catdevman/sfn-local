@@ -1,0 +1,9 @@
+{
+  "amount": 120,
+  "customer": "ada",
+  "id": "A-100",
+  "lane": "premium",
+  "receipt": {
+    "label": "premium:A-100"
+  }
+}

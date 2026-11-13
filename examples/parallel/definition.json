@@ -1,0 +1,110 @@
+{
+  "Comment": "Parallel. Each branch chooses its own quote. ResultSelector names the branch outputs, and ResultPath keeps the original order.",
+  "StartAt": "Quote",
+  "States": {
+    "Quote": {
+      "Type": "Parallel",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "weight.$": "$.weight",
+        "country.$": "$.country"
+      },
+      "Branches": [
+        {
+          "StartAt": "GroundCountry",
+          "States": {
+            "GroundCountry": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.country",
+                  "StringEquals": "CA",
+                  "Next": "GroundCA"
+                }
+              ],
+              "Default": "GroundOther"
+            },
+            "GroundCA": {
+              "Type": "Pass",
+              "Parameters": {
+                "method": "ground",
+                "cents": 700,
+                "country.$": "$.country"
+              },
+              "End": true
+            },
+            "GroundOther": {
+              "Type": "Pass",
+              "Parameters": {
+                "method": "ground",
+                "cents": 900,
+                "country.$": "$.country"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "ExpressBase",
+          "States": {
+            "ExpressBase": {
+              "Type": "Pass",
+              "Parameters": {
+                "method": "express",
+                "cents": 1500,
+                "weight.$": "$.weight",
+                "country.$": "$.country"
+              },
+              "Next": "Heavy"
+            },
+            "Heavy": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.weight",
+                  "NumericGreaterThan": 10,
+                  "Next": "Surcharge"
+                }
+              ],
+              "Default": "Keep"
+            },
+            "Surcharge": {
+              "Type": "Pass",
+              "Parameters": {
+                "method.$": "$.method",
+                "cents.$": "States.MathAdd($.cents, 500)",
+                "weight.$": "$.weight",
+                "country.$": "$.country",
+                "surcharge": true
+              },
+              "End": true
+            },
+            "Keep": {
+              "Type": "Pass",
+              "Result": false,
+              "ResultPath": "$.surcharge",
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultSelector": {
+        "ground.$": "$[0]",
+        "express.$": "$[1]"
+      },
+      "ResultPath": "$.quotes",
+      "Next": "Publish"
+    },
+    "Publish": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "weight.$": "$.weight",
+        "groundCents.$": "$.quotes.ground.cents",
+        "expressCents.$": "$.quotes.express.cents",
+        "expressSurcharge.$": "$.quotes.express.surcharge"
+      },
+      "End": true
+    }
+  }
+}

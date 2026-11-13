@@ -1,0 +1,23 @@
+{
+  "requestId": "req-42",
+  "channel": "web",
+  "customer": {
+    "id": "c-7",
+    "tier": "gold",
+    "country": "CA"
+  },
+  "cart": {
+    "items": [
+      {"sku": "pen", "qty": 2, "cents": 300},
+      {"sku": "book", "qty": 1, "cents": 1200}
+    ],
+    "coupon": "SAVE10"
+  },
+  "ship": {
+    "method": "express"
+  },
+  "flags": {
+    "gift": true,
+    "hold": false
+  }
+}

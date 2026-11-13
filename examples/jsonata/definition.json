@@ -1,0 +1,60 @@
+{
+  "Comment": "JSONata. Output reshapes the document, Condition chooses the lane, and Assign carries the customer into the envelope.",
+  "QueryLanguage": "JSONata",
+  "StartAt": "Normalize",
+  "States": {
+    "Normalize": {
+      "Type": "Pass",
+      "Output": {
+        "name": "{% $states.input.customer.name %}",
+        "score": "{% $states.input.score %}",
+        "units": "{% $sum($states.input.items.qty) %}"
+      },
+      "Assign": {
+        "name": "{% $states.input.customer.name %}",
+        "units": "{% $sum($states.input.items.qty) %}"
+      },
+      "Next": "ChooseLane"
+    },
+    "ChooseLane": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Condition": "{% $states.input.score >= 90 and $states.input.units >= 1 %}",
+          "Next": "Gold"
+        }
+      ],
+      "Default": "Standard"
+    },
+    "Gold": {
+      "Type": "Pass",
+      "Output": {
+        "name": "{% $states.input.name %}",
+        "score": "{% $states.input.score %}",
+        "units": "{% $states.input.units %}",
+        "lane": "gold"
+      },
+      "Next": "Envelope"
+    },
+    "Standard": {
+      "Type": "Pass",
+      "Output": {
+        "name": "{% $states.input.name %}",
+        "score": "{% $states.input.score %}",
+        "units": "{% $states.input.units %}",
+        "lane": "standard"
+      },
+      "Next": "Envelope"
+    },
+    "Envelope": {
+      "Type": "Pass",
+      "Output": {
+        "customer": "{% $name %}",
+        "units": "{% $units %}",
+        "lane": "{% $states.input.lane %}",
+        "label": "{% $name & ' / ' & $states.input.lane & ' / ' & $string($units) %}"
+      },
+      "End": true
+    }
+  }
+}

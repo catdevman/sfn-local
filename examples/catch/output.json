@@ -1,0 +1,7 @@
+{
+  "detail": "pen is unavailable",
+  "error": "InventoryMissing",
+  "orderId": "o-9",
+  "sku": "pen",
+  "status": "needs-stock"
+}

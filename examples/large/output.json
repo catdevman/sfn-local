@@ -1,0 +1,16 @@
+{
+  "coupon": "SAVE10",
+  "customerId": "c-7",
+  "decision": "review",
+  "discountCents": 1000,
+  "dutyCountry": "CA",
+  "feeCents": 2050,
+  "firstSku": "pen",
+  "held": false,
+  "itemCount": 2,
+  "queue": "floor",
+  "requestId": "req-42",
+  "shipMethod": "express",
+  "summary": "req-42 review via express",
+  "tierDiscountCents": 500
+}

@@ -1,0 +1,10 @@
+{
+  "customer": {
+    "name": "ada"
+  },
+  "score": 95,
+  "items": [
+    {"sku": "pen", "qty": 2},
+    {"sku": "book", "qty": 1}
+  ]
+}

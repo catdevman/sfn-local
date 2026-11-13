@@ -1,0 +1,27 @@
+{
+  "lineCount": 3,
+  "lines": [
+    {
+      "index": 0,
+      "lane": "pick",
+      "lineCents": 300,
+      "qty": 2,
+      "sku": "pen"
+    },
+    {
+      "index": 1,
+      "lane": "backorder",
+      "lineCents": 9000,
+      "qty": 1,
+      "sku": "desk"
+    },
+    {
+      "index": 2,
+      "lane": "pick",
+      "lineCents": 1200,
+      "qty": 1,
+      "sku": "book"
+    }
+  ],
+  "orderId": "o-1"
+}

@@ -1,0 +1,11 @@
+{
+  "accountId": "acct-9",
+  "addonCount": 2,
+  "amountCents": 11500,
+  "greeting": "Hello, Northwind",
+  "plan": "pro",
+  "region": "eu",
+  "review": "review",
+  "seats": 4,
+  "taxCents": 2000
+}

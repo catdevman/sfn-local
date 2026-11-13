@@ -1,0 +1,89 @@
+{
+  "Comment": "Inline Map. Each item chooses a lane, then the parent Pass publishes the lines.",
+  "StartAt": "Lines",
+  "States": {
+    "Lines": {
+      "Type": "Map",
+      "ItemsPath": "$.items",
+      "MaxConcurrency": 2,
+      "ItemSelector": {
+        "index.$": "$$.Map.Item.Index",
+        "sku.$": "$$.Map.Item.Value.sku",
+        "qty.$": "$$.Map.Item.Value.qty",
+        "cents.$": "$$.Map.Item.Value.cents",
+        "backorder.$": "$$.Map.Item.Value.backorder"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "ChooseLine",
+        "States": {
+          "ChooseLine": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.backorder",
+                "BooleanEquals": true,
+                "Next": "Backorder"
+              },
+              {
+                "Variable": "$.cents",
+                "NumericGreaterThan": 5000,
+                "Next": "Bulky"
+              }
+            ],
+            "Default": "Pick"
+          },
+          "Backorder": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "lane": "backorder",
+              "lineCents.$": "$.cents"
+            },
+            "End": true
+          },
+          "Bulky": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "lane": "bulky",
+              "lineCents.$": "$.cents"
+            },
+            "End": true
+          },
+          "Pick": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "lane": "pick",
+              "lineCents.$": "$.cents"
+            },
+            "End": true
+          }
+        }
+      },
+      "ResultSelector": {
+        "lines.$": "$"
+      },
+      "ResultPath": "$.fulfillment",
+      "Next": "Publish"
+    },
+    "Publish": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "lineCount.$": "States.ArrayLength($.fulfillment.lines)",
+        "lines.$": "$.fulfillment.lines"
+      },
+      "End": true
+    }
+  }
+}

@@ -1,0 +1,82 @@
+{
+  "Comment": "Small. Nest a flat order, choose a lane, and attach a receipt without dropping the lane.",
+  "StartAt": "NestOrder",
+  "States": {
+    "NestOrder": {
+      "Type": "Pass",
+      "Comment": "Replace the flat input with the fields the choice reads.",
+      "Parameters": {
+        "order": {
+          "id.$": "$.orderId",
+          "customer.$": "$.customer",
+          "amount.$": "$.amount"
+        },
+        "priority.$": "$.priority"
+      },
+      "Next": "ChooseLane"
+    },
+    "ChooseLane": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Variable": "$.order.amount",
+          "NumericGreaterThan": 100,
+          "Next": "MarkPremium"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.priority",
+              "BooleanEquals": true
+            },
+            {
+              "Variable": "$.order.amount",
+              "NumericGreaterThan": 0
+            }
+          ],
+          "Next": "MarkRush"
+        }
+      ],
+      "Default": "MarkStandard"
+    },
+    "MarkPremium": {
+      "Type": "Pass",
+      "Parameters": {
+        "id.$": "$.order.id",
+        "customer.$": "$.order.customer",
+        "amount.$": "$.order.amount",
+        "lane": "premium"
+      },
+      "Next": "AddReceipt"
+    },
+    "MarkRush": {
+      "Type": "Pass",
+      "Parameters": {
+        "id.$": "$.order.id",
+        "customer.$": "$.order.customer",
+        "amount.$": "$.order.amount",
+        "lane": "rush"
+      },
+      "Next": "AddReceipt"
+    },
+    "MarkStandard": {
+      "Type": "Pass",
+      "Parameters": {
+        "id.$": "$.order.id",
+        "customer.$": "$.order.customer",
+        "amount.$": "$.order.amount",
+        "lane": "standard"
+      },
+      "Next": "AddReceipt"
+    },
+    "AddReceipt": {
+      "Type": "Pass",
+      "Comment": "ResultPath adds the label onto the lane document instead of replacing it.",
+      "Parameters": {
+        "label.$": "States.Format('{}:{}', $.lane, $.id)"
+      },
+      "ResultPath": "$.receipt",
+      "End": true
+    }
+  }
+}

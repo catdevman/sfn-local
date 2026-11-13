@@ -1,0 +1,7 @@
+{
+  "orderId": "A-100",
+  "customer": "ada",
+  "amount": 120,
+  "currency": "USD",
+  "priority": false
+}

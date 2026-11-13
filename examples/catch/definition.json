@@ -1,0 +1,81 @@
+{
+  "Comment": "Catch. One Parallel branch fails. The catcher puts the error on the input, and a Pass turns that into a stock response.",
+  "StartAt": "CheckStock",
+  "States": {
+    "CheckStock": {
+      "Type": "Parallel",
+      "Branches": [
+        {
+          "StartAt": "KeepSku",
+          "States": {
+            "KeepSku": {
+              "Type": "Pass",
+              "Parameters": {
+                "sku.$": "$.sku",
+                "ok": true
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "Decide",
+          "States": {
+            "Decide": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.inStock",
+                  "BooleanEquals": false,
+                  "Next": "Missing"
+                }
+              ],
+              "Default": "Present"
+            },
+            "Missing": {
+              "Type": "Fail",
+              "Error": "InventoryMissing",
+              "Cause": "pen is unavailable"
+            },
+            "Present": {
+              "Type": "Pass",
+              "Parameters": {
+                "sku.$": "$.sku",
+                "ok": true
+              },
+              "End": true
+            }
+          }
+        }
+      ],
+      "Catch": [
+        {
+          "ErrorEquals": ["InventoryMissing"],
+          "ResultPath": "$.failure",
+          "Next": "Explain"
+        }
+      ],
+      "Next": "BothOk"
+    },
+    "BothOk": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "sku.$": "$.sku",
+        "status": "reserved"
+      },
+      "End": true
+    },
+    "Explain": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "sku.$": "$.sku",
+        "status": "needs-stock",
+        "error.$": "$.failure.Error",
+        "detail.$": "$.failure.Cause"
+      },
+      "End": true
+    }
+  }
+}
