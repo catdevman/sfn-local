@@ -4,4 +4,5 @@ package main
 const Name = "sfnlocal"
 
 // Version is the process version printed on startup.
-const Version = "dev"
+// GoReleaser sets it with -X main.Version. A plain go build leaves it as dev.
+var Version = "dev"
