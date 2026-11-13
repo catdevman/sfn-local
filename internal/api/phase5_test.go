@@ -187,9 +187,22 @@ func TestActivityCatchRetryAndTimeout(t *testing.T) {
 		t.Fatalf("%s %s %s %v", ex.Status, ex.Error, ex.Output, typesOf(ex))
 	}
 	timed := jsonField(t, findEventMust(t, ex, "ActivityScheduled").Input, "token")
-	_, err := s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp(timed), Output: sp(`{"late":true}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "TaskTimedOut" || !strings.Contains(api.Error(), "Task Timed Out: '"+timed+"'") {
-		t.Fatal(api)
+	// Captured from amazon/aws-stepfunctions-local:2.0.0. The argument is the
+	// activity ARN, not the task token. SendTaskFailure and SendTaskHeartbeat
+	// use the same message.
+	wantTimeout := "Task Timed Out: '" + arn + "'"
+	for _, check := range []struct {
+		name string
+		err  error
+	}{
+		{"success", sendTaskSuccess(t, s, timed)},
+		{"failure", sendTaskFailure(t, s, timed)},
+		{"heartbeat", sendTaskHeartbeat(t, s, timed)},
+	} {
+		api := mustAPI(t, check.err)
+		if api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: "+wantTimeout {
+			t.Fatalf("%s %s", check.name, api.Error())
+		}
 	}
 
 	retryDef := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"` + arn + `","TimeoutSeconds":0,"Parameters":{"token.$":"$$.Task.Token"},"Retry":[{"ErrorEquals":["States.Timeout"],"IntervalSeconds":0,"MaxAttempts":1}],"End":true}}}`
@@ -339,6 +352,14 @@ func TestCallbackWaitAndMock(t *testing.T) {
 	if cex.Status != store.ExecFailed || cex.Error != "States.Timeout" || countEvents(cex, "TaskSubmitted") != 1 || countEvents(cex, "TaskTimedOut") != 1 || countEvents(cex, "ExecutionTimedOut") != 0 {
 		t.Fatalf("%s %s %v", cex.Error, cex.Cause, typesOf(cex))
 	}
+	cbToken := jsonField(t, findEventMust(t, cex, "TaskScheduled").Parameters, "token")
+	cbTimeout := "Task Timed Out: 'arn:aws:states:us-east-1:123456789012:sqs:sendMessage.waitForTaskToken'"
+	if api := mustAPI(t, sendTaskSuccess(t, s, cbToken)); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: "+cbTimeout {
+		t.Fatal(api.Error())
+	}
+	if api := mustAPI(t, sendTaskHeartbeat(t, s, cbToken)); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: "+cbTimeout {
+		t.Fatal(api.Error())
+	}
 
 	noTestLeak(t, s)
 	out, err := s.TestState(context.Background(), &gen.TestStateInput{
@@ -377,6 +398,24 @@ func createActivity(t *testing.T, s *Service, name string) string {
 		t.Fatal(err)
 	}
 	return str(out.ActivityArn)
+}
+
+func sendTaskSuccess(t *testing.T, s *Service, token string) error {
+	t.Helper()
+	_, err := s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp(token), Output: sp(`{"late":true}`)})
+	return err
+}
+
+func sendTaskFailure(t *testing.T, s *Service, token string) error {
+	t.Helper()
+	_, err := s.SendTaskFailure(context.Background(), &gen.SendTaskFailureInput{TaskToken: sp(token), Error: sp("Boom"), Cause: sp("no")})
+	return err
+}
+
+func sendTaskHeartbeat(t *testing.T, s *Service, token string) error {
+	t.Helper()
+	_, err := s.SendTaskHeartbeat(context.Background(), &gen.SendTaskHeartbeatInput{TaskToken: sp(token)})
+	return err
 }
 
 func taskDef(resource, fields string) string {

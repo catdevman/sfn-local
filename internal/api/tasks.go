@@ -154,7 +154,7 @@ func tokenErr(err error) error {
 	}
 	switch te.Kind {
 	case "TaskTimedOut":
-		return modeled("TaskTimedOut", "Task Timed Out: '"+te.ID+"'")
+		return modeled("TaskTimedOut", "Task Timed Out: '"+te.Resource+"'")
 	case "TaskDoesNotExist":
 		return modeled("TaskDoesNotExist", "Task Does Not Exist: '"+te.ID+"'")
 	default:

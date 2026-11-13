@@ -21,9 +21,12 @@ const (
 // started is closed when a worker receives an activity token, or immediately
 // for a callback. hb receives SendTaskHeartbeat.
 type TaskToken struct {
-	ID           string
-	Kind         string
-	ActivityARN  string
+	ID          string
+	Kind        string
+	ActivityARN string
+	// Resource is the jar's TaskTimedOut argument: the activity ARN, or a
+	// callback resource with an empty region and account filled in.
+	Resource     string
 	ExecutionARN string
 	Input        string
 	Status       string
@@ -44,9 +47,11 @@ type TokenDone struct {
 }
 
 // TokenError is a SendTask* rejection. Kind is the Smithy error name.
+// Resource is set for TaskTimedOut and is the string inside the jar message.
 type TokenError struct {
-	Kind string
-	ID   string
+	Kind     string
+	ID       string
+	Resource string
 }
 
 func (e *TokenError) Error() string {
@@ -214,8 +219,9 @@ func (s *Store) FinishToken(id string, done TokenDone) error {
 	}
 	switch tok.Status {
 	case TokenTimedOut:
+		resource := tok.Resource
 		s.mu.Unlock()
-		return &TokenError{Kind: "TaskTimedOut", ID: id}
+		return &TokenError{Kind: "TaskTimedOut", ID: id, Resource: resource}
 	case TokenStarted:
 		tok.Status = done.Status
 		ch := tok.done
@@ -244,8 +250,9 @@ func (s *Store) HeartbeatToken(id string) error {
 	}
 	switch tok.Status {
 	case TokenTimedOut:
+		resource := tok.Resource
 		s.mu.Unlock()
-		return &TokenError{Kind: "TaskTimedOut", ID: id}
+		return &TokenError{Kind: "TaskTimedOut", ID: id, Resource: resource}
 	case TokenStarted:
 		ch := tok.hb
 		s.mu.Unlock()

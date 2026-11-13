@@ -30,7 +30,9 @@ const (
 )
 
 // jarErrorTypes maps a Smithy error name to a jar __type.
-// It is empty on purpose. Add a row only after a jar fixture captures the string.
+// It is empty on purpose. Add a row only when a compat fixture compares that
+// __type. The 2.0.0 TaskTimedOut string was captured and stays out of this
+// map. The default profile emits com.amazonaws.sfn#TaskTimedOut.
 var jarErrorTypes = map[string]string{}
 
 // jarAbsent is the Step Functions Local 2.0.0 operation set that this process

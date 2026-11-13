@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 5, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -34,7 +34,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [3](#x-phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
 | [T](#x-phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
 | [4](#x-phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
-| [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
+| [5](#x-phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
 | [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#x-phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
 | [I](#x-phase-i--service-integrations) | Optimized calls run when the endpoint is set. Distributed Map stays deferred. | unbounded |
@@ -203,7 +203,7 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
   - [x] `States.StringSplit` as a character set
   - [x] `States.UUID` checked for shape only
 
-## Phase 5 — activities and callbacks
+## [x] Phase 5 — activities and callbacks
 
 `GetActivityTask` and `SendTask*` depend on phase 3. `.waitForTaskToken` depends on phase 4 and on this phase.
 
@@ -212,7 +212,7 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
 - [x] `SendTaskSuccess`, `SendTaskFailure`, `SendTaskHeartbeat`. Heartbeat and activity timeout use `States.Timeout`.
 - [x] History detail members for activity events match the table in docs/spec.md. Success ends with `TaskStateExited`.
 - [x] An activity state named in the mock file fails with `States.Runtime` and does not schedule.
-- [ ] Capture the jar's `TaskTimedOut` message once and lock it in a test.
+- [x] Capture the jar's `TaskTimedOut` message once and lock it in a test.
 - [x] `.waitForTaskToken` on STANDARD suspends without calling a service endpoint. The token exists before `Parameters` runs, as `$$.Task.Token`.
 - [x] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted` with output `""`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
 - [x] A mock `Return` for a callback state completes through the mock path.

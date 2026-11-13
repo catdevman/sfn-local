@@ -137,6 +137,7 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 		return "", &taskFailure{Halt: true}
 	}
 	tok := newTaskToken(token, arn, meta)
+	tok.Resource = reportedResource(meta.resource, r.Region, r.Account)
 	if meta.kind == kindActivity {
 		tok.ActivityARN = meta.resource
 	}
@@ -296,6 +297,25 @@ func closedTime() <-chan time.Time {
 	ch := make(chan time.Time)
 	close(ch)
 	return ch
+}
+
+// reportedResource is the string the 2.0.0 jar puts in Task Timed Out.
+// An activity ARN is already complete. A callback resource with an empty
+// region and account is filled from the process, so
+// arn:aws:states:::sqs:sendMessage.waitForTaskToken becomes
+// arn:aws:states:<region>:<account>:sqs:sendMessage.waitForTaskToken.
+func reportedResource(resource, region, account string) string {
+	parts := strings.Split(resource, ":")
+	if len(parts) < 5 || parts[0] != "arn" || parts[1] != "aws" {
+		return resource
+	}
+	if parts[3] == "" {
+		parts[3] = region
+	}
+	if parts[4] == "" {
+		parts[4] = account
+	}
+	return strings.Join(parts, ":")
 }
 
 func newTaskToken(id, arn string, meta taskMeta) *store.TaskToken {
