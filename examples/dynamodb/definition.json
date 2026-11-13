@@ -1,0 +1,83 @@
+{
+  "Comment": "Save an order to DynamoDB, read it back, and mark it paid. Needs DYNAMODB_ENDPOINT and the orders table.",
+  "StartAt": "Prepare",
+  "States": {
+    "Prepare": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "customer.$": "$.customer",
+        "total.$": "States.MathAdd($.subtotal, $.shipping)",
+        "payment.$": "$.payment"
+      },
+      "Next": "SaveOrder"
+    },
+    "SaveOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:putItem",
+      "Parameters": {
+        "TableName": "orders",
+        "Item": {
+          "orderId": { "S.$": "$.orderId" },
+          "customer": { "S.$": "$.customer" },
+          "total": { "N.$": "States.Format('{}', $.total)" },
+          "status": { "S": "new" }
+        },
+        "ConditionExpression": "attribute_not_exists(orderId)"
+      },
+      "ResultPath": null,
+      "Next": "LoadOrder"
+    },
+    "LoadOrder": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:getItem",
+      "Parameters": {
+        "TableName": "orders",
+        "Key": { "orderId": { "S.$": "$.orderId" } },
+        "ConsistentRead": true
+      },
+      "ResultSelector": {
+        "customer.$": "$.Item.customer.S",
+        "total.$": "States.StringToJson($.Item.total.N)",
+        "status.$": "$.Item.status.S"
+      },
+      "ResultPath": "$.saved",
+      "Next": "MarkPaid"
+    },
+    "MarkPaid": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::dynamodb:updateItem",
+      "Parameters": {
+        "TableName": "orders",
+        "Key": { "orderId": { "S.$": "$.orderId" } },
+        "UpdateExpression": "SET #status = :paid, paidBy = :method",
+        "ConditionExpression": "#status = :new",
+        "ExpressionAttributeNames": { "#status": "status" },
+        "ExpressionAttributeValues": {
+          ":paid": { "S": "paid" },
+          ":new": { "S": "new" },
+          ":method": { "S.$": "$.payment" }
+        },
+        "ReturnValues": "ALL_NEW"
+      },
+      "ResultSelector": {
+        "status.$": "$.Attributes.status.S",
+        "paidBy.$": "$.Attributes.paidBy.S"
+      },
+      "ResultPath": "$.updated",
+      "Next": "Publish"
+    },
+    "Publish": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "customer.$": "$.saved.customer",
+        "total.$": "$.saved.total",
+        "savedAs.$": "$.saved.status",
+        "status.$": "$.updated.status",
+        "paidBy.$": "$.updated.paidBy"
+      },
+      "End": true
+    }
+  }
+}

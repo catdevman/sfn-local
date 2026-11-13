@@ -1,0 +1,7 @@
+{
+  "orderId": "ord-ddb-1",
+  "customer": "Northwind",
+  "subtotal": 4200,
+  "shipping": 700,
+  "payment": "card"
+}

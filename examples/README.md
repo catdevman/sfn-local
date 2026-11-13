@@ -1,6 +1,6 @@
 # Examples
 
-State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs all eight and checks those outputs.
+State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs eight of them and checks those outputs. The dynamodb machine calls a DynamoDB endpoint, so the test leaves it out.
 
 The small, medium, and large machines use Pass, Choice, and Fail. They change the document as it moves: `Parameters` replaces it, `ResultPath` adds a field, `InputPath` narrows what a state sees, and the last Pass publishes a smaller result. Change a field in `input.json` to take another branch.
 
@@ -89,3 +89,47 @@ One order uses the pieces above together. `Prepare` copies the order and Assign 
 A country other than `CA` ships for 900 cents. Priority false, or channel `store`, selects standard and then `manual` because the Not rule is first. Any other channel with priority still set is `review`. Clear `backorder` on the desk and its 12000 cents takes `bulky`. Clear `gift` on the book and it is `pick`.
 
 Output: label `order ord-7`, status `ready`, handling 1200, four lines. Desk is `backorder` with detail `desk is unavailable`. Lamp is `bulky`, book is `gift`, pen is `pick`.
+
+## dynamodb
+
+This one needs DynamoDB. `go test ./examples` does not run it. Start DynamoDB Local on port 8000 and point the server at it with `DYNAMODB_ENDPOINT`:
+
+```bash
+docker run --rm -p 127.0.0.1:8000:8000 amazon/dynamodb-local -jar DynamoDBLocal.jar -inMemory
+
+export AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=us-east-1
+DYNAMODB_ENDPOINT=http://127.0.0.1:8000 go run ./cmd/sfnlocal --bind-address 127.0.0.1
+```
+
+Create the table, then the machine, then start it:
+
+```bash
+command aws dynamodb create-table \
+  --endpoint-url http://127.0.0.1:8000 \
+  --cli-input-json file://examples/dynamodb/table.json
+
+command aws stepfunctions create-state-machine \
+  --endpoint-url http://127.0.0.1:8083 \
+  --name dynamodb \
+  --definition file://examples/dynamodb/definition.json \
+  --role-arn arn:aws:iam::123456789012:role/local
+
+command aws stepfunctions start-execution \
+  --endpoint-url http://127.0.0.1:8083 \
+  --state-machine-arn arn:aws:states:us-east-1:123456789012:stateMachine:dynamodb \
+  --name dynamodb-run \
+  --input file://examples/dynamodb/input.json
+
+command aws dynamodb get-item \
+  --endpoint-url http://127.0.0.1:8000 \
+  --table-name orders \
+  --key '{"orderId":{"S":"ord-ddb-1"}}'
+```
+
+DynamoDB Local refuses an unsigned request. The server signs DynamoDB calls with `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`, or `abcd` / `1234` when they are unset. Without `-sharedDb`, DynamoDB Local keeps one database per access key and region. Start the server with the same key and region the CLI used to create the table, or the task fails with `ResourceNotFoundException`. With `-sharedDb` the key does not matter.
+
+`Prepare` adds subtotal and shipping. `SaveOrder` is a `putItem` with `attribute_not_exists(orderId)`, so it only writes a new order. `LoadOrder` is a consistent `getItem`. `ResultSelector` unwraps the attribute values and turns the `N` string back into a number with `States.StringToJson`. `MarkPaid` is an `updateItem` that moves `status` from `new` to `paid` and returns `ALL_NEW`. `Publish` shows the status before and after.
+
+A second run with the same `orderId` fails at `SaveOrder`. The error is `DynamoDB.ServiceException`, and the cause holds DynamoDB's `ConditionalCheckFailedException` body. AWS names that error `DynamoDB.ConditionalCheckFailedException`. Change `orderId` or delete the item to run it again.
+
+Output: order `ord-ddb-1`, total 4900, saved as `new`, status `paid` by `card`.
