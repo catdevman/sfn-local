@@ -38,6 +38,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#x-phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
 | [I](#x-phase-i--service-integrations) | Optimized calls run when the endpoint is set. Distributed Map stays deferred. | unbounded |
+| [S](#phase-s--aws-sdk-integrations) | `aws-sdk:` actions run through the AWS SDK for Go v2 when the endpoint is set. | unbounded |
 
 Cuts: G is the protocol-compatible process. G + 0 + 1 is the smallest useful runner. V on top of 0 is the definition check. Through 4 is the jar-shaped JSONPath runner. 6 on top of that is the JSONata runner. Phase 5 after 3 is activity workers.
 
@@ -275,6 +276,17 @@ These stay deferred for the life of this plan. Their operations return `Validati
 - Item Reader and Result Writer
 - Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, and EMR on EKS
 
+## Phase S — aws-sdk integrations
+
+`arn:aws:states:::aws-sdk:<service>:<action>` runs through the AWS SDK for Go v2. Each service is a hand-written table from action to client method. A service runs only when `AWS_ENDPOINT_URL_<SERVICE>` or `AWS_ENDPOINT_URL` is set.
+
+- [x] `internal/sdk`: the `op` adapter, error names `<Prefix>.<Code>Exception`, and per-service endpoints.
+- [x] `internal/invoke/operations.toml` from `cmd/genops`, kept current by `TestGenerateClean` and checked by `TestOperations`.
+- [x] S3: 25 operations, with `getObject` and `putObject` bodies as strings.
+- [ ] DynamoDB, with a codec for `AttributeValue`.
+- [ ] Move the Phase I DynamoDB, SQS, SNS, and EventBridge calls onto the same clients.
+- [ ] Check error names and result shapes against AWS.
+
 ## Standing CI
 
 These boxes are part of phase G's test harness, then stay green. Check them when the suite exists, and leave them checked.
@@ -354,7 +366,9 @@ internal/jsonpath/
 internal/intrinsic/
 internal/jsonata/        gnata evaluator
 internal/mock/
-internal/invoke/         allow.toml
+internal/invoke/         allow.toml, operations.toml
+internal/sdk/            aws-sdk: tables over the AWS SDK for Go v2
+cmd/genops/              SDK clients → internal/invoke/operations.toml
 aws-spec/                snapshots and the Python sync
 docs/spec.md             execution semantics
 ```
@@ -370,7 +384,8 @@ docs/spec.md             execution semantics
 | `internal/intrinsic` | The eighteen `States.*` functions. |
 | `internal/jsonata` | gnata v0.6.2. `$eval` disabled. jsonata-js 2.0.6 is the language reference, not the runtime. |
 | `internal/mock` | Mock file, `#` test-case suffix, attempt keys. |
-| `internal/invoke` | Lambda Invoke, then the allow-list. |
+| `internal/invoke` | Lambda Invoke, then the allow-list and the operations inventory. |
+| `internal/sdk` | `aws-sdk:` tasks: one table per service, error names, endpoints. |
 
 ### Wire protocol
 
@@ -470,7 +485,7 @@ docs/spec.md's security section is the requirement. Generation adds these:
 
 - Persistence, clustering, and durability across process exit.
 - SigV4 verification.
-- A reflective AWS SDK or a generated client per integrated service.
+- A reflective AWS SDK. Phase S tables are written by hand.
 - Distributed Map, Item Reader, and Result Writer.
 - CloudWatch log delivery, X-Ray, and `traceHeader`.
 - LocalStack's CLI, gateway, and configuration file.
