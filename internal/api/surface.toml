@@ -56,9 +56,9 @@ message = "DescribeExecution is not implemented by this local server."
 
 [[operation]]
 name = "DescribeMapRun"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
-message = "Distributed Map is not supported by this local server."
+message = "DescribeMapRun is not implemented by this local server."
 
 [[operation]]
 name = "DescribeStateMachine"
@@ -104,9 +104,9 @@ message = "ListExecutions is not implemented by this local server."
 
 [[operation]]
 name = "ListMapRuns"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
-message = "Distributed Map is not supported by this local server."
+message = "ListMapRuns is not implemented by this local server."
 
 [[operation]]
 name = "ListStateMachineAliases"
@@ -200,9 +200,9 @@ message = "UntagResource is not implemented by this local server."
 
 [[operation]]
 name = "UpdateMapRun"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
-message = "Distributed Map is not supported by this local server."
+message = "UpdateMapRun is not implemented by this local server."
 
 [[operation]]
 name = "UpdateStateMachine"

@@ -1,0 +1,28 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DescribeMapRun",
+    "body": {
+      "mapRunArn": "arn:aws:states:us-east-1:123456789012:mapRun:orders/lines:5c3e6c61-6d2f-4a6b-8f3a-0e9b1f2d7a10"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "mapRunArn": "arn:aws:states:us-east-1:123456789012:mapRun:orders/lines:5c3e6c61-6d2f-4a6b-8f3a-0e9b1f2d7a10",
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:orders:run-1",
+      "status": "SUCCEEDED",
+      "startDate": 1715990400.123,
+      "stopDate": 1715990401.456,
+      "maxConcurrency": 2,
+      "toleratedFailurePercentage": 0,
+      "toleratedFailureCount": 0,
+      "itemCounts": {"pending": 0, "running": 0, "succeeded": 3, "failed": 0, "timedOut": 0, "aborted": 0, "total": 3, "resultsWritten": 0, "failuresNotRedrivable": 0, "pendingRedrive": 0},
+      "executionCounts": {"pending": 0, "running": 0, "succeeded": 3, "failed": 0, "timedOut": 0, "aborted": 0, "total": 3, "resultsWritten": 0, "failuresNotRedrivable": 0, "pendingRedrive": 0},
+      "redriveCount": 0
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ResourceNotFound"
+  }
+}

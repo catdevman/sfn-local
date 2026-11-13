@@ -197,7 +197,7 @@ func (s *Store) Sweep() {
 			continue
 		}
 		for exARN, rec := range s.execs {
-			if rec.StateMachineARN != arn || rec.Express {
+			if rec.Machine() != arn || rec.Express {
 				continue
 			}
 			if rec.Status != ExecRunning {
@@ -207,7 +207,7 @@ func (s *Store) Sweep() {
 		}
 		alive := false
 		for _, rec := range s.execs {
-			if rec.StateMachineARN == arn && !rec.Express && rec.Status == ExecRunning {
+			if rec.Machine() == arn && !rec.Express && rec.Status == ExecRunning {
 				alive = true
 				break
 			}

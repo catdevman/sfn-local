@@ -22,6 +22,9 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 		r.failCtx(ctx, arn, "States.Runtime", "Map has no iterator")
 		return "", "", false, true
 	}
+	if st.Dist != nil {
+		return r.runDistributed(ctx, arn, st, input, effVal, ctxObj)
+	}
 	retries := 0
 	started := false
 	for {

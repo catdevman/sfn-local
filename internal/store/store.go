@@ -118,6 +118,8 @@ type HistoryEvent struct {
 	// HasRedrive is set even when the count is 0 so the history API emits it.
 	RedriveCount int32
 	HasRedrive   bool
+	// MapRunARN is mapRunStartedEventDetails.mapRunArn.
+	MapRunARN string
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken
@@ -157,6 +159,11 @@ type Execution struct {
 	// RedriveToken is the client token of the latest accepted redrive.
 	// An empty token matches only while that redrive is still RUNNING.
 	RedriveToken string
+	// MapRunARN, Label, and ParentMachineARN are set on a Distributed Map
+	// child. StateMachineARN is then <parent>/<label>, which is not a machine.
+	MapRunARN        string
+	Label            string
+	ParentMachineARN string
 }
 
 // ExistsError is a duplicate name whose definition differs.
@@ -188,6 +195,7 @@ type Store struct {
 	tokensByExec     map[string]map[string]*TaskToken
 	activityQ        map[string][]*TaskToken
 	activityWait     map[string][]activityWaiter
+	mapRuns          map[string]*MapRun
 }
 
 type execRec struct {
@@ -230,6 +238,7 @@ func New() *Store {
 		tokensByExec:     map[string]map[string]*TaskToken{},
 		activityQ:        map[string][]*TaskToken{},
 		activityWait:     map[string][]activityWaiter{},
+		mapRuns:          map[string]*MapRun{},
 	}
 }
 

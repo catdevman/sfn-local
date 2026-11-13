@@ -116,7 +116,7 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 		if r.halt(ctx, arn) {
 			return
 		}
-		if !r.alive(ex.StateMachineARN) {
+		if !r.alive(ex.Machine()) {
 			r.fail(arn, "States.Runtime", "The state machine has been deleted.")
 			return
 		}

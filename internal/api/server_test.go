@@ -20,7 +20,7 @@ import (
 func TestDeferredOperationsAreModeled(t *testing.T) {
 	srv := prodServer(t, ProfileSmithy)
 	body := call(t, srv, "AWSStepFunctions.ListMapRuns", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
-	if body.Type != "com.amazonaws.sfn#ValidationException" || body.Message != "Distributed Map is not supported by this local server." {
+	if body.Type != "com.amazonaws.sfn#ExecutionDoesNotExist" {
 		t.Fatalf("%+v", body)
 	}
 	if body.Status != 400 || body.Header.Get("Content-Type") != contentTypeJSON10 {
@@ -45,7 +45,7 @@ func TestDeferredOperationsAreModeled(t *testing.T) {
 		t.Fatalf("test state %d %s", code, raw)
 	}
 	mapRun := call(t, srv, "AWSStepFunctions.DescribeMapRun", `{"mapRunArn":"arn:aws:states:us-east-1:123456789012:mapRun:sm:1"}`, contentTypeJSON10)
-	if mapRun.Code() != "ValidationException" || mapRun.Message != "Distributed Map is not supported by this local server." {
+	if mapRun.Code() != "ResourceNotFound" || mapRun.Message != "Resource not found: 'arn:aws:states:us-east-1:123456789012:mapRun:sm:1'" {
 		t.Fatalf("%+v", mapRun)
 	}
 }

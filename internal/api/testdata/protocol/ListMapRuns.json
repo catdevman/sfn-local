@@ -1,0 +1,26 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ListMapRuns",
+    "body": {
+      "executionArn": "arn:aws:states:us-east-1:123456789012:execution:orders:run-1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "mapRuns": [
+        {
+          "executionArn": "arn:aws:states:us-east-1:123456789012:execution:orders:run-1",
+          "mapRunArn": "arn:aws:states:us-east-1:123456789012:mapRun:orders/lines:5c3e6c61-6d2f-4a6b-8f3a-0e9b1f2d7a10",
+          "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:orders",
+          "startDate": 1715990400.123,
+          "stopDate": 1715990401.456
+        }
+      ]
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ExecutionDoesNotExist"
+  }
+}

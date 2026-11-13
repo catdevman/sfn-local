@@ -56,42 +56,44 @@ type Path struct {
 // State is one state the runner can read. Nested machines are copied for
 // Parallel branches and inline Map.
 type State struct {
-	Name                 string
-	Type                 string
-	Next                 string
-	End                  bool
-	InputPath            Path
-	OutputPath           Path
-	ResultPath           Path
-	HasResult            bool
-	Result               json.RawMessage
-	HasParameters        bool
-	HasAssign            bool
-	Assign               json.RawMessage
-	HasResultSelector    bool
-	Parameters           json.RawMessage
-	ResultSelector       json.RawMessage
-	JSONata              bool
-	QueryLanguage        string
-	HasArguments         bool
-	Arguments            json.RawMessage
-	HasOutput            bool
-	Output               json.RawMessage
-	HasItems             bool
-	Items                json.RawMessage
-	SecondsExpr          string
-	TimestampExpr        string
-	TimeoutExpr          string
-	HeartbeatExpr        string
-	ErrorExpr            string
-	CauseExpr            string
-	MaxConcurrencyExpr   string
-	Branches             []*Program
-	ItemsPath            string
-	MaxConcurrency       *int64
-	HasItemSelector      bool
-	ItemSelector         json.RawMessage
-	Processor            *Program
+	Name               string
+	Type               string
+	Next               string
+	End                bool
+	InputPath          Path
+	OutputPath         Path
+	ResultPath         Path
+	HasResult          bool
+	Result             json.RawMessage
+	HasParameters      bool
+	HasAssign          bool
+	Assign             json.RawMessage
+	HasResultSelector  bool
+	Parameters         json.RawMessage
+	ResultSelector     json.RawMessage
+	JSONata            bool
+	QueryLanguage      string
+	HasArguments       bool
+	Arguments          json.RawMessage
+	HasOutput          bool
+	Output             json.RawMessage
+	HasItems           bool
+	Items              json.RawMessage
+	SecondsExpr        string
+	TimestampExpr      string
+	TimeoutExpr        string
+	HeartbeatExpr      string
+	ErrorExpr          string
+	CauseExpr          string
+	MaxConcurrencyExpr string
+	Branches           []*Program
+	ItemsPath          string
+	MaxConcurrency     *int64
+	HasItemSelector    bool
+	ItemSelector       json.RawMessage
+	Processor          *Program
+	// Dist is set when the ItemProcessor's Mode is DISTRIBUTED.
+	Dist                 *DistMap
 	HasError             bool
 	Error                string
 	HasCause             bool
@@ -733,11 +735,15 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 			st.Processor = prog
 		}
 		if proc {
-			prog, err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express, machineLang)
+			prog, dist, err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express, machineLang)
 			if err != nil {
 				return err
 			}
 			st.Processor = prog
+			st.Dist = dist
+		}
+		if err := checkDistributed(st, fields, ptr, st.Dist != nil); err != nil {
+			return err
 		}
 		if !st.JSONata {
 			st.ItemsPath = "$"
@@ -820,30 +826,54 @@ func checkSubmachine(raw json.RawMessage, ptr string, express bool, machineLang 
 	return validateMachine(fields, ptr, false, express, machineLang)
 }
 
-func checkProcessor(raw json.RawMessage, ptr string, express bool, machineLang string) (*Program, error) {
+// checkProcessor validates an ItemProcessor. The DistMap is non-nil when
+// ProcessorConfig sets Mode DISTRIBUTED. A distributed child is validated as
+// its own ExecutionType, and an EXPRESS parent cannot run one.
+func checkProcessor(raw json.RawMessage, ptr string, express bool, machineLang string) (*Program, *DistMap, error) {
 	fields, err := decodeObject(raw)
 	if err != nil {
-		return nil, defErr(codeSchema, "Field must be an object", ptr)
+		return nil, nil, defErr(codeSchema, "Field must be an object", ptr)
 	}
 	allowed := map[string]bool{"Comment": true, "StartAt": true, "States": true, "ProcessorConfig": true, "Retry": true}
 	if err := unknown(fields, allowed, ptr); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
+	var dist *DistMap
 	if raw, ok := fields["ProcessorConfig"]; ok {
+		cfgPtr := join(ptr, "ProcessorConfig")
 		cfg, err := decodeObject(raw)
 		if err != nil {
-			return nil, defErr(codeSchema, "Field 'ProcessorConfig' must be an object", join(ptr, "ProcessorConfig"))
+			return nil, nil, defErr(codeSchema, "Field 'ProcessorConfig' must be an object", cfgPtr)
 		}
-		if err := unknown(cfg, map[string]bool{"Mode": true}, join(ptr, "ProcessorConfig")); err != nil {
-			return nil, err
+		if err := unknown(cfg, map[string]bool{"Mode": true, "ExecutionType": true}, cfgPtr); err != nil {
+			return nil, nil, err
 		}
 		mode, err := asString(cfg["Mode"])
-		if err != nil || mode != "INLINE" {
+		if err != nil || (mode != "INLINE" && mode != "DISTRIBUTED") {
 			text := ""
 			if err == nil {
 				text = mode
 			}
-			return nil, defErr(codeSchema, "Field 'Mode' value '"+text+"' is not supported", join(ptr, "ProcessorConfig")+"/Mode")
+			return nil, nil, defErr(codeSchema, "Field 'Mode' value '"+text+"' is not supported", cfgPtr+"/Mode")
+		}
+		rawType, hasType := cfg["ExecutionType"]
+		if mode == "INLINE" && hasType {
+			return nil, nil, defErr(codeSchema, "Field 'ExecutionType' requires Mode DISTRIBUTED", cfgPtr+"/ExecutionType")
+		}
+		if mode == "DISTRIBUTED" {
+			if express {
+				return nil, nil, defErr(codeSchema, "Mode DISTRIBUTED is not supported in an EXPRESS state machine", cfgPtr+"/Mode")
+			}
+			typ, err := asString(rawType)
+			if !hasType || err != nil || (typ != "STANDARD" && typ != "EXPRESS") {
+				return nil, nil, defErr(codeSchema, "Field 'ExecutionType' must be STANDARD or EXPRESS for Mode DISTRIBUTED", cfgPtr+"/ExecutionType")
+			}
+			def, err := childDefinition(fields, machineLang)
+			if err != nil {
+				return nil, nil, defErr(codeSchema, err.Error(), ptr)
+			}
+			dist = &DistMap{ExecutionType: typ, Definition: def}
+			express = typ == "EXPRESS"
 		}
 	}
 	// Validate StartAt and States by reusing the branch rules. Drop the extra keys first.
@@ -855,14 +885,14 @@ func checkProcessor(raw json.RawMessage, ptr string, express bool, machineLang s
 	}
 	prog, err := validateMachine(base, ptr, false, express, machineLang)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if raw, ok := fields["Retry"]; ok {
 		if err := checkRetry(raw, join(ptr, "Retry")); err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 	}
-	return prog, nil
+	return prog, dist, nil
 }
 
 func checkRetry(raw json.RawMessage, ptr string) error {
@@ -1255,7 +1285,7 @@ var jsonataExtra = map[string][]string{
 	"Succeed":  {},
 	"Fail":     {"Error", "Cause"},
 	"Parallel": {"Branches", "Next", "End"},
-	"Map":      {"MaxConcurrency", "ItemSelector", "Iterator", "ItemProcessor", "Items", "Next", "End"},
+	"Map":      {"MaxConcurrency", "ItemSelector", "Iterator", "ItemProcessor", "Items", "Next", "End", "ItemReader", "ItemBatcher", "ResultWriter", "Label", "ToleratedFailurePercentage", "ToleratedFailureCount"},
 }
 
 var extraFields = map[string][]string{
@@ -1266,7 +1296,7 @@ var extraFields = map[string][]string{
 	"Succeed":  {},
 	"Fail":     {"Error", "ErrorPath", "Cause", "CausePath"},
 	"Parallel": {"Branches", "Next", "End"},
-	"Map":      {"ItemsPath", "MaxConcurrency", "ItemSelector", "Iterator", "ItemProcessor", "Next", "End"},
+	"Map":      {"ItemsPath", "MaxConcurrency", "ItemSelector", "Iterator", "ItemProcessor", "Next", "End", "ItemReader", "ItemBatcher", "ResultWriter", "Label", "MaxConcurrencyPath", "ToleratedFailurePercentage", "ToleratedFailurePercentagePath", "ToleratedFailureCount", "ToleratedFailureCountPath"},
 }
 
 func jsonPathFields() []specgen.Field {

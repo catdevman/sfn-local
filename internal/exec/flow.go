@@ -357,6 +357,12 @@ func (r *Runner) contextObject(ctx context.Context, ex store.Execution, st *asl.
 	return obj
 }
 
+// mockMachine is the machine name the mock file keys on. A Map Run child
+// uses its parent's machine.
+func mockMachine(ex store.Execution) string {
+	return arnName(ex.Machine(), ":stateMachine:")
+}
+
 func arnName(arn, mark string) string {
 	if i := strings.LastIndex(arn, mark); i >= 0 {
 		return arn[i+len(mark):]

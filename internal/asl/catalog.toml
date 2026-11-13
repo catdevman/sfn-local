@@ -131,7 +131,7 @@ status = "deferred"
 
 [[code]]
 name = "States.ExceedToleratedFailureThreshold"
-status = "deferred"
+status = "implemented"
 
 [[code]]
 name = "States.ItemReaderFailed"

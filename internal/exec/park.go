@@ -425,5 +425,5 @@ func (r *Runner) resourceMocked(ex store.Execution, state string) (bool, error) 
 	if r.Mocks == nil {
 		return false, nil
 	}
-	return r.Mocks.Mocked(arnName(ex.StateMachineARN, ":stateMachine:"), ex.MockTest, state)
+	return r.Mocks.Mocked(mockMachine(ex), ex.MockTest, state)
 }

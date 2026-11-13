@@ -307,7 +307,12 @@ func checkScopes(prog *Program, outer map[string]bool) error {
 	for _, name := range names {
 		st := prog.States[name]
 		if st.Processor != nil {
-			if err := checkScopes(st.Processor, next); err != nil {
+			// A Distributed Map child is its own execution and sees no outer variables.
+			scope := next
+			if st.Dist != nil {
+				scope = map[string]bool{}
+			}
+			if err := checkScopes(st.Processor, scope); err != nil {
 				return err
 			}
 		}

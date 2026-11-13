@@ -69,6 +69,9 @@ func (s *Service) DescribeStateMachineForExecution(_ context.Context, in *gen.De
 	if err != nil {
 		return nil, err
 	}
+	if ex.MapRunARN != "" {
+		return childMachine(ex), nil
+	}
 	m, ok := s.Store.Machine(ex.StateMachineARN)
 	if !ok {
 		return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+ex.StateMachineARN+"'")
@@ -141,22 +144,38 @@ func (s *Service) GetExecutionHistory(_ context.Context, in *gen.GetExecutionHis
 }
 
 func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput) (*gen.ListExecutionsOutput, error) {
-	if in == nil || in.StateMachineArn == nil || *in.StateMachineArn == "" {
+	hasMachine := in != nil && in.StateMachineArn != nil && *in.StateMachineArn != ""
+	hasMapRun := in != nil && in.MapRunArn != nil && *in.MapRunArn != ""
+	if hasMachine && hasMapRun {
+		return nil, modeled("ValidationException", "Specify either stateMachineArn or mapRunArn, not both")
+	}
+	if !hasMachine && !hasMapRun {
 		return nil, modeled("ValidationException", "1 validation error detected: Value null at 'stateMachineArn' failed to satisfy constraint: Member must not be null")
 	}
-	m, versionFilter, aliasFilter, err := s.listedMachine(*in.StateMachineArn)
-	if err != nil {
-		return nil, err
-	}
-	if m.Type == store.TypeExpress {
-		return nil, &wireError{
-			name:    "InvalidParameterValue",
-			shape:   shapePrefix + "InvalidParameterValue",
-			message: "This operation is not supported by this type of state machine",
-			status:  400,
+	var rows []store.Execution
+	var versionFilter, aliasFilter string
+	if hasMapRun {
+		run, err := s.mapRun(*in.MapRunArn)
+		if err != nil {
+			return nil, err
 		}
+		rows = s.Store.MapRunExecutions(run.ARN)
+	} else {
+		m, vf, af, err := s.listedMachine(*in.StateMachineArn)
+		if err != nil {
+			return nil, err
+		}
+		if m.Type == store.TypeExpress {
+			return nil, &wireError{
+				name:    "InvalidParameterValue",
+				shape:   shapePrefix + "InvalidParameterValue",
+				message: "This operation is not supported by this type of state machine",
+				status:  400,
+			}
+		}
+		rows = s.Store.Executions(m.ARN)
+		versionFilter, aliasFilter = vf, af
 	}
-	rows := s.Store.Executions(m.ARN)
 	if versionFilter != "" || aliasFilter != "" {
 		filtered := make([]store.Execution, 0, len(rows))
 		for _, row := range rows {
@@ -482,6 +501,32 @@ func newExecutionName() string {
 	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
+// childMachine describes the machine a Distributed Map child ran: the
+// ItemProcessor as its own definition, named <parent>/<label>.
+func childMachine(ex store.Execution) *gen.DescribeStateMachineForExecutionOutput {
+	_, name := splitMachine(ex.StateMachineARN)
+	out := &gen.DescribeStateMachineForExecutionOutput{
+		StateMachineArn: sp(ex.StateMachineARN),
+		Name:            sp(name),
+		Definition:      sp(ex.Definition),
+		MapRunArn:       sp(ex.MapRunARN),
+		Label:           sp(ex.Label),
+		UpdateDate:      ts(ex.Started),
+	}
+	if ex.RoleArn != "" {
+		out.RoleArn = sp(ex.RoleArn)
+	}
+	return out
+}
+
+func splitMachine(arn string) (string, string) {
+	i := strings.LastIndex(arn, stateMachineMarker)
+	if i < 0 {
+		return arn, ""
+	}
+	return arn[:i], arn[i+len(stateMachineMarker):]
+}
+
 func describeExecution(ex store.Execution) *gen.DescribeExecutionOutput {
 	status := gen.ExecutionStatus(ex.Status)
 	included := true
@@ -513,6 +558,9 @@ func describeExecution(ex store.Execution) *gen.DescribeExecutionOutput {
 	}
 	if ex.RedriveDate != nil {
 		out.RedriveDate = ts(*ex.RedriveDate)
+	}
+	if ex.MapRunARN != "" {
+		out.MapRunArn = sp(ex.MapRunARN)
 	}
 	return out
 }
@@ -607,6 +655,17 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 			d.Cause = sp(ev.Cause)
 		}
 		out.ExecutionTimedOutEventDetails = d
+	case "MapRunStarted":
+		out.MapRunStartedEventDetails = &gen.MapRunStartedEventDetails{MapRunArn: sp(ev.MapRunARN)}
+	case "MapRunFailed":
+		d := &gen.MapRunFailedEventDetails{}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.MapRunFailedEventDetails = d
 	case "ExecutionRedriven":
 		d := &gen.ExecutionRedrivenEventDetails{}
 		if ev.HasRedrive {

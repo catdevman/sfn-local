@@ -83,7 +83,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 	if !ok {
 		return "", "", false, true
 	}
-	machine := arnName(ex.StateMachineARN, ":stateMachine:")
+	machine := mockMachine(ex)
 	kind, target, mocked, err := r.classify(ex, st, machine)
 	if err != nil {
 		r.failCtx(ctx, arn, "States.Runtime", err.Error())
@@ -291,7 +291,7 @@ func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution,
 		tf     *taskFailure
 	)
 	if mocked {
-		result, tf = r.readMock(arn, arnName(ex.StateMachineARN, ":stateMachine:"), ex.MockTest, meta.state, meta.kind)
+		result, tf = r.readMock(arn, mockMachine(ex), ex.MockTest, meta.state, meta.kind)
 	} else if meta.kind == kindLambda {
 		result, tf = r.invokeLambda(callCtx, ctx, target, meta.input, taskWins)
 	} else {

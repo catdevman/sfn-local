@@ -1,0 +1,19 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.UpdateMapRun",
+    "body": {
+      "mapRunArn": "arn:aws:states:us-east-1:123456789012:mapRun:orders/lines:5c3e6c61-6d2f-4a6b-8f3a-0e9b1f2d7a10",
+      "maxConcurrency": 5,
+      "toleratedFailurePercentage": 10.5,
+      "toleratedFailureCount": 2
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ResourceNotFound"
+  }
+}
