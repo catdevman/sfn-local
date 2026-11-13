@@ -3,37 +3,37 @@
 [[field]]
 language = "jsonata"
 name = "Type"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Comment"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Output"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Assign"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Arguments"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Retry"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonata"
 name = "Catch"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonpath"
@@ -58,7 +58,7 @@ status = "deferred"
 [[field]]
 language = "jsonpath"
 name = "Assign"
-status = "deferred"
+status = "implemented"
 
 [[field]]
 language = "jsonpath"
@@ -115,7 +115,7 @@ status = "deferred"
 
 [[code]]
 name = "States.QueryEvaluationError"
-status = "deferred"
+status = "implemented"
 
 [[code]]
 name = "States.BranchFailed"

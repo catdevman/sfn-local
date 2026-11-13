@@ -1,6 +1,6 @@
 # stepfunctions-local
 
-The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 0b checks create-time validator messages. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait. Phase 3 runs mocked tasks, direct Lambda invoke, Retry, and Catch. Phase 4 runs Parallel, inline Map, and the eighteen intrinsic functions. Phase V validates definitions and serves state machine versions and aliases. Activities and `.waitForTaskToken` callbacks run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not run.
+The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 0b checks create-time validator messages. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait. Phase 3 runs mocked tasks, direct Lambda invoke, Retry, and Catch. Phase 4 runs Parallel, inline Map, and the eighteen intrinsic functions. Phase V validates definitions and serves state machine versions and aliases. `TestState` runs one state. Activities and `.waitForTaskToken` callbacks run. JSONata and JSONPath `Assign` run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not run.
 
 Listen on `0.0.0.0:8083`. Point the AWS CLI at `--endpoint-url http://127.0.0.1:8083`. SigV4 is not checked. The store is in memory. Bind `127.0.0.1` unless the port is published on purpose, and do not expose the port beyond the host or the compose network.
 
@@ -20,7 +20,7 @@ Three specifications sit next to each other. They are not the same document.
 
 Adjacent material lives under `aws-spec/` as well:
 
-- `aws-spec/jsonata/` is the JSONata 2.0.6 language reference. Step Functions names that version. The language is not part of the States Language spec, and the sync job does not move this pin. It does hash the AWS page that states the version.
+- `aws-spec/jsonata/` is the JSONata 2.0.6 language reference. The local runtime is `github.com/recolabs/gnata` v0.6.2. Step Functions names 2.0.6. The language is not part of the States Language spec, and the sync job does not move this pin. It does hash the AWS page that states the version.
 - `aws-spec/page-watch.json` is the SHA-256 of the developer-guide pages for quotas, intrinsics, TestState, redrive, activities, and the other product behavior. Those pages are not copied.
 - `aws-spec/release-notes.json`, `document-history.json`, `recent-launches.json`, and `sdk-integrations.json` are the changelog feeds the same workflow refreshes.
 

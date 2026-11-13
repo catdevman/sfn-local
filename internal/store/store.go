@@ -141,6 +141,9 @@ type Execution struct {
 	// StateMachineARN stays the unqualified machine ARN.
 	VersionARN string
 	AliasARN   string
+	// RedriveCount is how many times RedriveExecution has resumed this run.
+	// JSONPath context objects omit it. JSONata context includes it, including 0.
+	RedriveCount int32
 }
 
 // ExistsError is a duplicate name whose definition differs.

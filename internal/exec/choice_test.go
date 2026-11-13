@@ -49,7 +49,7 @@ func TestComparators(t *testing.T) {
 	}
 	for _, tc := range cases {
 		st := &asl.State{Choices: []byte("[" + tc.raw + "]"), HasDefault: true, Default: "N"}
-		got, err := choose(st, root, map[string]any{})
+		got, _, _, err := choose(st, root, map[string]any{}, nil)
 		if err != nil {
 			t.Fatalf("%s: %v", tc.raw, err)
 		}
@@ -61,7 +61,7 @@ func TestComparators(t *testing.T) {
 			t.Fatalf("%s -> %s", tc.raw, got)
 		}
 	}
-	if _, err := choose(&asl.State{Choices: []byte(`[{"Variable":"$.missing","IsNull":true,"Next":"Y"}]`)}, root, nil); err == nil {
+	if _, _, _, err := choose(&asl.State{Choices: []byte(`[{"Variable":"$.missing","IsNull":true,"Next":"Y"}]`)}, root, nil, nil); err == nil {
 		t.Fatal("missing IsNull")
 	}
 	if !stringMatches(`a\*b`, "a*b") || stringMatches(`a\*b`, "axb") {

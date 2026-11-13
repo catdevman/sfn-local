@@ -1,12 +1,14 @@
 // Package jsonpath evaluates the reference paths and payload templates the
 // JSONPath state set uses. Paths are a single node: `$`, `$.a.b`, `$[0]`,
-// or `$$.Execution.Id`. A `$name` variable reference fails closed.
+// `$$.Execution.Id`, or a variable `$name` / `$name.foo` / `$name[0]`.
 package jsonpath
 
 import (
 	"errors"
 	"strconv"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 
 	"github.com/catdevman/sfn-local/internal/intrinsic"
 )
@@ -44,6 +46,7 @@ type rootKind int
 const (
 	dataRoot rootKind = iota
 	ctxRoot
+	varRoot
 )
 
 type segKind int
@@ -60,18 +63,34 @@ type segment struct {
 }
 
 // Get reads path. root is the `$` document and ctx is the `$$` document.
-// found is false when a key or index is absent. A malformed path, a variable
-// reference, or a descent into a value that is not a container returns an error.
+// found is false when a key, index, or variable is absent. A malformed path
+// or a descent into a value that is not a container returns an error.
+// A variable path is read with an empty variable map, so it is not found.
 func Get(path string, root, ctx any) (any, bool, error) {
-	kind, segs, err := parse(path)
+	return GetBound(path, root, ctx, nil)
+}
+
+// GetBound is Get with a variable map. Names are the identifier after `$`,
+// without the dollar. A missing variable returns found=false and a nil error
+// so IsPresent can treat it as absent. `$$`, `$.`, and `$[` stay context and
+// data paths.
+func GetBound(path string, root, ctx any, vars map[string]any) (any, bool, error) {
+	parsed, err := parse(path)
 	if err != nil {
 		return nil, false, err
 	}
 	cur := root
-	if kind == ctxRoot {
+	switch parsed.kind {
+	case ctxRoot:
 		cur = ctx
+	case varRoot:
+		val, ok := vars[parsed.name]
+		if !ok {
+			return nil, false, nil
+		}
+		cur = val
 	}
-	for _, seg := range segs {
+	for _, seg := range parsed.segs {
 		next, ok, err := step(cur, seg)
 		if err != nil || !ok {
 			return nil, ok, err
@@ -81,26 +100,41 @@ func Get(path string, root, ctx any) (any, bool, error) {
 	return cur, true, nil
 }
 
+// ReferencesVariable reports whether path starts at a variable (`$name` or
+// `$name` followed by `.` or `[` segments). ResultPath rejects these.
+func ReferencesVariable(path string) bool {
+	_, _, ok := splitVariable(path)
+	return ok
+}
+
 // Set writes value at path in a copy of root. `$` replaces the document.
 // The leaf is created when its parent exists. A missing intermediate or a
 // parent of the wrong JSON type does not invent a container.
 func Set(root any, path string, value any) (any, error) {
-	kind, segs, err := parse(path)
+	parsed, err := parse(path)
 	if err != nil {
 		return nil, err
 	}
-	if kind == ctxRoot {
+	if parsed.kind == ctxRoot {
 		return nil, Runtime("ResultPath cannot reference the context object")
 	}
-	if len(segs) == 0 {
+	if parsed.kind == varRoot {
+		return nil, Runtime("ResultPath cannot reference a variable")
+	}
+	if len(parsed.segs) == 0 {
 		return value, nil
 	}
-	return write(clone(root), segs, value, path)
+	return write(clone(root), parsed.segs, value, path)
 }
 
 // Apply evaluates a payload template. A key ending in `.$` is a reference
 // path or a States.* call.
 func Apply(template, root, ctx any) (any, error) {
+	return ApplyBound(template, root, ctx, nil)
+}
+
+// ApplyBound is Apply with a variable map for `$name` inside paths and intrinsics.
+func ApplyBound(template, root, ctx any, vars map[string]any) (any, error) {
 	switch node := template.(type) {
 	case map[string]any:
 		for key := range node {
@@ -119,14 +153,14 @@ func Apply(template, root, ctx any) (any, error) {
 				if !ok {
 					return nil, Runtime("path value for " + key + " must be a string")
 				}
-				val, err := Eval(text, root, ctx)
+				val, err := EvalBound(text, root, ctx, vars)
 				if err != nil {
 					return nil, err
 				}
 				out[strings.TrimSuffix(key, ".$")] = val
 				continue
 			}
-			val, err := Apply(child, root, ctx)
+			val, err := ApplyBound(child, root, ctx, vars)
 			if err != nil {
 				return nil, err
 			}
@@ -136,7 +170,7 @@ func Apply(template, root, ctx any) (any, error) {
 	case []any:
 		out := make([]any, len(node))
 		for i, child := range node {
-			val, err := Apply(child, root, ctx)
+			val, err := ApplyBound(child, root, ctx, vars)
 			if err != nil {
 				return nil, err
 			}
@@ -150,10 +184,17 @@ func Apply(template, root, ctx any) (any, error) {
 
 // Eval evaluates one payload-template expression.
 func Eval(expr string, root, ctx any) (any, error) {
+	return EvalBound(expr, root, ctx, nil)
+}
+
+// EvalBound is Eval with a variable map. A missing variable is
+// "variable $name was not found". A missing field of a found variable is
+// "path ... was not found".
+func EvalBound(expr string, root, ctx any, vars map[string]any) (any, error) {
 	expr = strings.TrimSpace(expr)
 	if strings.HasPrefix(expr, "States.") {
 		val, err := intrinsic.Eval(expr, func(path string) (any, error) {
-			return Eval(path, root, ctx)
+			return EvalBound(path, root, ctx, vars)
 		})
 		if err != nil {
 			var ev *EvalError
@@ -164,22 +205,35 @@ func Eval(expr string, root, ctx any) (any, error) {
 		}
 		return val, nil
 	}
-	val, found, err := Get(expr, root, ctx)
+	val, found, err := GetBound(expr, root, ctx, vars)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
+		if name, rest, ok := splitVariable(expr); ok && rest == "" {
+			return nil, Runtime("variable $" + name + " was not found")
+		}
 		return nil, Runtime("path " + expr + " was not found")
 	}
 	return val, nil
 }
 
-func parse(path string) (rootKind, []segment, error) {
+type parsedPath struct {
+	kind rootKind
+	name string
+	segs []segment
+}
+
+func parse(path string) (parsedPath, error) {
 	if path == "" {
-		return 0, nil, Runtime("path is empty")
+		return parsedPath{}, Runtime("path is empty")
 	}
-	if isVariable(path) {
-		return 0, nil, Runtime("variable " + path + " is not enabled")
+	if name, rest, ok := splitVariable(path); ok {
+		segs, err := parseSegments(rest, path)
+		if err != nil {
+			return parsedPath{}, err
+		}
+		return parsedPath{kind: varRoot, name: name, segs: segs}, nil
 	}
 	kind := dataRoot
 	rest := path
@@ -190,48 +244,76 @@ func parse(path string) (rootKind, []segment, error) {
 	case strings.HasPrefix(path, "$"):
 		rest = path[1:]
 	default:
-		return 0, nil, Runtime("path " + path + " must start with $. or $$")
+		return parsedPath{}, Runtime("path " + path + " must start with $. or $$")
 	}
+	segs, err := parseSegments(rest, path)
+	if err != nil {
+		return parsedPath{}, err
+	}
+	return parsedPath{kind: kind, segs: segs}, nil
+}
+
+func parseSegments(rest, path string) ([]segment, error) {
 	var segs []segment
 	for len(rest) > 0 {
 		switch rest[0] {
 		case '.':
 			name, next, err := parseIdent(rest[1:], path)
 			if err != nil {
-				return 0, nil, err
+				return nil, err
 			}
 			segs = append(segs, segment{kind: segKey, key: name})
 			rest = next
 		case '[':
 			seg, next, err := parseBracket(rest, path)
 			if err != nil {
-				return 0, nil, err
+				return nil, err
 			}
 			segs = append(segs, seg)
 			rest = next
 		default:
-			return 0, nil, Runtime("invalid path " + path)
+			return nil, Runtime("invalid path " + path)
 		}
 	}
-	return kind, segs, nil
+	return segs, nil
 }
 
-func isVariable(path string) bool {
+// splitVariable accepts `$name`, `$name.foo`, and `$name[0]`. The name uses
+// Unicode ID_Start / ID_Continue. `_` is ID_Continue, so it cannot be the
+// first character. `$$`, `$.`, and `$[` are not variables.
+func splitVariable(path string) (name, rest string, ok bool) {
 	if len(path) < 2 || path[0] != '$' {
-		return false
+		return "", "", false
 	}
 	if path[1] == '$' || path[1] == '.' || path[1] == '[' {
-		return false
+		return "", "", false
 	}
-	for i := 1; i < len(path); i++ {
-		if i == 1 && !isIdentStart(path[i]) {
-			return false
-		}
-		if i > 1 && !isIdentCont(path[i]) {
-			return false
-		}
+	r, size := utf8.DecodeRuneInString(path[1:])
+	if !idStart(r) {
+		return "", "", false
 	}
-	return true
+	i := 1 + size
+	for i < len(path) {
+		r, size = utf8.DecodeRuneInString(path[i:])
+		if !idContinue(r) {
+			break
+		}
+		i += size
+	}
+	name = path[1:i]
+	rest = path[i:]
+	if name == "" || (rest != "" && rest[0] != '.' && rest[0] != '[') {
+		return "", "", false
+	}
+	return name, rest, true
+}
+
+func idStart(r rune) bool {
+	return r != utf8.RuneError && (unicode.IsLetter(r) || unicode.Is(unicode.Nl, r))
+}
+
+func idContinue(r rune) bool {
+	return idStart(r) || unicode.Is(unicode.Mn, r) || unicode.Is(unicode.Mc, r) || unicode.Is(unicode.Nd, r) || unicode.Is(unicode.Pc, r)
 }
 
 func parseIdent(rest, path string) (string, string, error) {

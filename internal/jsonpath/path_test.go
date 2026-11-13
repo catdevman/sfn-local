@@ -22,7 +22,18 @@ func TestGetAndSet(t *testing.T) {
 	if err != nil || !found {
 		t.Fatal(err, found)
 	}
-	if _, _, err := Get("$saved", root, ctx); err == nil || !contains(err.Error(), "not enabled") {
+	_, found, err = Get("$saved", root, ctx)
+	if err != nil || found {
+		t.Fatalf("missing variable %v %v", found, err)
+	}
+	got, found, err = GetBound("$saved.id", nil, nil, map[string]any{"saved": map[string]any{"id": "A"}})
+	if err != nil || !found || got != "A" {
+		t.Fatalf("variable %v %v %v", got, found, err)
+	}
+	if _, err := Eval("$saved", root, ctx); err == nil || !contains(err.Error(), "variable $saved was not found") {
+		t.Fatal(err)
+	}
+	if _, err := Set(root, "$saved", "x"); err == nil || !contains(err.Error(), "variable") {
 		t.Fatal(err)
 	}
 	if _, _, err := Get("name", root, ctx); err == nil || !contains(err.Error(), "$.") {

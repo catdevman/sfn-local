@@ -97,6 +97,7 @@ func (r *Runner) RunState(ctx context.Context, spec StateRun) (StateResult, erro
 		handle.Finish()
 		r.clearAttempts(stored.ARN)
 		r.clearStateMock(stored.ARN)
+		r.dropScope(stored.ARN)
 		r.Store.Drop(stored.ARN)
 	}()
 	if spec.Mock != nil {

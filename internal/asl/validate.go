@@ -1,7 +1,8 @@
-// Package asl validates a JSONPath state machine against the generated field
-// matrix. QueryLanguage and JSONata-only fields fail. Create-time messages
-// for transitions, States.ALL, registered connectors, and EXPRESS resources
-// live here. Logging configuration and tag length stay in the API.
+// Package asl validates a state machine against the generated field matrix.
+// QueryLanguage selects JSONPath or JSONata. Omitted means JSONPath.
+// Create-time messages for transitions, States.ALL, registered connectors,
+// and EXPRESS resources live here. Logging configuration and tag length stay
+// in the API.
 package asl
 
 import (
@@ -66,9 +67,25 @@ type State struct {
 	Result               json.RawMessage
 	HasParameters        bool
 	HasAssign            bool
+	Assign               json.RawMessage
 	HasResultSelector    bool
 	Parameters           json.RawMessage
 	ResultSelector       json.RawMessage
+	JSONata              bool
+	QueryLanguage        string
+	HasArguments         bool
+	Arguments            json.RawMessage
+	HasOutput            bool
+	Output               json.RawMessage
+	HasItems             bool
+	Items                json.RawMessage
+	SecondsExpr          string
+	TimestampExpr        string
+	TimeoutExpr          string
+	HeartbeatExpr        string
+	ErrorExpr            string
+	CauseExpr            string
+	MaxConcurrencyExpr   string
 	Branches             []*Program
 	ItemsPath            string
 	MaxConcurrency       *int64
@@ -111,17 +128,22 @@ type Retrier struct {
 }
 
 // Catcher is one Catch entry. ResultPath defaults to $ when omitted.
+// JSONata catchers use Output and Assign instead of ResultPath.
 type Catcher struct {
 	ErrorEquals []string
 	Next        string
 	ResultPath  Path
 	HasAssign   bool
+	Assign      json.RawMessage
+	HasOutput   bool
+	Output      json.RawMessage
 }
 
 // Program is a validated definition.
 type Program struct {
 	StartAt        string
 	TimeoutSeconds int64
+	QueryLanguage  string
 	States         map[string]*State
 }
 
@@ -142,14 +164,28 @@ func validateDefinition(definition string, express bool) (*Program, error) {
 	if err != nil {
 		return nil, defErr(codeSchema, err.Error(), "/")
 	}
-	return validateMachine(fields, "/", true, express)
+	return validateMachine(fields, "/", true, express, langJSONPath)
 }
 
-func validateMachine(fields map[string]json.RawMessage, ptr string, top, express bool) (*Program, error) {
+func validateMachine(fields map[string]json.RawMessage, ptr string, top, express bool, machineLang string) (*Program, error) {
+	if top {
+		machineLang = langJSONPath
+		if raw, ok := fields["QueryLanguage"]; ok {
+			lang, err := readQueryLanguage(raw, join(ptr, "QueryLanguage"))
+			if err != nil {
+				return nil, err
+			}
+			machineLang = lang
+		}
+	}
+	if machineLang == "" {
+		machineLang = langJSONPath
+	}
 	allowed := map[string]bool{"Comment": true, "StartAt": true, "States": true}
 	if top {
 		allowed["TimeoutSeconds"] = true
 		allowed["Version"] = true
+		allowed["QueryLanguage"] = true
 	}
 	if err := unknown(fields, allowed, ptr); err != nil {
 		return nil, err
@@ -192,14 +228,14 @@ func validateMachine(fields map[string]json.RawMessage, ptr string, top, express
 			return nil, defErr(codeSchema, "Field 'Comment' must be a string", join(ptr, "Comment"))
 		}
 	}
-	prog := &Program{StartAt: start, TimeoutSeconds: timeout, States: map[string]*State{}}
+	prog := &Program{StartAt: start, TimeoutSeconds: timeout, QueryLanguage: machineLang, States: map[string]*State{}}
 	for name, raw := range states {
 		stPtr := join(ptr, "States") + "/" + escape(name)
 		obj, err := decodeObject(raw)
 		if err != nil {
 			return nil, defErr(codeSchema, "Field must be an object", stPtr)
 		}
-		st, err := validateState(name, obj, stPtr, express)
+		st, err := validateState(name, obj, stPtr, express, machineLang)
 		if err != nil {
 			return nil, err
 		}
@@ -208,10 +244,15 @@ func validateMachine(fields map[string]json.RawMessage, ptr string, top, express
 	if err := checkGraph(prog, ptr); err != nil {
 		return nil, err
 	}
+	if top {
+		if err := checkScopes(prog, nil); err != nil {
+			return nil, err
+		}
+	}
 	return prog, nil
 }
 
-func validateState(name string, fields map[string]json.RawMessage, ptr string, express bool) (*State, error) {
+func validateState(name string, fields map[string]json.RawMessage, ptr string, express bool, machineLang string) (*State, error) {
 	typeRaw, ok := fields["Type"]
 	if !ok {
 		return nil, defErr(codeSchema, "Missing required field 'Type'", ptr)
@@ -223,11 +264,26 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 	if !knownType(typ) {
 		return nil, defErr(codeSchema, "Field 'Type' value '"+typ+"' is not supported", join(ptr, "Type"))
 	}
-	allowed := allowedFields(typ)
+	stateLang := machineLang
+	if stateLang == "" {
+		stateLang = langJSONPath
+	}
+	if raw, ok := fields["QueryLanguage"]; ok {
+		stateLang, err = readQueryLanguage(raw, join(ptr, "QueryLanguage"))
+		if err != nil {
+			return nil, err
+		}
+	}
+	jsonata := stateLang == langJSONata
+	allowed := allowedFields(typ, jsonata)
 	if err := unknown(fields, allowed, ptr); err != nil {
 		return nil, err
 	}
-	for _, field := range jsonPathFields() {
+	matrix := jsonPathFields()
+	if jsonata {
+		matrix = jsonataFields()
+	}
+	for _, field := range matrix {
 		if field.Name == "Type" {
 			continue
 		}
@@ -240,7 +296,7 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 	if err := checkTransition(typ, fields, ptr); err != nil {
 		return nil, err
 	}
-	st := &State{Name: name, Type: typ, InputPath: Path{Kind: PathDefault}, OutputPath: Path{Kind: PathDefault}, ResultPath: Path{Kind: PathDefault}}
+	st := &State{Name: name, Type: typ, JSONata: jsonata, QueryLanguage: stateLang, InputPath: Path{Kind: PathDefault}, OutputPath: Path{Kind: PathDefault}, ResultPath: Path{Kind: PathDefault}}
 	if raw, ok := fields["Next"]; ok {
 		if isNull(raw) {
 			return nil, defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "Next"))
@@ -268,8 +324,26 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 			return nil, err
 		}
 	}
-	if _, ok := fields["Assign"]; ok {
+	if raw, ok := fields["Arguments"]; ok && !isNull(raw) {
+		st.HasArguments = true
+		st.Arguments = append(json.RawMessage(nil), raw...)
+		if err := scanRaw(raw, join(ptr, "Arguments"), false, false); err != nil {
+			return nil, err
+		}
+	}
+	if raw, ok := fields["Output"]; ok && !isNull(raw) {
+		st.HasOutput = true
+		st.Output = append(json.RawMessage(nil), raw...)
+		if err := scanRaw(raw, join(ptr, "Output"), allowResult(st), false); err != nil {
+			return nil, err
+		}
+	}
+	if raw, ok := fields["Assign"]; ok {
+		if err := checkAssign(raw, join(ptr, "Assign"), jsonata, allowResult(st), false); err != nil {
+			return nil, err
+		}
 		st.HasAssign = true
+		st.Assign = append(json.RawMessage(nil), raw...)
 	}
 	if raw, ok := fields["ResultSelector"]; ok {
 		st.HasResultSelector = true
@@ -283,16 +357,30 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 		if err != nil {
 			return nil, defErr(codeSchema, "Field 'Error' must be a string", join(ptr, "Error"))
 		}
-		st.HasError = true
-		st.Error = text
+		if body, ok := fullExpr(text); ok && jsonata {
+			if err := scanExpr(body, join(ptr, "Error"), false, false); err != nil {
+				return nil, err
+			}
+			st.ErrorExpr = body
+		} else {
+			st.HasError = true
+			st.Error = text
+		}
 	}
 	if raw, ok := fields["Cause"]; ok {
 		text, err := asString(raw)
 		if err != nil {
 			return nil, defErr(codeSchema, "Field 'Cause' must be a string", join(ptr, "Cause"))
 		}
-		st.HasCause = true
-		st.Cause = text
+		if body, ok := fullExpr(text); ok && jsonata {
+			if err := scanExpr(body, join(ptr, "Cause"), false, false); err != nil {
+				return nil, err
+			}
+			st.CauseExpr = body
+		} else {
+			st.HasCause = true
+			st.Cause = text
+		}
 	}
 	if raw, ok := fields["ErrorPath"]; ok {
 		text, err := asString(raw)
@@ -310,7 +398,7 @@ func validateState(name string, fields map[string]json.RawMessage, ptr string, e
 		st.HasCausePath = true
 		st.CausePath = text
 	}
-	if err := checkTypeShape(st, fields, ptr, express); err != nil {
+	if err := checkTypeShape(st, fields, ptr, express, machineLang); err != nil {
 		return nil, err
 	}
 	if err := captureRuntime(st, fields, ptr); err != nil {
@@ -338,19 +426,33 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		st.HasDefault = true
 	}
 	if raw, ok := fields["Seconds"]; ok {
-		n, err := asInt(raw, 0, defaultTimeout)
-		if err != nil {
-			return defErr(codeSchema, "Field 'Seconds' must be an integer in 0..99999999", join(ptr, "Seconds"))
+		if body, ok := expressionBody(raw); ok && st.JSONata {
+			if err := scanExpr(body, join(ptr, "Seconds"), false, false); err != nil {
+				return err
+			}
+			st.SecondsExpr = body
+		} else {
+			n, err := asInt(raw, 0, defaultTimeout)
+			if err != nil {
+				return defErr(codeSchema, "Field 'Seconds' must be an integer in 0..99999999", join(ptr, "Seconds"))
+			}
+			st.Seconds = &n
 		}
-		st.Seconds = &n
 	}
 	if raw, ok := fields["Timestamp"]; ok {
-		text, err := asString(raw)
-		if err != nil {
-			return defErr(codeSchema, "Field 'Timestamp' must be a string", join(ptr, "Timestamp"))
+		if body, ok := expressionBody(raw); ok && st.JSONata {
+			if err := scanExpr(body, join(ptr, "Timestamp"), false, false); err != nil {
+				return err
+			}
+			st.TimestampExpr = body
+		} else {
+			text, err := asString(raw)
+			if err != nil {
+				return defErr(codeSchema, "Field 'Timestamp' must be a string", join(ptr, "Timestamp"))
+			}
+			st.Timestamp = text
+			st.HasTimestamp = true
 		}
-		st.Timestamp = text
-		st.HasTimestamp = true
 	}
 	if raw, ok := fields["SecondsPath"]; ok {
 		text, err := asString(raw)
@@ -374,11 +476,18 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		st.Resource = text
 	}
 	if raw, ok := fields["TimeoutSeconds"]; ok {
-		n, err := asInt(raw, 0, defaultTimeout)
-		if err != nil {
-			return defErr(codeSchema, "Field 'TimeoutSeconds' must be an integer in 0..99999999", join(ptr, "TimeoutSeconds"))
+		if body, ok := expressionBody(raw); ok && st.JSONata {
+			if err := scanExpr(body, join(ptr, "TimeoutSeconds"), false, false); err != nil {
+				return err
+			}
+			st.TimeoutExpr = body
+		} else {
+			n, err := asInt(raw, 0, defaultTimeout)
+			if err != nil {
+				return defErr(codeSchema, "Field 'TimeoutSeconds' must be an integer in 0..99999999", join(ptr, "TimeoutSeconds"))
+			}
+			st.TimeoutSeconds = &n
 		}
-		st.TimeoutSeconds = &n
 	}
 	if raw, ok := fields["TimeoutSecondsPath"]; ok {
 		text, err := asString(raw)
@@ -388,11 +497,18 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		st.TimeoutSecondsPath = text
 	}
 	if raw, ok := fields["HeartbeatSeconds"]; ok {
-		n, err := asInt(raw, 0, defaultTimeout)
-		if err != nil {
-			return defErr(codeSchema, "Field 'HeartbeatSeconds' must be an integer in 0..99999999", join(ptr, "HeartbeatSeconds"))
+		if body, ok := expressionBody(raw); ok && st.JSONata {
+			if err := scanExpr(body, join(ptr, "HeartbeatSeconds"), false, false); err != nil {
+				return err
+			}
+			st.HeartbeatExpr = body
+		} else {
+			n, err := asInt(raw, 0, defaultTimeout)
+			if err != nil {
+				return defErr(codeSchema, "Field 'HeartbeatSeconds' must be an integer in 0..99999999", join(ptr, "HeartbeatSeconds"))
+			}
+			st.HeartbeatSeconds = &n
 		}
-		st.HeartbeatSeconds = &n
 	}
 	if raw, ok := fields["HeartbeatSecondsPath"]; ok {
 		text, err := asString(raw)
@@ -412,7 +528,7 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		st.Retry = list
 	}
 	if raw, ok := fields["Catch"]; ok {
-		list, err := parseCatch(raw, join(ptr, "Catch"))
+		list, err := parseCatch(raw, join(ptr, "Catch"), st.JSONata)
 		if err != nil {
 			return err
 		}
@@ -486,6 +602,9 @@ func fillPaths(st *State, fields map[string]json.RawMessage, ptr string) error {
 		if err != nil {
 			return err
 		}
+		if err := resultPathVariable(st.ResultPath, join(ptr, "ResultPath")); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -530,7 +649,7 @@ func checkTransition(typ string, fields map[string]json.RawMessage, ptr string) 
 	return nil
 }
 
-func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, express bool) error {
+func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, express bool, machineLang string) error {
 	switch st.Type {
 	case "Task":
 		raw, ok := fields["Resource"]
@@ -557,8 +676,10 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 			return defErr(codeSchema, "Exactly one of Seconds, Timestamp, SecondsPath, or TimestampPath is required", ptr)
 		}
 		if raw, ok := fields["Seconds"]; ok {
-			if _, err := asInt(raw, 0, defaultTimeout); err != nil {
-				return defErr(codeSchema, "Field 'Seconds' must be an integer in 0..99999999", join(ptr, "Seconds"))
+			if _, expr := expressionBody(raw); !(expr && st.JSONata) {
+				if _, err := asInt(raw, 0, defaultTimeout); err != nil {
+					return defErr(codeSchema, "Field 'Seconds' must be an integer in 0..99999999", join(ptr, "Seconds"))
+				}
 			}
 		}
 	case "Choice":
@@ -566,7 +687,7 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 		if !ok {
 			return defErr(codeSchema, "Missing required field 'Choices'", ptr)
 		}
-		if err := checkChoices(raw, join(ptr, "Choices")); err != nil {
+		if err := checkChoices(raw, join(ptr, "Choices"), st.JSONata); err != nil {
 			return err
 		}
 		if raw, ok := fields["Default"]; ok && !isNull(raw) {
@@ -590,7 +711,7 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 		if !ok {
 			return defErr(codeSchema, "Missing required field 'Branches'", ptr)
 		}
-		branches, err := checkBranches(raw, join(ptr, "Branches"), express)
+		branches, err := checkBranches(raw, join(ptr, "Branches"), express, machineLang)
 		if err != nil {
 			return err
 		}
@@ -605,38 +726,58 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 			return defErr(codeSchema, "Exactly one of Iterator or ItemProcessor is required", ptr)
 		}
 		if it {
-			prog, err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), express)
+			prog, err := checkSubmachine(fields["Iterator"], join(ptr, "Iterator"), express, machineLang)
 			if err != nil {
 				return err
 			}
 			st.Processor = prog
 		}
 		if proc {
-			prog, err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express)
+			prog, err := checkProcessor(fields["ItemProcessor"], join(ptr, "ItemProcessor"), express, machineLang)
 			if err != nil {
 				return err
 			}
 			st.Processor = prog
 		}
-		st.ItemsPath = "$"
-		if raw, ok := fields["ItemsPath"]; ok {
-			text, err := asString(raw)
-			if err != nil || text == "" {
-				return defErr(codeSchema, "Field 'ItemsPath' must be a non-empty string", join(ptr, "ItemsPath"))
+		if !st.JSONata {
+			st.ItemsPath = "$"
+			if raw, ok := fields["ItemsPath"]; ok {
+				text, err := asString(raw)
+				if err != nil || text == "" {
+					return defErr(codeSchema, "Field 'ItemsPath' must be a non-empty string", join(ptr, "ItemsPath"))
+				}
+				st.ItemsPath = text
 			}
-			st.ItemsPath = text
+		}
+		if raw, ok := fields["Items"]; ok {
+			if err := checkItems(raw, join(ptr, "Items")); err != nil {
+				return err
+			}
+			st.HasItems = true
+			st.Items = append(json.RawMessage(nil), raw...)
 		}
 		if raw, ok := fields["MaxConcurrency"]; ok {
-			n, err := asInt(raw, 0, int64(^uint64(0)>>1))
-			if err != nil {
-				return defErr(codeSchema, "Field 'MaxConcurrency' must be an integer >= 0", join(ptr, "MaxConcurrency"))
+			if body, ok := expressionBody(raw); ok && st.JSONata {
+				if err := scanExpr(body, join(ptr, "MaxConcurrency"), false, false); err != nil {
+					return err
+				}
+				st.MaxConcurrencyExpr = body
+			} else {
+				n, err := asInt(raw, 0, int64(^uint64(0)>>1))
+				if err != nil {
+					return defErr(codeSchema, "Field 'MaxConcurrency' must be an integer >= 0", join(ptr, "MaxConcurrency"))
+				}
+				st.MaxConcurrency = &n
 			}
-			st.MaxConcurrency = &n
 		}
 		if raw, ok := fields["ItemSelector"]; ok && !isNull(raw) {
 			st.HasItemSelector = true
 			st.ItemSelector = append(json.RawMessage(nil), raw...)
-			if err := checkPayload(raw, join(ptr, "ItemSelector")); err != nil {
+			if st.JSONata {
+				if err := checkItemSelectorJSONata(raw, join(ptr, "ItemSelector")); err != nil {
+					return err
+				}
+			} else if err := checkPayload(raw, join(ptr, "ItemSelector")); err != nil {
 				return err
 			}
 		}
@@ -647,21 +788,21 @@ func checkTypeShape(st *State, fields map[string]json.RawMessage, ptr string, ex
 		}
 	}
 	if raw, ok := fields["Catch"]; ok {
-		if err := checkCatch(raw, join(ptr, "Catch")); err != nil {
+		if err := checkCatch(raw, join(ptr, "Catch"), st.JSONata); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkBranches(raw json.RawMessage, ptr string, express bool) ([]*Program, error) {
+func checkBranches(raw json.RawMessage, ptr string, express bool, machineLang string) ([]*Program, error) {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
 		return nil, defErr(codeSchema, "Field 'Branches' must be a non-empty array", ptr)
 	}
 	out := make([]*Program, 0, len(arr))
 	for i, item := range arr {
-		prog, err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), express)
+		prog, err := checkSubmachine(item, fmt.Sprintf("%s[%d]", ptr, i), express, machineLang)
 		if err != nil {
 			return nil, err
 		}
@@ -670,16 +811,16 @@ func checkBranches(raw json.RawMessage, ptr string, express bool) ([]*Program, e
 	return out, nil
 }
 
-func checkSubmachine(raw json.RawMessage, ptr string, express bool) (*Program, error) {
+func checkSubmachine(raw json.RawMessage, ptr string, express bool, machineLang string) (*Program, error) {
 	fields, err := decodeObject(raw)
 	if err != nil {
 		return nil, defErr(codeSchema, "Field must be an object", ptr)
 	}
 	// Branches and iterators only allow Comment, StartAt, and States.
-	return validateMachine(fields, ptr, false, express)
+	return validateMachine(fields, ptr, false, express, machineLang)
 }
 
-func checkProcessor(raw json.RawMessage, ptr string, express bool) (*Program, error) {
+func checkProcessor(raw json.RawMessage, ptr string, express bool, machineLang string) (*Program, error) {
 	fields, err := decodeObject(raw)
 	if err != nil {
 		return nil, defErr(codeSchema, "Field must be an object", ptr)
@@ -712,7 +853,7 @@ func checkProcessor(raw json.RawMessage, ptr string, express bool) (*Program, er
 			base[key] = raw
 		}
 	}
-	prog, err := validateMachine(base, ptr, false, express)
+	prog, err := validateMachine(base, ptr, false, express, machineLang)
 	if err != nil {
 		return nil, err
 	}
@@ -803,17 +944,22 @@ func parseRetry(raw json.RawMessage, ptr string) ([]Retrier, error) {
 	return out, nil
 }
 
-func checkCatch(raw json.RawMessage, ptr string) error {
-	_, err := parseCatch(raw, ptr)
+func checkCatch(raw json.RawMessage, ptr string, jsonata bool) error {
+	_, err := parseCatch(raw, ptr, jsonata)
 	return err
 }
 
-func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
+func parseCatch(raw json.RawMessage, ptr string, jsonata bool) ([]Catcher, error) {
 	arr, err := decodeArray(raw)
 	if err != nil {
 		return nil, defErr(codeSchema, "Field 'Catch' must be an array", ptr)
 	}
-	allowed := map[string]bool{"ErrorEquals": true, "Next": true, "ResultPath": true, "Comment": true, "Assign": true}
+	allowed := map[string]bool{"ErrorEquals": true, "Next": true, "Comment": true, "Assign": true}
+	if jsonata {
+		allowed["Output"] = true
+	} else {
+		allowed["ResultPath"] = true
+	}
 	out := make([]Catcher, 0, len(arr))
 	for i, item := range arr {
 		ip := fmt.Sprintf("%s[%d]", ptr, i)
@@ -851,10 +997,24 @@ func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
 			if err != nil {
 				return nil, err
 			}
+			if err := resultPathVariable(path, join(ip, "ResultPath")); err != nil {
+				return nil, err
+			}
 			c.ResultPath = path
 		}
-		if _, ok := obj["Assign"]; ok {
+		if raw, ok := obj["Output"]; ok && !isNull(raw) {
+			if err := scanRaw(raw, join(ip, "Output"), false, true); err != nil {
+				return nil, err
+			}
+			c.HasOutput = true
+			c.Output = append(json.RawMessage(nil), raw...)
+		}
+		if raw, ok := obj["Assign"]; ok {
+			if err := checkAssign(raw, join(ip, "Assign"), jsonata, false, true); err != nil {
+				return nil, err
+			}
 			c.HasAssign = true
+			c.Assign = append(json.RawMessage(nil), raw...)
 		}
 		out = append(out, c)
 	}
@@ -868,25 +1028,28 @@ func parseCatch(raw json.RawMessage, ptr string) ([]Catcher, error) {
 	return out, nil
 }
 
-func checkChoices(raw json.RawMessage, ptr string) error {
+func checkChoices(raw json.RawMessage, ptr string, jsonata bool) error {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
 		return defErr(codeSchema, "Field 'Choices' must be a non-empty array", ptr)
 	}
 	for i, item := range arr {
-		if err := checkRule(item, fmt.Sprintf("%s[%d]", ptr, i), true); err != nil {
+		if err := checkRule(item, fmt.Sprintf("%s[%d]", ptr, i), true, jsonata); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkRule(raw json.RawMessage, ptr string, top bool) error {
+func checkRule(raw json.RawMessage, ptr string, top, jsonata bool) error {
 	obj, err := decodeObject(raw)
 	if err != nil {
 		return defErr(codeSchema, "Field must be an object", ptr)
 	}
-	allowed := map[string]bool{"Comment": true, "Variable": true, "Next": true, "And": true, "Or": true, "Not": true}
+	if jsonata {
+		return checkJSONataRule(obj, ptr, top)
+	}
+	allowed := map[string]bool{"Comment": true, "Variable": true, "Next": true, "And": true, "Or": true, "Not": true, "Assign": true}
 	for name := range comparatorNames {
 		allowed[name] = true
 	}
@@ -944,31 +1107,84 @@ func checkRule(raw json.RawMessage, ptr string, top bool) error {
 			return defErr(codeSchema, "Field 'Next' must be a non-empty string", join(ptr, "Next"))
 		}
 	}
+	if raw, ok := obj["Assign"]; ok {
+		if !top {
+			return defErr(codeSchema, "Field 'Assign' is not supported", join(ptr, "Assign"))
+		}
+		if err := checkAssign(raw, join(ptr, "Assign"), false, false, false); err != nil {
+			return err
+		}
+	}
 	if raw, ok := obj["And"]; ok {
-		if err := checkRuleArray(raw, join(ptr, "And")); err != nil {
+		if err := checkRuleArray(raw, join(ptr, "And"), false); err != nil {
 			return err
 		}
 	}
 	if raw, ok := obj["Or"]; ok {
-		if err := checkRuleArray(raw, join(ptr, "Or")); err != nil {
+		if err := checkRuleArray(raw, join(ptr, "Or"), false); err != nil {
 			return err
 		}
 	}
 	if raw, ok := obj["Not"]; ok {
-		if err := checkRule(raw, join(ptr, "Not"), false); err != nil {
+		if err := checkRule(raw, join(ptr, "Not"), false, false); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func checkRuleArray(raw json.RawMessage, ptr string) error {
+func checkJSONataRule(obj map[string]json.RawMessage, ptr string, top bool) error {
+	allowed := map[string]bool{"Comment": true, "Condition": true, "Next": true, "Assign": true}
+	if err := unknown(obj, allowed, ptr); err != nil {
+		return err
+	}
+	raw, ok := obj["Condition"]
+	if !ok {
+		return defErr(codeSchema, "Missing required field 'Condition'", ptr)
+	}
+	body, ok := expressionBody(raw)
+	if !ok {
+		return defErr(codeSchema, "Field 'Condition' must be a JSONata expression", join(ptr, "Condition"))
+	}
+	if err := scanExpr(body, join(ptr, "Condition"), false, false); err != nil {
+		return err
+	}
+	if !top {
+		if _, ok := obj["Next"]; ok {
+			return defErr(codeSchema, "Field 'Next' is not supported", join(ptr, "Next"))
+		}
+		if _, ok := obj["Assign"]; ok {
+			return defErr(codeSchema, "Field 'Assign' is not supported", join(ptr, "Assign"))
+		}
+	}
+	if top {
+		next, ok := obj["Next"]
+		if !ok {
+			return defErr(codeSchema, "Missing required field 'Next'", ptr)
+		}
+		if isNull(next) {
+			return defErr(codeMissingTarget, "Missing transition pointer", join(ptr, "Next"))
+		}
+		text, err := asString(next)
+		if err != nil || text == "" {
+			return defErr(codeSchema, "Field 'Next' must be a non-empty string", join(ptr, "Next"))
+		}
+		if raw, ok := obj["Assign"]; ok {
+			if err := checkAssign(raw, join(ptr, "Assign"), true, false, false); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func checkRuleArray(raw json.RawMessage, ptr string, jsonata bool) error {
 	arr, err := decodeArray(raw)
 	if err != nil || len(arr) == 0 {
 		return defErr(codeSchema, "Field must be a non-empty array", ptr)
 	}
 	for i, item := range arr {
-		if err := checkRule(item, fmt.Sprintf("%s[%d]", ptr, i), false); err != nil {
+		if err := checkRule(item, fmt.Sprintf("%s[%d]", ptr, i), false, jsonata); err != nil {
 			return err
 		}
 	}
@@ -1002,17 +1218,44 @@ func knownType(typ string) bool {
 	}
 }
 
-func allowedFields(typ string) map[string]bool {
+func allowedFields(typ string, jsonata bool) map[string]bool {
 	out := map[string]bool{}
-	for _, field := range jsonPathFields() {
+	fields := jsonPathFields()
+	extras := extraFields[typ]
+	if jsonata {
+		fields = jsonataFields()
+		extras = jsonataExtra[typ]
+	}
+	for _, field := range fields {
 		if presence(field, typ) != specgen.PresenceAbsent {
 			out[field.Name] = true
 		}
 	}
-	for _, name := range extraFields[typ] {
+	for _, name := range extras {
 		out[name] = true
 	}
+	out["QueryLanguage"] = true
 	return out
+}
+
+func jsonataFields() []specgen.Field {
+	for _, lang := range specgen.Languages {
+		if lang.Name == "jsonata" {
+			return lang.Fields
+		}
+	}
+	return nil
+}
+
+var jsonataExtra = map[string][]string{
+	"Pass":     {"Next", "End"},
+	"Task":     {"Resource", "TimeoutSeconds", "HeartbeatSeconds", "Next", "End"},
+	"Wait":     {"Seconds", "Timestamp", "Next", "End"},
+	"Choice":   {"Choices", "Default"},
+	"Succeed":  {},
+	"Fail":     {"Error", "Cause"},
+	"Parallel": {"Branches", "Next", "End"},
+	"Map":      {"MaxConcurrency", "ItemSelector", "Iterator", "ItemProcessor", "Items", "Next", "End"},
 }
 
 var extraFields = map[string][]string{
@@ -1088,8 +1331,14 @@ func checkTaskResource(st *State, express bool, ptr string) error {
 			return defErr(codeSchema, "Express state machine does not support '.sync' service integration", join(ptr, "Resource"))
 		}
 	}
-	if registeredConnectors[connectorBase(st.Resource)] && !st.HasParameters {
-		return defErr(codeSchema, "Parameters field is required for resource ARN: "+st.Resource, join(ptr, "Resource"))
+	if registeredConnectors[connectorBase(st.Resource)] {
+		if st.JSONata {
+			if !st.HasArguments {
+				return defErr(codeSchema, "Arguments field is required for resource ARN: "+st.Resource, join(ptr, "Resource"))
+			}
+		} else if !st.HasParameters {
+			return defErr(codeSchema, "Parameters field is required for resource ARN: "+st.Resource, join(ptr, "Resource"))
+		}
 	}
 	return nil
 }

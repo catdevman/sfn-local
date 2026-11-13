@@ -106,11 +106,11 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 	if api = mustAPI(t, err); api.ErrorName() != "InvalidDefinition" || !strings.Contains(api.Error(), "SCHEMA_VALIDATION_FAILED") || !strings.Contains(api.Error(), "Nope") {
 		t.Fatal(api)
 	}
-	_, err = s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
+	created, err := s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
 		Name: sp("q"), Definition: sp(`{"StartAt":"P","QueryLanguage":"JSONata","States":{"P":{"Type":"Pass","End":true}}}`), RoleArn: sp(roleARN),
 	})
-	if api = mustAPI(t, err); api.ErrorName() != "InvalidDefinition" || !strings.Contains(api.Error(), "QueryLanguage") {
-		t.Fatal(api)
+	if err != nil || created.StateMachineArn == nil || !strings.Contains(*created.StateMachineArn, ":stateMachine:q") {
+		t.Fatal(err, created)
 	}
 
 	described, err := s.DescribeStateMachine(context.Background(), &gen.DescribeStateMachineInput{StateMachineArn: sp(arn)})
@@ -140,10 +140,10 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 
 	createMachine(t, s, "other", passDef, roleARN)
 	listed, err := s.ListStateMachines(context.Background(), &gen.ListStateMachinesInput{})
-	if err != nil || listed.StateMachines == nil || len(*listed.StateMachines) != 2 {
+	if err != nil || listed.StateMachines == nil || len(*listed.StateMachines) != 3 {
 		t.Fatal(err, listed)
 	}
-	if *(*listed.StateMachines)[0].Name != "other" || *(*listed.StateMachines)[1].Name != "rebuild-check" {
+	if *(*listed.StateMachines)[0].Name != "other" || *(*listed.StateMachines)[1].Name != "q" || *(*listed.StateMachines)[2].Name != "rebuild-check" {
 		t.Fatal("sort")
 	}
 	zero := int32(0)

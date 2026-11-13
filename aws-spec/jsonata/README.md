@@ -10,6 +10,8 @@ JSONata 2.1.0 (31 July 2025) added the `?:` and `??` operators. They are not in 
 
 The Step Functions feature announcement is 22 November 2024, a week before the 2.0.6 tag. The guide as published now says 2.0.6. It does not say which build was embedded on the announcement day.
 
+The local runtime is `github.com/recolabs/gnata` v0.6.2. This directory stays the language pin. It is not copied into the binary. gnata accepts the 2.1 operators `?:` and `??`. The validator rejects them so a definition stays inside the 2.0.6 language.
+
 `aws-spec/page-watch.json` already hashes `transforming-data.md`. A change to the version sentence shows up there. This directory is the pinned language text. The sync job does not replace it.
 
 ## What Step Functions adds and removes

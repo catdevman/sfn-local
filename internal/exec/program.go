@@ -2,16 +2,18 @@ package exec
 
 import (
 	"context"
-	"errors"
 
 	"github.com/catdevman/sfn-local/internal/asl"
-	"github.com/catdevman/sfn-local/internal/jsonpath"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
 // runProgram runs a nested state machine on the same execution. It does not
 // succeed or fail the execution. A terminal state returns its output.
 func (r *Runner) runProgram(ctx context.Context, arn string, prog *asl.Program, input string) branchResult {
+	ctx = r.ensureScope(ctx, arn)
+	child := scopeOf(ctx).child()
+	ctx = withScope(ctx, child)
+	defer child.detach()
 	ctx, frame := withNest(ctx)
 	if prog == nil {
 		r.failCtx(ctx, arn, "States.Runtime", "nested state machine is missing")
@@ -80,10 +82,8 @@ func failureFrom(err error) branchResult {
 	if err != nil {
 		cause = err.Error()
 	}
-	var ev *jsonpath.EvalError
-	if errors.As(err, &ev) && ev != nil {
-		name = ev.Name
-		cause = ev.Cause
+	if n, c, ok := namedFailure(err); ok {
+		name, cause = n, c
 	}
 	return branchResult{outcome: outcomeFail, errName: name, cause: cause}
 }

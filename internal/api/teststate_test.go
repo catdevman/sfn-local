@@ -192,11 +192,11 @@ func TestTestStateRefusesUnimplemented(t *testing.T) {
 	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "mock can only be specified") {
 		t.Fatalf("%v", err)
 	}
-	_, err = s.TestState(context.Background(), &gen.TestStateInput{
+	out, err := s.TestState(context.Background(), &gen.TestStateInput{
 		Definition: sp(`{"StartAt":"P","QueryLanguage":"JSONata","States":{"P":{"Type":"Pass","End":true}}}`),
 	})
-	if api := mustAPI(t, err); api.ErrorName() != "InvalidDefinition" || !strings.Contains(api.Error(), "QueryLanguage") {
-		t.Fatalf("%v", err)
+	if err != nil || statusOf(out) != "SUCCEEDED" || str(out.Output) != "{}" {
+		t.Fatalf("%v %+v", err, out)
 	}
 	_, err = s.TestState(context.Background(), &gen.TestStateInput{Definition: sp(passDef), Variables: sp(`{}`)})
 	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "variables are not implemented") {
@@ -229,7 +229,7 @@ func TestTestStateRefusesUnimplemented(t *testing.T) {
 	if api := mustAPI(t, err); api.ErrorName() != "InvalidArn" || !strings.Contains(api.Error(), "Invalid Role Arn") {
 		t.Fatalf("%v", err)
 	}
-	out := mustTestRole(t, s)
+	out = mustTestRole(t, s)
 	if statusOf(out) != "SUCCEEDED" {
 		t.Fatalf("%+v", out)
 	}

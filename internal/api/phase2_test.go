@@ -80,7 +80,7 @@ func TestPhase2Fixtures(t *testing.T) {
 
 	variable := `{"StartAt":"P","States":{"P":{"Type":"Pass","InputPath":"$saved","End":true}}}`
 	ex = runMachine(t, s, "var", variable, "run", `{}`)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not enabled") {
+	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "variable $saved was not found") {
 		t.Fatalf("variable %s %s", ex.Error, ex.Cause)
 	}
 

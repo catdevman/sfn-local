@@ -306,8 +306,10 @@ func TestJSONataPin(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(reason, "phase 6 has not started") {
-		t.Fatalf("%s", reason)
+	for _, phrase := range []string{"gnata", "assign", "negative $nextX", "absent $eval"} {
+		if !strings.Contains(strings.ToLower(reason), strings.ToLower(phrase)) {
+			t.Fatalf("missing %s in %s", phrase, reason)
+		}
 	}
 	t.Log(reason)
 }
@@ -320,7 +322,7 @@ const jarImage = "amazon/aws-stepfunctions-local:2.0.0"
 
 func runnerRegistered(phase string) bool {
 	switch phase {
-	case "1", "2", "3", "4":
+	case "1", "2", "3", "4", "6":
 		return true
 	default:
 		return false
@@ -366,10 +368,8 @@ func jsonataPin(root string) (string, error) {
 			phase6 = true
 		}
 	}
-	vendored := filepath.Join(root, "third_party/jsonata/2.0.6")
-	_, statErr := os.Stat(vendored)
-	if !phase6 && os.IsNotExist(statErr) {
-		return "jsonata pin: phase 6 has not started; third_party/jsonata/2.0.6 is not vendored", nil
+	if !phase6 {
+		return "", oracleError("phase 6 heading is unchecked")
 	}
 	raw, err := os.ReadFile(filepath.Join(root, "aws-spec/jsonata/2.0.6/upstream.json"))
 	if err != nil {
@@ -382,12 +382,16 @@ func jsonataPin(root string) (string, error) {
 		return "", err
 	}
 	if doc.Commit != "6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b" {
-		return "", oracleError("upstream.json commit moved; re-vendor and re-record the Assign example")
+		return "", oracleError("upstream.json commit moved; re-record the Assign example")
 	}
-	if statErr != nil {
-		return "", statErr
+	mod, err := os.ReadFile(filepath.Join(root, "go.mod"))
+	if err != nil {
+		return "", err
 	}
-	return "", oracleError("vendored JSONata is present and the Assign, negative $nextX, and absent $eval checks are not recorded")
+	if !strings.Contains(string(mod), "github.com/recolabs/gnata ") {
+		return "", oracleError("go.mod is missing github.com/recolabs/gnata")
+	}
+	return "jsonata pin: gnata runtime, upstream 6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b, assign example, negative $nextX, and absent $eval", nil
 }
 
 func landedFixtures(root string) []string {

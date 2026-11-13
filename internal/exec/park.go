@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/catdevman/sfn-local/internal/asl"
-	"github.com/catdevman/sfn-local/internal/jsonpath"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -33,13 +32,27 @@ func (r *Runner) runParked(ctx context.Context, arn string, st *asl.State, input
 			r.finish(arn, store.ExecTimedOut, "ExecutionTimedOut", "", false, "States.Timeout", "", true, false)
 			return "", "", false, true
 		}
-		seconds, hasTimeout, err := timeoutSeconds(st, baseVal, ctxObj)
+		seconds, hasTimeout, err := r.timeoutSeconds(ctx, st, baseVal, ctxObj)
 		if err != nil {
+			next, output, terminal, done, again, handled := r.catchQuery(ctx, arn, st, input, ctxObj, err, &retries)
+			if handled {
+				if again {
+					continue
+				}
+				return next, output, terminal, done
+			}
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		hb, hasHB, err := heartbeatSeconds(st, baseVal, ctxObj)
+		hb, hasHB, err := r.heartbeatSeconds(ctx, st, baseVal, ctxObj)
 		if err != nil {
+			next, output, terminal, done, again, handled := r.catchQuery(ctx, arn, st, input, ctxObj, err, &retries)
+			if handled {
+				if again {
+					continue
+				}
+				return next, output, terminal, done
+			}
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
@@ -53,7 +66,7 @@ func (r *Runner) runParked(ctx context.Context, arn string, st *asl.State, input
 			obj["Task"] = map[string]any{"Token": token}
 		}
 		if st.HasParameters {
-			_, attemptInput, err = evalParameters(st.Parameters, baseVal, ctxObj)
+			_, attemptInput, err = evalParameters(st.Parameters, baseVal, ctxObj, entryVars(ctx))
 			if err != nil {
 				r.failEval(ctx, arn, err)
 				return "", "", false, true
@@ -94,10 +107,6 @@ func (r *Runner) runParked(ctx context.Context, arn string, st *asl.State, input
 			}
 		}
 		if catcher, ok := pickCatch(st.Catch, failure.Name); ok {
-			if catcher.HasAssign {
-				r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
-				return "", "", false, true
-			}
 			return r.catchTask(ctx, arn, st, input, catcher, failure, ctxObj)
 		}
 		r.failCtx(ctx, arn, failure.Name, failure.Cause)
@@ -356,31 +365,6 @@ func (r *Runner) emitActivityEnd(arn, result string, tf *taskFailure) bool {
 	ev.Cause = tf.Cause
 	ev.HasCause = tf.Cause != ""
 	return r.emit(arn, ev)
-}
-
-func heartbeatSeconds(st *asl.State, root, ctx any) (int64, bool, error) {
-	if st.HeartbeatSeconds != nil {
-		return *st.HeartbeatSeconds, true, nil
-	}
-	if st.HeartbeatSecondsPath == "" {
-		return 0, false, nil
-	}
-	val, found, err := jsonpath.Get(st.HeartbeatSecondsPath, root, ctx)
-	if err != nil {
-		return 0, false, err
-	}
-	if !found {
-		return 0, false, jsonpath.Runtime("path " + st.HeartbeatSecondsPath + " was not found")
-	}
-	n, ok := asFloat(val)
-	if !ok {
-		return 0, false, jsonpath.Runtime("HeartbeatSecondsPath must yield a number")
-	}
-	sec := int64(n)
-	if sec < 0 {
-		sec = 0
-	}
-	return sec, true, nil
 }
 
 func (r *Runner) deferTaskParameters(ex store.Execution, st *asl.State) bool {

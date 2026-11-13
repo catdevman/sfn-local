@@ -332,10 +332,10 @@ func TestStopIdempotencyAndUnimplementedStates(t *testing.T) {
 	assign := createMachine(t, s, "assign", `{"StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"a":1},"End":true}}}`, roleARN)
 	assignRun := startExec(t, s, *assign.StateMachineArn, "run", `{}`)
 	assignEx := waitExec(t, s, *assignRun.ExecutionArn)
-	assertTypes(t, assignEx, "ExecutionStarted", "PassStateEntered", "ExecutionFailed")
-	if !strings.Contains(assignEx.Cause, "Assign is not implemented") {
-		t.Fatal(assignEx.Cause)
+	if assignEx.Status != store.ExecSucceeded || assignEx.Output != "{}" {
+		t.Fatalf("%s %s %s", assignEx.Status, assignEx.Output, assignEx.Cause)
 	}
+	assertTypes(t, assignEx, "ExecutionStarted", "PassStateEntered", "PassStateExited", "ExecutionSucceeded")
 }
 
 func TestSyncExpressAndList(t *testing.T) {

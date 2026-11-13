@@ -12,13 +12,14 @@ import (
 )
 
 func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
+	ctx = r.ensureScope(ctx, arn)
 	if err := r.entered(arn, st, input); err != nil {
 		r.onAppendErr(arn, err)
 		return "", "", false, true
 	}
-	if st.HasAssign {
-		r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
-		return "", "", false, true
+	ctx = withEntryVars(ctx, scopeOf(ctx).snapshot())
+	if st.JSONata {
+		return r.stepJSONata(ctx, arn, st, input)
 	}
 	ex, ok := r.Store.Execution(arn)
 	if !ok {
@@ -31,7 +32,8 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		return "", "", false, true
 	}
 	ctxObj := r.contextObject(ctx, ex, st, now, 0)
-	effective, effVal, err := project(st.InputPath, input, root, ctxObj)
+	vars := entryVars(ctx)
+	effective, effVal, err := project(st.InputPath, input, root, ctxObj, vars)
 	if err != nil {
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
@@ -45,7 +47,7 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 			}
 		}
 		if st.HasParameters && st.Type != "Map" {
-			effVal, effective, err = evalParameters(st.Parameters, effVal, ctxObj)
+			effVal, effective, err = evalParameters(st.Parameters, effVal, ctxObj, vars)
 			if err != nil {
 				r.failEval(ctx, arn, err)
 				return "", "", false, true
@@ -57,22 +59,26 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		r.failState(ctx, arn, st, effVal, ctxObj)
 		return "", "", false, true
 	case "Choice":
-		chosen, err := choose(st, effVal, ctxObj)
+		chosen, assignRaw, matched, err := choose(st, effVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
+		output, _, err = project(st.OutputPath, effective, effVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		if !r.exit(ctx, arn, st, output) {
+		raw := st.Assign
+		if matched {
+			raw = assignRaw
+		}
+		if !r.commitJSONPath(ctx, arn, st, output, raw, effVal, ctxObj, vars) {
 			return "", "", false, true
 		}
 		return chosen, output, false, false
 	case "Wait":
-		ms, err := waitMillis(st, effVal, ctxObj, now)
+		ms, err := waitMillis(st, effVal, ctxObj, vars, now)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
@@ -98,12 +104,12 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 			}
 			return "", "", false, true
 		}
-		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
+		output, _, err = project(st.OutputPath, effective, effVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		if !r.exit(ctx, arn, st, output) {
+		if !r.commitJSONPath(ctx, arn, st, output, st.Assign, effVal, ctxObj, vars) {
 			return "", "", false, true
 		}
 		return transition(st, output)
@@ -133,13 +139,17 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
-		output, _, err = project(st.OutputPath, injected, injVal, ctxObj)
+		output, _, err = project(st.OutputPath, injected, injVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
 		}
+		if !r.commitJSONPath(ctx, arn, st, output, st.Assign, resultVal, ctxObj, vars) {
+			return "", "", false, true
+		}
+		return transition(st, output)
 	case "Succeed":
-		output, _, err = project(st.OutputPath, effective, effVal, ctxObj)
+		output, _, err = project(st.OutputPath, effective, effVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
@@ -174,12 +184,13 @@ func (r *Runner) exit(ctx context.Context, arn string, st *asl.State, output str
 }
 
 func (r *Runner) failState(ctx context.Context, arn string, st *asl.State, effective, ctxObj any) {
-	errName, hasErr, err := resolveText(st.HasErrorPath, st.ErrorPath, st.HasError, st.Error, effective, ctxObj, "ErrorPath")
+	vars := entryVars(ctx)
+	errName, hasErr, err := resolveText(st.HasErrorPath, st.ErrorPath, st.HasError, st.Error, effective, ctxObj, vars, "ErrorPath")
 	if err != nil {
 		r.failEval(ctx, arn, err)
 		return
 	}
-	cause, hasCause, err := resolveText(st.HasCausePath, st.CausePath, st.HasCause, st.Cause, effective, ctxObj, "CausePath")
+	cause, hasCause, err := resolveText(st.HasCausePath, st.CausePath, st.HasCause, st.Cause, effective, ctxObj, vars, "CausePath")
 	if err != nil {
 		r.failEval(ctx, arn, err)
 		return
@@ -217,14 +228,14 @@ func setRetryCount(ctxObj any, n int) {
 	}
 }
 
-func resolveText(hasPath bool, path string, hasLit bool, lit string, root, ctx any, label string) (string, bool, error) {
+func resolveText(hasPath bool, path string, hasLit bool, lit string, root, ctx any, vars map[string]any, label string) (string, bool, error) {
 	if hasPath {
-		val, found, err := jsonpath.Get(path, root, ctx)
+		val, found, err := jsonpath.GetBound(path, root, ctx, vars)
 		if err != nil {
 			return "", false, err
 		}
 		if !found {
-			return "", false, jsonpath.Runtime("path " + path + " was not found")
+			return "", false, missingPath(path)
 		}
 		text, ok := val.(string)
 		if !ok {
@@ -238,19 +249,19 @@ func resolveText(hasPath bool, path string, hasLit bool, lit string, root, ctx a
 	return "", false, nil
 }
 
-func project(path asl.Path, text string, val, ctx any) (string, any, error) {
+func project(path asl.Path, text string, val, ctx any, vars map[string]any) (string, any, error) {
 	switch path.Kind {
 	case asl.PathDefault, asl.PathIdentity:
 		return text, val, nil
 	case asl.PathNull:
 		return "{}", map[string]any{}, nil
 	default:
-		got, found, err := jsonpath.Get(path.Text, val, ctx)
+		got, found, err := jsonpath.GetBound(path.Text, val, ctx, vars)
 		if err != nil {
 			return "", nil, err
 		}
 		if !found {
-			return "", nil, jsonpath.Runtime("path " + path.Text + " was not found")
+			return "", nil, missingPath(path.Text)
 		}
 		out, err := compactValue(got)
 		if err != nil {
@@ -287,12 +298,12 @@ func inject(path asl.Path, originalText, resultText string, result any) (string,
 	}
 }
 
-func evalParameters(raw []byte, root, ctx any) (any, string, error) {
+func evalParameters(raw []byte, root, ctx any, vars map[string]any) (any, string, error) {
 	parsed, err := parseJSON(string(raw))
 	if err != nil {
 		return nil, "", err
 	}
-	out, err := jsonpath.Apply(parsed, root, ctx)
+	out, err := jsonpath.ApplyBound(parsed, root, ctx, vars)
 	if err != nil {
 		return nil, "", err
 	}
@@ -360,16 +371,49 @@ func isoInstant(t time.Time) string {
 	return t.UTC().Format("2006-01-02T15:04:05.000Z")
 }
 
+func missingPath(path string) error {
+	if jsonpath.ReferencesVariable(path) {
+		body := strings.TrimPrefix(path, "$")
+		if !strings.ContainsAny(body, ".[") {
+			return jsonpath.Runtime("variable $" + body + " was not found")
+		}
+	}
+	return jsonpath.Runtime("path " + path + " was not found")
+}
+
+func namedFailure(err error) (string, string, bool) {
+	if cause, ok := queryCause(err); ok {
+		return "States.QueryEvaluationError", cause, true
+	}
+	var ev *jsonpath.EvalError
+	if errors.As(err, &ev) && ev != nil {
+		return ev.Name, ev.Cause, true
+	}
+	return "", "", false
+}
+
 func (r *Runner) failEval(ctx context.Context, arn string, err error) {
 	name := "States.Runtime"
 	cause := ""
 	if err != nil {
 		cause = err.Error()
 	}
-	var ev *jsonpath.EvalError
-	if errors.As(err, &ev) && ev != nil {
-		name = ev.Name
-		cause = ev.Cause
+	if n, c, ok := namedFailure(err); ok {
+		name, cause = n, c
 	}
 	r.failCtx(ctx, arn, name, cause)
+}
+
+// commitJSONPath checks the output size, writes Assign against root, then exits.
+// root is the pre-assignment snapshot for this state. Output was already projected.
+func (r *Runner) commitJSONPath(ctx context.Context, arn string, st *asl.State, output string, assign []byte, root, ctxObj any, vars map[string]any) bool {
+	if len(output) > maxPayload {
+		r.failCtx(ctx, arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
+		return false
+	}
+	if err := r.applyJSONPathAssign(ctx, assign, root, ctxObj, vars); err != nil {
+		r.failEval(ctx, arn, err)
+		return false
+	}
+	return r.exit(ctx, arn, st, output)
 }

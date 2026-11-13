@@ -12,39 +12,41 @@ import (
 )
 
 type choiceRule struct {
-	Next     string
-	Variable string
-	Op       string
-	Operand  json.RawMessage
-	And      []choiceRule
-	Or       []choiceRule
-	Not      *choiceRule
+	Next      string
+	Condition string
+	Variable  string
+	Op        string
+	Operand   json.RawMessage
+	Assign    json.RawMessage
+	And       []choiceRule
+	Or        []choiceRule
+	Not       *choiceRule
 }
 
-func choose(st *asl.State, root, ctx any) (string, error) {
+func choose(st *asl.State, root, ctx any, vars map[string]any) (string, json.RawMessage, bool, error) {
 	rules, err := decodeRuleList(st.Choices)
 	if err != nil {
-		return "", err
+		return "", nil, false, err
 	}
 	for _, rule := range rules {
-		ok, err := evalRule(rule, root, ctx)
+		ok, err := evalRule(rule, root, ctx, vars)
 		if err != nil {
-			return "", err
+			return "", nil, false, err
 		}
 		if ok {
-			return rule.Next, nil
+			return rule.Next, rule.Assign, true, nil
 		}
 	}
 	if st.HasDefault {
-		return st.Default, nil
+		return st.Default, nil, false, nil
 	}
-	return "", jsonpath.Runtime("Failed to transition out of the state")
+	return "", nil, false, jsonpath.Runtime("Failed to transition out of the state")
 }
 
-func evalRule(rule choiceRule, root, ctx any) (bool, error) {
+func evalRule(rule choiceRule, root, ctx any, vars map[string]any) (bool, error) {
 	if rule.And != nil {
 		for _, child := range rule.And {
-			ok, err := evalRule(child, root, ctx)
+			ok, err := evalRule(child, root, ctx, vars)
 			if err != nil || !ok {
 				return ok, err
 			}
@@ -53,7 +55,7 @@ func evalRule(rule choiceRule, root, ctx any) (bool, error) {
 	}
 	if rule.Or != nil {
 		for _, child := range rule.Or {
-			ok, err := evalRule(child, root, ctx)
+			ok, err := evalRule(child, root, ctx, vars)
 			if err != nil || ok {
 				return ok, err
 			}
@@ -61,16 +63,16 @@ func evalRule(rule choiceRule, root, ctx any) (bool, error) {
 		return false, nil
 	}
 	if rule.Not != nil {
-		ok, err := evalRule(*rule.Not, root, ctx)
+		ok, err := evalRule(*rule.Not, root, ctx, vars)
 		if err != nil {
 			return false, err
 		}
 		return !ok, nil
 	}
-	return evalCompare(rule, root, ctx)
+	return evalCompare(rule, root, ctx, vars)
 }
 
-func evalCompare(rule choiceRule, root, ctx any) (bool, error) {
+func evalCompare(rule choiceRule, root, ctx any, vars map[string]any) (bool, error) {
 	op := rule.Op
 	operand, err := decodeOperand(rule.Operand)
 	if err != nil {
@@ -81,17 +83,17 @@ func evalCompare(rule choiceRule, root, ctx any) (bool, error) {
 		if !ok {
 			return false, jsonpath.Runtime(op + " must be a path")
 		}
-		val, found, err := jsonpath.Get(text, root, ctx)
+		val, found, err := jsonpath.GetBound(text, root, ctx, vars)
 		if err != nil {
 			return false, err
 		}
 		if !found {
-			return false, jsonpath.Runtime("path " + text + " was not found")
+			return false, missingPath(text)
 		}
 		operand = val
 		op = strings.TrimSuffix(op, "Path")
 	}
-	left, found, err := jsonpath.Get(rule.Variable, root, ctx)
+	left, found, err := jsonpath.GetBound(rule.Variable, root, ctx, vars)
 	if err != nil {
 		return false, err
 	}
@@ -99,7 +101,7 @@ func evalCompare(rule choiceRule, root, ctx any) (bool, error) {
 		return evalIs(op, left, found, operand)
 	}
 	if !found {
-		return false, jsonpath.Runtime("path " + rule.Variable + " was not found")
+		return false, missingPath(rule.Variable)
 	}
 	return compareValues(op, left, operand)
 }
@@ -368,6 +370,14 @@ func decodeRule(raw json.RawMessage) (choiceRule, error) {
 		if err := json.Unmarshal(raw, &rule.Variable); err != nil {
 			return choiceRule{}, jsonpath.Runtime("Choice Variable must be a string")
 		}
+	}
+	if raw, ok := obj["Condition"]; ok {
+		if err := json.Unmarshal(raw, &rule.Condition); err != nil {
+			return choiceRule{}, jsonpath.Runtime("Choice Condition must be a string")
+		}
+	}
+	if raw, ok := obj["Assign"]; ok {
+		rule.Assign = append(json.RawMessage(nil), raw...)
 	}
 	for _, name := range comparatorOrder {
 		if raw, ok := obj[name]; ok {

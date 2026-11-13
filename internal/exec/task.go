@@ -103,10 +103,38 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 			r.finish(arn, store.ExecTimedOut, "ExecutionTimedOut", "", false, "States.Timeout", "", true, false)
 			return "", "", false, true
 		}
-		seconds, hasTimeout, err := timeoutSeconds(st, effVal, ctxObj)
+		seconds, hasTimeout, err := r.timeoutSeconds(ctx, st, effVal, ctxObj)
 		if err != nil {
+			next, output, terminal, done, again, handled := r.catchQuery(ctx, arn, st, input, ctxObj, err, &retries)
+			if handled {
+				if again {
+					continue
+				}
+				return next, output, terminal, done
+			}
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
+		}
+		if st.JSONata && (st.HeartbeatExpr != "" || st.HeartbeatSeconds != nil) {
+			hb, hasHB, herr := r.heartbeatSeconds(ctx, st, effVal, ctxObj)
+			if herr != nil {
+				next, output, terminal, done, again, handled := r.catchQuery(ctx, arn, st, input, ctxObj, herr, &retries)
+				if handled {
+					if again {
+						continue
+					}
+					return next, output, terminal, done
+				}
+				r.failEval(ctx, arn, herr)
+				return "", "", false, true
+			}
+			if hasHB && hasTimeout && hb >= seconds {
+				r.failCtx(ctx, arn, "States.Runtime", "HeartbeatSeconds must be less than TimeoutSeconds")
+				return "", "", false, true
+			}
+			if hasHB {
+				meta.heartbeat = &hb
+			}
 		}
 		if hasTimeout {
 			meta.timeout = &seconds
@@ -136,10 +164,6 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 			}
 		}
 		if catcher, ok := pickCatch(st.Catch, failure.Name); ok {
-			if catcher.HasAssign {
-				r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
-				return "", "", false, true
-			}
 			return r.catchTask(ctx, arn, st, input, catcher, failure, ctxObj)
 		}
 		r.failCtx(ctx, arn, failure.Name, failure.Cause)
@@ -271,8 +295,25 @@ func (r *Runner) completeTask(ctx context.Context, arn string, st *asl.State, in
 		r.failCtx(ctx, arn, "States.Runtime", "task result is not JSON")
 		return "", "", false, true
 	}
+	vars := entryVars(ctx)
+	if st.JSONata {
+		inputVal, err := parseJSON(input)
+		if err != nil {
+			r.failEval(ctx, arn, err)
+			return "", "", false, true
+		}
+		text, err := r.commitJSONata(ctx, inputVal, ctxObj, vars, resultVal, true, nil, st.Output, st.HasOutput, st.Assign, st)
+		if err != nil {
+			return r.failQuery(ctx, arn, st, input, inputVal, ctxObj, err)
+		}
+		if !r.exit(ctx, arn, st, text) {
+			return "", "", false, true
+		}
+		return transition(st, text)
+	}
+	assignRoot := resultVal
 	if st.HasResultSelector {
-		resultVal, result, err = evalSelector(st.ResultSelector, resultVal, ctxObj)
+		resultVal, result, err = evalSelector(st.ResultSelector, resultVal, ctxObj, vars)
 		if err != nil {
 			r.failEval(ctx, arn, err)
 			return "", "", false, true
@@ -283,18 +324,26 @@ func (r *Runner) completeTask(ctx context.Context, arn string, st *asl.State, in
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	output, _, err := project(st.OutputPath, injected, injVal, ctxObj)
+	output, _, err := project(st.OutputPath, injected, injVal, ctxObj, vars)
 	if err != nil {
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if !r.exit(ctx, arn, st, output) {
+	if !r.commitJSONPath(ctx, arn, st, output, st.Assign, assignRoot, ctxObj, vars) {
 		return "", "", false, true
 	}
 	return transition(st, output)
 }
 
 func (r *Runner) catchTask(ctx context.Context, arn string, st *asl.State, input string, catcher asl.Catcher, failure *taskFailure, ctxObj any) (string, string, bool, bool) {
+	if st.JSONata {
+		inputVal, err := parseJSON(input)
+		if err != nil {
+			r.failEval(ctx, arn, err)
+			return "", "", false, true
+		}
+		return r.finishCatchJSONata(ctx, arn, st, input, catcher, failure, inputVal, ctxObj)
+	}
 	doc := errDoc{Error: failure.Name, Cause: failure.Cause}
 	text, err := marshalDoc(doc)
 	if err != nil {
@@ -306,12 +355,14 @@ func (r *Runner) catchTask(ctx context.Context, arn string, st *asl.State, input
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	output, _, err := project(st.OutputPath, injected, injVal, ctxObj)
+	vars := entryVars(ctx)
+	output, _, err := project(st.OutputPath, injected, injVal, ctxObj, vars)
 	if err != nil {
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if !r.exit(ctx, arn, st, output) {
+	errRoot := map[string]any{"Error": failure.Name, "Cause": failure.Cause}
+	if !r.commitJSONPath(ctx, arn, st, output, catcher.Assign, errRoot, ctxObj, vars) {
 		return "", "", false, true
 	}
 	if catcher.Next == "" {
@@ -678,26 +729,29 @@ func asTaskFailure(err error) *taskFailure {
 	if err == nil {
 		return nil
 	}
-	var ev *jsonpath.EvalError
-	if errors.As(err, &ev) && ev != nil {
-		return &taskFailure{Name: ev.Name, Cause: ev.Cause, Timeout: ev.Name == "States.Timeout"}
+	if name, cause, ok := namedFailure(err); ok {
+		return &taskFailure{Name: name, Cause: cause, Timeout: name == "States.Timeout"}
 	}
 	return &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 }
 
-func timeoutSeconds(st *asl.State, root, ctx any) (int64, bool, error) {
+func (r *Runner) timeoutSeconds(ctx context.Context, st *asl.State, root, ctxObj any) (int64, bool, error) {
+	if st.TimeoutExpr != "" {
+		sec, err := r.evalDuration(ctx, st.TimeoutExpr, root, ctxObj, "TimeoutSeconds")
+		return sec, err == nil, err
+	}
 	if st.TimeoutSeconds != nil {
 		return *st.TimeoutSeconds, true, nil
 	}
 	if st.TimeoutSecondsPath == "" {
 		return 0, false, nil
 	}
-	val, found, err := jsonpath.Get(st.TimeoutSecondsPath, root, ctx)
+	val, found, err := jsonpath.GetBound(st.TimeoutSecondsPath, root, ctxObj, entryVars(ctx))
 	if err != nil {
 		return 0, false, err
 	}
 	if !found {
-		return 0, false, jsonpath.Runtime("path " + st.TimeoutSecondsPath + " was not found")
+		return 0, false, missingPath(st.TimeoutSecondsPath)
 	}
 	n, ok := asFloat(val)
 	if !ok {
@@ -708,6 +762,43 @@ func timeoutSeconds(st *asl.State, root, ctx any) (int64, bool, error) {
 		sec = 0
 	}
 	return sec, true, nil
+}
+
+func (r *Runner) heartbeatSeconds(ctx context.Context, st *asl.State, root, ctxObj any) (int64, bool, error) {
+	if st.HeartbeatExpr != "" {
+		sec, err := r.evalDuration(ctx, st.HeartbeatExpr, root, ctxObj, "HeartbeatSeconds")
+		return sec, err == nil, err
+	}
+	if st.HeartbeatSeconds != nil {
+		return *st.HeartbeatSeconds, true, nil
+	}
+	if st.HeartbeatSecondsPath == "" {
+		return 0, false, nil
+	}
+	val, found, err := jsonpath.GetBound(st.HeartbeatSecondsPath, root, ctxObj, entryVars(ctx))
+	if err != nil {
+		return 0, false, err
+	}
+	if !found {
+		return 0, false, missingPath(st.HeartbeatSecondsPath)
+	}
+	n, ok := asFloat(val)
+	if !ok {
+		return 0, false, jsonpath.Runtime("HeartbeatSecondsPath must yield a number")
+	}
+	sec := int64(n)
+	if sec < 0 {
+		sec = 0
+	}
+	return sec, true, nil
+}
+
+func (r *Runner) evalDuration(ctx context.Context, expr string, root, ctxObj any, label string) (int64, error) {
+	val, err := r.evalExpr(ctx, expr, root, r.bindings(root, ctxObj, entryVars(ctx)))
+	if err != nil {
+		return 0, err
+	}
+	return floored(val, label)
 }
 
 func pickRetry(list []asl.Retrier, name string) (asl.Retrier, bool) {
@@ -784,12 +875,12 @@ func resourceTypeOf(resource string) string {
 	return "states"
 }
 
-func evalSelector(raw []byte, root, ctx any) (any, string, error) {
+func evalSelector(raw []byte, root, ctx any, vars map[string]any) (any, string, error) {
 	parsed, err := parseJSON(string(raw))
 	if err != nil {
 		return nil, "", err
 	}
-	out, err := jsonpath.Apply(parsed, root, ctx)
+	out, err := jsonpath.ApplyBound(parsed, root, ctx, vars)
 	if err != nil {
 		return nil, "", err
 	}

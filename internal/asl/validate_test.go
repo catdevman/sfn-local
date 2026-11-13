@@ -13,8 +13,11 @@ func TestValidatePassAndRejectedFields(t *testing.T) {
 	if prog.StartAt != "P" || prog.TimeoutSeconds != 99999999 || !prog.States["P"].HasResult || !prog.States["P"].End {
 		t.Fatalf("%+v", prog)
 	}
+	okLang, err := Validate(`{"StartAt":"P","QueryLanguage":"JSONata","States":{"P":{"Type":"Pass","End":true}}}`)
+	if err != nil || !okLang.States["P"].JSONata || okLang.QueryLanguage != "JSONata" {
+		t.Fatal(err)
+	}
 	for _, def := range []string{
-		`{"StartAt":"P","QueryLanguage":"JSONata","States":{"P":{"Type":"Pass","End":true}}}`,
 		`{"StartAt":"P","States":{"P":{"Type":"Pass","Output":"ok","End":true}}}`,
 		`{"StartAt":"P","States":{"P":{"Type":"Pass","Arguments":{},"End":true}}}`,
 		`{"StartAt":"P","States":{"P":{"Type":"Pass","Nope":1,"End":true}}}`,
@@ -167,6 +170,48 @@ func TestPhase0bValidatorMessages(t *testing.T) {
 	assertInvalid(t, `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"r","Catch":[{"ErrorEquals":["States.ALL"],"Next":"T"},{"ErrorEquals":["States.Timeout"],"Next":"T"}],"End":true}}}`, "", "SCHEMA_VALIDATION_FAILED", "States.ALL must appear alone and at end of list")
 	validAll := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"r","Retry":[{"ErrorEquals":["States.Timeout"],"MaxAttempts":1},{"ErrorEquals":["States.ALL"],"MaxAttempts":1}],"Catch":[{"ErrorEquals":["States.ALL"],"Next":"T"}],"End":true}}}`
 	if _, err := Validate(validAll); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestJSONataValidation(t *testing.T) {
+	ok := []string{
+		`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"x":3,"a":6},"Output":"{% $states.input %}","End":true}}}`,
+		`{"QueryLanguage":"JSONata","StartAt":"S","States":{"S":{"Type":"Succeed","Output":{"lastName":"{% $states.input.customer.lastName %}"}}}}`,
+		`{"QueryLanguage":"JSONata","StartAt":"C","States":{"C":{"Type":"Choice","Choices":[{"Condition":"{% $states.input.score > 90 %}","Assign":{"outputValue":"high score"},"Next":"P"}],"Assign":{"outputValue":"default path taken"},"Default":"P"},"P":{"Type":"Pass","End":true}}}`,
+		`{"QueryLanguage":"JSONata","StartAt":"M","States":{"M":{"Type":"Map","Items":[1,"{% 2 %}",3],"Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`,
+		`{"StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"saved.$":"$.id"},"End":true}}}`,
+		`{"QueryLanguage":"JSONPath","StartAt":"P","States":{"P":{"Type":"Pass","QueryLanguage":"JSONata","End":true}}}`,
+	}
+	for _, def := range ok {
+		if _, err := Validate(def); err != nil {
+			t.Fatalf("%s: %v", def, err)
+		}
+	}
+	bad := []struct{ def, part string }{
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Result":1,"End":true}}}`, "Result"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Output":"{% $states.result %}","End":true}}}`, "$states.result"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Output":"{% $eval(1) %}","End":true}}}`, "$eval"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Output":"{% a ?: 1 %}","End":true}}}`, "?:"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"_x":1},"End":true}}}`, "invalid"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"states":1},"End":true}}}`, "reserved"},
+		{`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"x.y":1},"End":true}}}`, "invalid"},
+		{`{"QueryLanguage":"JSONata","StartAt":"M","States":{"M":{"Type":"Map","Items":{"a":1},"Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`, "Items"},
+		{`{"QueryLanguage":"JSONata","StartAt":"M","States":{"M":{"Type":"Map","Parameters":{},"Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`, "Parameters"},
+		{`{"QueryLanguage":"JSONata","StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:::lambda:invoke","End":true}}}`, "Arguments"},
+		{`{"StartAt":"P","States":{"P":{"Type":"Pass","ResultPath":"$saved","End":true}}}`, "variable"},
+		{`{"QueryLanguage":"JSONata","StartAt":"M","States":{"M":{"Type":"Map","Assign":{"caught":1},"Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","Assign":{"caught":2},"End":true}}},"End":true}}}`, "outer scope"},
+		{`{"StartAt":"I","States":{"I":{"Type":"Map","Iterator":{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`, "QueryLanguage"},
+		{`{"QueryLanguage":"Nope","StartAt":"P","States":{"P":{"Type":"Pass","End":true}}}`, "QueryLanguage"},
+	}
+	for _, tc := range bad {
+		_, err := Validate(tc.def)
+		if err == nil || !strings.Contains(err.Error(), "SCHEMA_VALIDATION_FAILED") || !strings.Contains(err.Error(), tc.part) {
+			t.Fatalf("%s -> %v", tc.def, err)
+		}
+	}
+	// A quoted ?: inside an expression is still the 2.0.6 language.
+	if _, err := Validate(`{"QueryLanguage":"JSONata","StartAt":"P","States":{"P":{"Type":"Pass","Output":"{% '?:' %}","End":true}}}`); err != nil {
 		t.Fatal(err)
 	}
 }

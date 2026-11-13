@@ -33,7 +33,7 @@ func scaleWait(ms int64, scale *float32) int64 {
 	return int64(scaled)
 }
 
-func waitMillis(st *asl.State, root, ctx any, now time.Time) (int64, error) {
+func waitMillis(st *asl.State, root, ctx any, vars map[string]any, now time.Time) (int64, error) {
 	switch {
 	case st.Seconds != nil:
 		return *st.Seconds * 1000, nil
@@ -44,12 +44,12 @@ func waitMillis(st *asl.State, root, ctx any, now time.Time) (int64, error) {
 		}
 		return delayUntil(when, now), nil
 	case st.SecondsPath != "":
-		val, found, err := jsonpath.Get(st.SecondsPath, root, ctx)
+		val, found, err := jsonpath.GetBound(st.SecondsPath, root, ctx, vars)
 		if err != nil {
 			return 0, err
 		}
 		if !found {
-			return 0, jsonpath.Runtime("path " + st.SecondsPath + " was not found")
+			return 0, missingPath(st.SecondsPath)
 		}
 		n, ok := asFloat(val)
 		if !ok {
@@ -61,12 +61,12 @@ func waitMillis(st *asl.State, root, ctx any, now time.Time) (int64, error) {
 		}
 		return sec * 1000, nil
 	case st.TimestampPath != "":
-		val, found, err := jsonpath.Get(st.TimestampPath, root, ctx)
+		val, found, err := jsonpath.GetBound(st.TimestampPath, root, ctx, vars)
 		if err != nil {
 			return 0, err
 		}
 		if !found {
-			return 0, jsonpath.Runtime("path " + st.TimestampPath + " was not found")
+			return 0, missingPath(st.TimestampPath)
 		}
 		text, ok := val.(string)
 		if !ok {

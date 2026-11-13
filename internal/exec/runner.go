@@ -50,6 +50,7 @@ type Runner struct {
 	mu         sync.Mutex
 	attempts   map[string]map[string]int
 	stateMocks map[string]*StateMock
+	scopes     map[string]*scope
 	testSeq    uint64
 }
 
@@ -69,6 +70,12 @@ func (r *Runner) Start(handle *store.RunHandle, arn string) {
 func (r *Runner) Run(ctx context.Context, arn string) {
 	ctx = withStop(ctx)
 	defer r.clearAttempts(arn)
+	defer func() {
+		ex, ok := r.Store.Execution(arn)
+		if !ok || ex.Status == store.ExecSucceeded {
+			r.dropScope(arn)
+		}
+	}()
 	ex, ok := r.Store.Execution(arn)
 	if !ok {
 		return

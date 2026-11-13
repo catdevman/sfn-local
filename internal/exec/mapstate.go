@@ -33,7 +33,19 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 			return "", "", false, true
 		}
 		setRetryCount(ctxObj, retries)
-		items, err := mapItems(st, effVal, ctxObj)
+		var items []any
+		var err error
+		var maxc *int64
+		if st.JSONata {
+			obj, _ := ctxObj.(map[string]any)
+			items, err = r.evalItems(ctx, st, effVal, obj, entryVars(ctx))
+			if err == nil {
+				maxc, err = r.evalMaxConcurrency(ctx, st, effVal, ctxObj, entryVars(ctx))
+			}
+		} else {
+			items, err = mapItems(st, effVal, ctxObj, entryVars(ctx))
+			maxc = st.MaxConcurrency
+		}
 		if err != nil {
 			next, output, terminal, done, again := r.retryOrFinish(ctx, arn, st, input, ctxObj, "MapStateFailed", failureFrom(err), &retries)
 			if again {
@@ -51,7 +63,7 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 			}
 			started = true
 		}
-		res := r.mapOnce(ctx, arn, st, effVal, items, retries)
+		res := r.mapOnce(ctx, arn, st, effVal, items, retries, maxc)
 		switch res.outcome {
 		case outcomeOK:
 			if !r.emit(arn, store.HistoryEvent{Type: "MapStateSucceeded"}) {
@@ -91,17 +103,17 @@ func (r *Runner) retryOrFinish(ctx context.Context, arn string, st *asl.State, i
 	return next, output, terminal, done, false
 }
 
-func mapItems(st *asl.State, root, ctx any) ([]any, error) {
+func mapItems(st *asl.State, root, ctx any, vars map[string]any) ([]any, error) {
 	path := st.ItemsPath
 	if path == "" {
 		path = "$"
 	}
-	got, found, err := jsonpath.Get(path, root, ctx)
+	got, found, err := jsonpath.GetBound(path, root, ctx, vars)
 	if err != nil {
 		return nil, err
 	}
 	if !found {
-		return nil, jsonpath.Runtime("path " + path + " was not found")
+		return nil, missingPath(path)
 	}
 	arr, ok := got.([]any)
 	if !ok {
@@ -110,7 +122,7 @@ func mapItems(st *asl.State, root, ctx any) ([]any, error) {
 	return arr, nil
 }
 
-func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root any, items []any, retries int) branchResult {
+func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root any, items []any, retries int, maxc *int64) branchResult {
 	n := len(items)
 	if n == 0 {
 		return branchResult{outcome: outcomeOK, output: "[]"}
@@ -118,8 +130,8 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 	child, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var sem chan struct{}
-	if st.MaxConcurrency != nil && *st.MaxConcurrency > 0 {
-		sem = make(chan struct{}, int(*st.MaxConcurrency))
+	if maxc != nil && *maxc > 0 {
+		sem = make(chan struct{}, int(*maxc))
 	}
 	results := make([]string, n)
 	status := make([]int, n)
@@ -240,6 +252,21 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 }
 
 func (r *Runner) iterationInput(ctx context.Context, arn string, st *asl.State, root any, index int, elem any, retries int) (string, error) {
+	if st.JSONata {
+		if !st.HasItemSelector {
+			return compactValue(elem)
+		}
+		ex, ok := r.Store.Execution(arn)
+		if !ok {
+			return "", jsonpath.Runtime("execution disappeared")
+		}
+		ctxObj := r.jsonataContext(withItem(ctx, index, elem), ex, st, r.now(), retries)
+		val, err := r.evalRaw(ctx, st.ItemSelector, root, r.bindings(root, ctxObj, entryVars(ctx)))
+		if err != nil {
+			return "", err
+		}
+		return compactValue(val)
+	}
 	if !st.HasParameters && !st.HasItemSelector {
 		return compactValue(elem)
 	}
@@ -252,6 +279,6 @@ func (r *Runner) iterationInput(ctx context.Context, arn string, st *asl.State, 
 		return "", jsonpath.Runtime("execution disappeared")
 	}
 	ctxObj := r.contextObject(withItem(ctx, index, elem), ex, st, r.now(), retries)
-	_, text, err := evalParameters(raw, root, ctxObj)
+	_, text, err := evalParameters(raw, root, ctxObj, entryVars(ctx))
 	return text, err
 }

@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, and Phase V checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. Activities and `.waitForTaskToken` callbacks run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, and Phase 6 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -32,10 +32,10 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [1](#x-phase-1--pass-succeed-fail) | Smallest useful runner. Pass, Succeed, Fail. | 1.5–2.5 |
 | [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
 | [3](#x-phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
-| [T](#phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
+| [T](#x-phase-t--teststate) | `TestState` runs one state. Grows with later phases. | 1, then small |
 | [4](#x-phase-4--parallel-map-intrinsics) | Jar-shaped JSONPath runner. | 4–6 |
 | [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
-| [6](#phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
+| [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
 | [I](#phase-i--service-integrations) | One integration per change. Distributed Map stays deferred. | unbounded |
 
@@ -163,14 +163,14 @@ Depends on phase 2.
 - [x] Task timeout.
 - [x] Fixtures: RetryOnce and Catch from docs/spec.md.
 
-## Phase T — TestState
+## [x] Phase T — TestState
 
 Depends on phase 1. Widen it as phases 2, 3, and 6 add state types. The operation is registered in phase G and becomes real here.
 
 - [x] `TestState` runs one state through the same state handlers as an execution.
 - [x] The first cut supports Pass, Succeed, Fail, and the Choice and Wait behavior phase 2 has.
 - [x] Mocked Task and Lambda Invoke work once phase 3 has landed.
-- [ ] JSONata states work once phase 6 has landed.
+- [x] JSONata states work once phase 6 has landed.
 - [x] `surface.toml` marks `TestState` `implemented` for the state types the current binary runs, and the handler returns a modeled error for a state type the binary does not run yet.
 
 ## [x] Phase 4 — Parallel, Map, intrinsics
@@ -218,35 +218,35 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
 - [x] A mock `Return` for a callback state completes through the mock path.
 - [ ] `.sync` is unchecked on purpose until a named integration in phase I needs it. Leave this box open.
 
-## Phase 6 — JSONata and variables
+## [x] Phase 6 — JSONata and variables
 
 Depends on phase 4 for the context object, and on phase 4's Map for the scope fixtures. The JSONPath release is green before this starts.
 
-- [ ] Vendor `jsonata-js` 2.0.6 at commit `6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b` under `third_party/jsonata/2.0.6/` (MIT). The module does not download it. A test fails when the directory version and `aws-spec/jsonata/2.0.6/upstream.json` disagree.
-- [ ] `internal/jsonata` embeds that runtime in goja behind `Expr.Eval`. One-second interrupt. Evaluator memory cap starts at 32 MiB. No host function reads the environment, opens a file, or fetches a URL. `$eval` is absent.
-- [ ] Accept `QueryLanguage` on the machine and on a state. JSONPath fields and JSONata fields are mutually exclusive for the effective language of that state.
-- [ ] `{% %}` detection, including strings nested in objects and arrays.
-- [ ] `$states.input` and `$states.context`. `Execution.RedriveCount` is `0` on the JSONata context.
-- [ ] Step Functions functions, with the contracts in docs/spec.md.
-  - [ ] `$partition`
-  - [ ] `$range`
-  - [ ] `$hash`
-  - [ ] `$random()` in `[0, 1)`, and one recorded seeded value
-  - [ ] `$uuid` checked for shape only
-  - [ ] `$parse`
-- [ ] Choice `Condition`. Explicit Succeed `Output` fixture.
-- [ ] A failed `Arguments` expression has an entered event and no exited event. Undefined is `States.QueryEvaluationError`. Pass cannot catch it.
-- [ ] Variable store. Assign and Output run against the entry snapshot. Writes commit after every expression. Names: length at most 80, Unicode `ID_Start` / `ID_Continue`. 256 KiB per value, 256 KiB per Assign, 10 MiB per execution.
-- [ ] Worked Store / Swap / After fixture, output `{"x":6,"nextX":3,"a":6}`.
-- [ ] Negative fixture: `Swap.Output` of `{% $nextX %}` fails with `States.QueryEvaluationError`.
-- [ ] Child scopes for inline Map iterations and Parallel branches. Sibling writes stay invisible. The two-branch Parallel fixture fails in the parent with `States.QueryEvaluationError`.
-- [ ] Choice rule `Assign` excludes the state-level `Assign`. Fixture `outputValue` from docs/spec.md.
-- [ ] Catch `Assign` on a Map writes the parent scope. Fixture output `"Boom"`. Reusing that name inside the iterator fails validation.
-- [ ] Direct `$states.result` and `$states.errorOutput` are rejected at create time outside their legal fields. `$states["result"]` is a runtime `States.QueryEvaluationError` when the key is absent.
-- [ ] Map `Items` as an array or an expression that returns an array, including `[1, "{% 2 %}", 3]`. An object fails validation or, from an expression, fails at runtime.
-- [ ] JSONPath `Assign` with `key.$`. Variable reads in Choice `Variable` and in `States.Format`. `ResultPath` referencing a variable fails validation.
-- [ ] JSONPath variable-read fixture, compared to AWS or a known-good LocalStack run, not to the jar.
-- [ ] `catalog.toml` marks the JSONata fields `implemented`.
+- [x] The language reference stays `jsonata-js` 2.0.6 at commit `6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b` under `aws-spec/jsonata/2.0.6/` (MIT). The runtime is `github.com/recolabs/gnata` v0.6.2. It is not a vendored JavaScript file and not goja. `?:` and `??` are rejected at validation because gnata accepts those 2.1 operators.
+- [x] `internal/jsonata` evaluates through gnata behind `Expr.Eval`. The input document is separate from bindings, so a binding does not hide an input field. One-second interrupt. Evaluator memory cap starts at 32 MiB. No host function reads the environment, opens a file, or fetches a URL. `$eval` returns an error.
+- [x] Accept `QueryLanguage` on the machine and on a state. JSONPath fields and JSONata fields are mutually exclusive for the effective language of that state.
+- [x] `{% %}` detection, including strings nested in objects and arrays.
+- [x] `$states.input` and `$states.context`. `Execution.RedriveCount` is `0` on the JSONata context.
+- [x] Step Functions functions, with the contracts in docs/spec.md.
+  - [x] `$partition`
+  - [x] `$range`
+  - [x] `$hash`
+  - [x] `$random()` in `[0, 1)`, and one recorded seeded value
+  - [x] `$uuid` checked for shape only
+  - [x] `$parse`
+- [x] Choice `Condition`. Explicit Succeed `Output` fixture.
+- [x] A failed `Arguments` expression has an entered event and no exited event. Undefined is `States.QueryEvaluationError`. Pass cannot catch it.
+- [x] Variable store. Assign and Output run against the entry snapshot. Writes commit after every expression. Names: length at most 80, Unicode `ID_Start` / `ID_Continue`. 256 KiB per value, 256 KiB per Assign, 10 MiB per execution.
+- [x] Worked Store / Swap / After fixture, output `{"x":6,"nextX":3,"a":6}`.
+- [x] Negative fixture: `Swap.Output` of `{% $nextX %}` fails with `States.QueryEvaluationError`.
+- [x] Child scopes for inline Map iterations and Parallel branches. Sibling writes stay invisible. The two-branch Parallel fixture fails in the parent with `States.QueryEvaluationError`.
+- [x] Choice rule `Assign` excludes the state-level `Assign`. Fixture `outputValue` from docs/spec.md.
+- [x] Catch `Assign` on a Map writes the parent scope. Fixture output `"Boom"`. Reusing that name inside the iterator fails validation.
+- [x] Direct `$states.result` and `$states.errorOutput` are rejected at create time outside their legal fields. In JSONata 2.0.6 a non-numeric bracket is a predicate, so `$states["result"]` keeps the object. `$lookup($states, "result")` is a runtime `States.QueryEvaluationError` when the key is absent.
+- [x] Map `Items` as an array or an expression that returns an array, including `[1, "{% 2 %}", 3]`. An object fails validation or, from an expression, fails at runtime.
+- [x] JSONPath `Assign` with `key.$`. Variable reads in Choice `Variable` and in `States.Format`. `ResultPath` referencing a variable fails validation.
+- [x] JSONPath variable-read fixture from docs/spec.md, output `{"label":"id=A"}`. No live AWS or LocalStack run was available. The jar rejects `Assign`, so this fixture is not compared to 2.0.0. A later live run wins if it disagrees.
+- [x] `catalog.toml` marks the JSONata fields `implemented`.
 
 ## Phase R — redrive
 
@@ -285,7 +285,7 @@ These boxes are part of phase G's test harness, then stay green. Check them when
 - [x] Protocol golden: each implemented operation has one HTTP request and response covering the target header, member names, a numeric timestamp, and error `__type` plus status.
 - [x] Spec fixtures: the acceptance fixtures in docs/spec.md for the phases that have landed. Recorded JSON. No AWS account.
 - [x] Jar oracle: when Docker is present, compare status, output JSON, and history event types with `amazon/aws-stepfunctions-local:2.0.0`. Developer CI may skip with a loud message. The release pipeline may not skip quietly.
-- [x] JSONata pin, once phase 6 has started: vendored version matches `upstream.json`, the Assign example passes, the negative `$nextX` example passes, and `$eval` is absent.
+- [x] JSONata pin: `upstream.json` stays commit `6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b`, the runtime is gnata, the Assign example passes, the negative `$nextX` example passes, and `$eval` is absent.
 - [x] Compat profile: the jar `__type` strings in docs/spec.md are asserted only with `--compat=sfn-local`.
 
 ## When AWS publishes a change
@@ -297,7 +297,7 @@ The daily sync opens one pull request. Most days it prints `no file changes`. On
 3. Merge the snapshot. The bot has already regenerated Go and the field matrix.
 4. When the row should be real behavior, change `docs/spec.md` if the semantics are new, then replace `Unimplemented` and add the fixture. `go test` is the gate.
 
-A new shape kind fails `cmd/genapi` until the generator learns it. A new state type fails `cmd/genasl` until this plan is revised. A JSONata version sentence does not move the pin. Update `upstream.json`, replace the vendored tree, re-record the seeded `$random` value, and re-run the Assign example.
+A new shape kind fails `cmd/genapi` until the generator learns it. A new state type fails `cmd/genasl` until this plan is revised. A JSONata version sentence does not move the pin. Update `upstream.json`, re-record the seeded `$random` value against the gnata version, and re-run the Assign example. The language pin stays jsonata-js 2.0.6.
 
 ## Reference
 
@@ -308,7 +308,7 @@ A new shape kind fails `cmd/genapi` until the generator learns it. A new state t
 | HTTP API | [aws-spec/states-api/sfn-2016-11-23.json](aws-spec/states-api/sfn-2016-11-23.json) | AWS, via the daily sync | Generate Go types, the operation interface, constraints, and error types. |
 | Workflow language, field matrix | [aws-spec/asl/spec.html](aws-spec/asl/spec.html) | AWS, copied verbatim | Generate the state-type field matrix, the Appendix A error-name list, and the Appendix B intrinsic-name list. |
 | How a state actually runs | [docs/spec.md](docs/spec.md) | This project | Handwritten engine. The sync job does not edit this file. |
-| JSONata 2.0.6 | [aws-spec/jsonata/](aws-spec/jsonata/) | Pinned on purpose | Vendor the JavaScript runtime at the commit in `upstream.json`. Bind the extra Step Functions functions in Go. |
+| JSONata 2.0.6 | [aws-spec/jsonata/](aws-spec/jsonata/) | Pinned on purpose | Language reference only. The runtime is `github.com/recolabs/gnata` v0.6.2. Step Functions functions are bound in Go. |
 | Product behavior pages | `aws-spec/page-watch.json`, release notes, document history | AWS, hashes and rows only | A human ack. No code is generated from prose. |
 
 The current snapshot is Smithy 2.0 JSON: 37 operations, 170 structures, 18 enums, one timestamp shape. `states-api/operations.json` stays the human-readable index. It drops length, pattern, and range traits. The Go generator reads the Smithy file.
@@ -329,11 +329,11 @@ type Service struct {
 }
 ```
 
-`internal/jsonata` calls one function. `Limits` carries the one-second timeout and the memory cap.
+`internal/jsonata` calls gnata. The input document stays separate from the bindings. `Limits` carries the one-second timeout and the memory cap.
 
 ```go
 type Expr interface {
-    Eval(ctx context.Context, expression string, bindings map[string]any, limits Limits) (any, error)
+    Eval(ctx context.Context, expression string, input any, bindings map[string]any, limits Limits) (any, error)
 }
 ```
 
@@ -351,10 +351,9 @@ internal/asl/            validator overlay, states, catalog.toml, page-acks.toml
 internal/asl/specgen/    generated, committed
 internal/jsonpath/
 internal/intrinsic/
-internal/jsonata/
+internal/jsonata/        gnata evaluator
 internal/mock/
 internal/invoke/         allow.toml
-third_party/jsonata/2.0.6/
 aws-spec/                snapshots and the Python sync
 docs/spec.md             execution semantics
 ```
@@ -368,7 +367,7 @@ docs/spec.md             execution semantics
 | `internal/asl` | Validator overlay, state handlers, payload templates, context object. |
 | `internal/jsonpath` | Reference paths, payload templates, `$$`. |
 | `internal/intrinsic` | The eighteen `States.*` functions. |
-| `internal/jsonata` | goja plus the vendored runtime. `$eval` removed. |
+| `internal/jsonata` | gnata v0.6.2. `$eval` disabled. jsonata-js 2.0.6 is the language reference, not the runtime. |
 | `internal/mock` | Mock file, `#` test-case suffix, attempt keys. |
 | `internal/invoke` | Lambda Invoke, then the allow-list. |
 

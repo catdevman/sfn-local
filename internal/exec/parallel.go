@@ -126,10 +126,6 @@ func (r *Runner) parallelOnce(ctx context.Context, arn string, st *asl.State, in
 // The caller has already appended the Failed event.
 func (r *Runner) afterFailure(ctx context.Context, arn string, st *asl.State, input string, ctxObj any, res branchResult) (string, string, bool, bool) {
 	if catcher, ok := pickCatch(st.Catch, res.errName); ok {
-		if catcher.HasAssign {
-			r.failCtx(ctx, arn, "States.Runtime", "Assign is not implemented by this local server.")
-			return "", "", false, true
-		}
 		return r.catchTask(ctx, arn, st, input, catcher, &taskFailure{Name: res.errName, Cause: res.cause}, ctxObj)
 	}
 	r.failCtx(ctx, arn, res.errName, res.cause)
