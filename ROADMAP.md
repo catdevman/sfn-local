@@ -37,8 +37,9 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [5](#x-phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
 | [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#x-phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
-| [I](#x-phase-i--service-integrations) | Optimized calls run when the endpoint is set. Distributed Map stays deferred. | unbounded |
+| [I](#x-phase-i--service-integrations) | Optimized calls run when the endpoint is set. | unbounded |
 | [S](#phase-s--aws-sdk-integrations) | `aws-sdk:` actions run through the AWS SDK for Go v2 when the endpoint is set. | unbounded |
+| [D](#phase-d--distributed-map) | Distributed Map children run as executions. Map Run API. | 3–5 |
 
 Cuts: G is the protocol-compatible process. G + 0 + 1 is the smallest useful runner. V on top of 0 is the definition check. Through 4 is the jar-shaped JSONPath runner. 6 on top of that is the JSONata runner. Phase 5 after 3 is activity workers.
 
@@ -266,10 +267,8 @@ The endpoint flag gates each integration. An empty endpoint is an unsupported re
 - [x] Nested Step Functions `startExecution` posts JSON 1.0 to `STEP_FUNCTIONS_ENDPOINT`.
 - [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution`. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
 
-These stay deferred for the life of this plan. Their operations return `ValidationException` with a message that says Distributed Map is not supported. A definition with `ProcessorConfig.Mode` other than `INLINE` fails validation.
+These stay deferred for the life of this plan.
 
-- `DescribeMapRun`, `ListMapRuns`, `UpdateMapRun`
-- Item Reader and Result Writer
 - Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, and EMR on EKS
 
 ## Phase S — aws-sdk integrations
@@ -282,6 +281,18 @@ These stay deferred for the life of this plan. Their operations return `Validati
 - [x] DynamoDB: 23 operations, with a codec for `AttributeValue`. Parameter names match exactly at every depth.
 - [x] SQS, SNS, and EventBridge as `aws-sdk:` services. The Phase I DynamoDB, SQS, SNS, and EventBridge resources run through the same clients.
 - [ ] Check error names and result shapes against AWS.
+
+## Phase D — Distributed Map
+
+`ProcessorConfig.Mode` `DISTRIBUTED` runs each item, or each batch, as a child execution in the store. docs/spec.md has the rules.
+
+- [x] Validation: `ExecutionType`, `Label`, tolerances, `ItemBatcher`, `ResultWriter.WriterConfig`, the `Path` forms, and JSONata expressions. Refused in EXPRESS machines and on `INLINE` Maps.
+- [x] Map Runs and child executions, `MaxConcurrency`, failure thresholds, a new run per retry, and stop.
+- [x] `COMPACT`, `FLATTEN`, and `NONE` results, with records for tolerated failures.
+- [x] `DescribeMapRun`, `ListMapRuns`, `UpdateMapRun`, `ListExecutions` by `mapRunArn`, and child `DescribeExecution` and `DescribeStateMachineForExecution`.
+- [ ] `ItemReader` from S3: JSON, JSONL, CSV, `ListObjectsV2`, and manifests.
+- [ ] `ResultWriter` export to S3: `manifest.json` and the `SUCCEEDED`, `FAILED`, and `PENDING` files.
+- [ ] Check the parent event sequence and the threshold cause against AWS.
 
 ## Standing CI
 
@@ -482,7 +493,7 @@ docs/spec.md's security section is the requirement. Generation adds these:
 - Persistence, clustering, and durability across process exit.
 - SigV4 verification.
 - A reflective AWS SDK. Phase S tables are written by hand.
-- Distributed Map, Item Reader, and Result Writer.
+- Map Run redrive.
 - CloudWatch log delivery, X-Ray, and `traceHeader`.
 - LocalStack's CLI, gateway, and configuration file.
 - An interpreter generated from the prose of spec.html.
