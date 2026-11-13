@@ -130,6 +130,6 @@ DynamoDB Local refuses an unsigned request. The server signs DynamoDB calls with
 
 `Prepare` adds subtotal and shipping. `SaveOrder` is a `putItem` with `attribute_not_exists(orderId)`, so it only writes a new order. `LoadOrder` is a consistent `getItem`. `ResultSelector` unwraps the attribute values and turns the `N` string back into a number with `States.StringToJson`. `MarkPaid` is an `updateItem` that moves `status` from `new` to `paid` and returns `ALL_NEW`. `Publish` shows the status before and after.
 
-A second run with the same `orderId` fails at `SaveOrder`. The error is `DynamoDB.ServiceException`, and the cause holds DynamoDB's `ConditionalCheckFailedException` body. AWS names that error `DynamoDB.ConditionalCheckFailedException`. Change `orderId` or delete the item to run it again.
+A second run with the same `orderId` fails at `SaveOrder` with `DynamoDB.ConditionalCheckFailedException`. Change `orderId` or delete the item to run it again.
 
 Output: order `ord-ddb-1`, total 4900, saved as `new`, status `paid` by `card`.

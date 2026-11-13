@@ -262,12 +262,8 @@ Depends on phase 1 history, and on phase 6 for the JSONata context count.
 The endpoint flag gates each integration. An empty endpoint is an unsupported resource. `internal/invoke/allow.toml` has no row for these optimized resources, and AWS Lambda Core stays unsupported. `.sync` and `.sync:2` run only for nested `states:startExecution`.
 
 - [x] `arn:aws:states:::lambda:invoke` returns `{StatusCode, Payload}`. A direct function ARN still returns the raw payload.
-- [x] SQS `sendMessage` posts the query form to `SQS_ENDPOINT`.
-- [x] SNS `publish` reads the XML response into a JSON object.
-- [x] DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem` post JSON 1.0 to `DYNAMODB_ENDPOINT`.
-- [x] DynamoDB calls carry a SigV4 `Authorization` header so DynamoDB Local accepts them.
+- [x] SQS `sendMessage`, SNS `publish`, DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem`, and EventBridge `putEvents` run through the Phase S clients. Errors are `<Service>.<Code>Exception`.
 - [x] Nested Step Functions `startExecution` posts JSON 1.0 to `STEP_FUNCTIONS_ENDPOINT`.
-- [x] EventBridge `putEvents` posts JSON 1.0 to `EVENTBRIDGE_ENDPOINT`.
 - [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution`. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
 
 These stay deferred for the life of this plan. Their operations return `ValidationException` with a message that says Distributed Map is not supported. A definition with `ProcessorConfig.Mode` other than `INLINE` fails validation.
@@ -284,7 +280,7 @@ These stay deferred for the life of this plan. Their operations return `Validati
 - [x] `internal/invoke/operations.toml` from `cmd/genops`, kept current by `TestGenerateClean` and checked by `TestOperations`.
 - [x] S3: 25 operations, with `getObject` and `putObject` bodies as strings.
 - [x] DynamoDB: 23 operations, with a codec for `AttributeValue`. Parameter names match exactly at every depth.
-- [ ] Move the Phase I DynamoDB, SQS, SNS, and EventBridge calls onto the same clients.
+- [x] SQS, SNS, and EventBridge as `aws-sdk:` services. The Phase I DynamoDB, SQS, SNS, and EventBridge resources run through the same clients.
 - [ ] Check error names and result shapes against AWS.
 
 ## Standing CI
