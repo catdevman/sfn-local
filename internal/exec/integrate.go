@@ -322,7 +322,7 @@ func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn strin
 	if execARN == "" {
 		return "", &taskFailure{Name: "States.Runtime", Cause: "StartExecution did not return executionArn", Submit: true}
 	}
-	if !r.emit(arn, storeHistorySubmitted(meta, started)) {
+	if !r.emit(parent, arn, storeHistorySubmitted(meta, started)) {
 		return "", &taskFailure{Halt: true}
 	}
 	for {

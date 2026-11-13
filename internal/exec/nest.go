@@ -3,6 +3,8 @@ package exec
 import (
 	"context"
 	"sync"
+
+	"github.com/catdevman/sfn-local/internal/store"
 )
 
 type stopKey struct{}
@@ -88,6 +90,44 @@ func withItem(ctx context.Context, index int, value any) context.Context {
 		ctx = context.Background()
 	}
 	return context.WithValue(ctx, itemKey{}, mapItem{Index: index, Value: value})
+}
+
+type parentKey struct{}
+
+// parentIter is the outermost Map iteration around the current state.
+// Index 0 is a real iteration, so the value is a struct rather than a bare int.
+type parentIter struct {
+	Index int32
+}
+
+// withParentIter records index unless an outer Map iteration already did.
+// A nested Map keeps the outer index so interleaved items stay distinguishable.
+func withParentIter(ctx context.Context, index int32) context.Context {
+	if ctx == nil {
+		ctx = context.Background()
+	}
+	if _, ok := ctx.Value(parentKey{}).(parentIter); ok {
+		return ctx
+	}
+	return context.WithValue(ctx, parentKey{}, parentIter{Index: index})
+}
+
+func parentIterOf(ctx context.Context) (int32, bool) {
+	if ctx == nil {
+		return 0, false
+	}
+	p, ok := ctx.Value(parentKey{}).(parentIter)
+	return p.Index, ok
+}
+
+func stampParent(ctx context.Context, ev *store.HistoryEvent) {
+	if ev == nil {
+		return
+	}
+	if idx, ok := parentIterOf(ctx); ok {
+		ev.ParentIndex = idx
+		ev.HasParentIndex = true
+	}
 }
 
 type outcome int

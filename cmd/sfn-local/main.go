@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 	"time"
 
@@ -60,6 +61,20 @@ func waitScale(v *float64) *float32 {
 	return &s
 }
 
+// consoleURL is the page printed at startup. A wildcard bind is shown as
+// loopback. An IPv6 address is bracketed.
+func consoleURL(bind string, port int) string {
+	host := bind
+	switch host {
+	case "", "0.0.0.0", "::", "[::]":
+		host = "127.0.0.1"
+	}
+	if strings.Contains(host, ":") && !strings.HasPrefix(host, "[") {
+		host = "[" + host + "]"
+	}
+	return fmt.Sprintf("http://%s:%d/dashboard", host, port)
+}
+
 func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 	if ctx == nil {
 		ctx = context.Background()
@@ -81,6 +96,7 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 	}
 	fmt.Fprintf(stdout, "Starting server on port %d with account %s, region %s, bind address %s\n",
 		port, cfg.Account, cfg.Region, cfg.BindAddress)
+	fmt.Fprintf(stdout, "Console at %s\n", consoleURL(cfg.BindAddress, port))
 	st := store.New()
 	go exec.Sweep(ctx, st)
 	runner := &exec.Runner{

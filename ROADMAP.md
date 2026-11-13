@@ -375,7 +375,7 @@ docs/spec.md             execution semantics
 
 One route. AWS JSON 1.0, as the model declares.
 
-- Method POST. The protocol identity is `POST /`. The server also accepts any path, because Step Functions Local does and some proxies rewrite it.
+- Method POST. The protocol identity is `POST /`. The server also accepts any path, because Step Functions Local does and some proxies rewrite it. GET `/dashboard` serves the embedded console and is not part of the API. POST `/dashboard` stays AWS JSON. GET `/dashboard/assets/htmx.min.js`, GET `/dashboard/assets/tailwind.css`, and POST `/dashboard/stop` belong to the console and are not access-logged.
 - Header `X-Amz-Target`, matched case-insensitively. The operation is the substring after the first dot. A missing header or a value with no dot is HTTP 400 with a modeled missing-header error.
 - Request `Content-Type` may be `application/x-amz-json-1.0` or `application/json`. Response `Content-Type` is `application/x-amz-json-1.0`, including when the output has no members. Those responses are `{}`.
 - Body is one JSON object, UTF-8. An empty body is `{}`. Unknown members are ignored. Trailing tokens after one value are rejected.

@@ -186,6 +186,7 @@ func helpText() string {
 
 Local Step Functions server. The store is in memory. Process exit drops definitions, inputs, outputs, and tokens.
 Bind 127.0.0.1 unless the port is published on purpose. Do not expose this port beyond the host or the compose network. Core dumps and swap can retain inputs, outputs, and tokens.
+GET /dashboard serves a console of state machines, executions, and history. API calls stay POST.
 
 SigV4 is not checked. The default error profile is the public Smithy shape id com.amazonaws.sfn#<ShapeName>. --compat=sfn-local selects the Step Functions Local error profile.
 

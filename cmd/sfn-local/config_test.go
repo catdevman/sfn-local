@@ -137,6 +137,9 @@ func TestStartupBanner(t *testing.T) {
 	if !strings.HasPrefix(text, "sfn-local dev\n") {
 		t.Fatalf("version line %q", text)
 	}
+	if !strings.Contains(text, "Console at http://127.0.0.1:") {
+		t.Fatalf("console line %q", text)
+	}
 	if !strings.Contains(text, "with account 123456789012, region us-east-1, bind address 127.0.0.1") {
 		t.Fatalf("banner %q", text)
 	}
@@ -145,6 +148,24 @@ func TestStartupBanner(t *testing.T) {
 	}
 	if strings.Contains(text, "abcd") {
 		t.Fatal("logged the dummy access key")
+	}
+}
+
+func TestConsoleURL(t *testing.T) {
+	if got := consoleURL("0.0.0.0", 8083); got != "http://127.0.0.1:8083/dashboard" {
+		t.Fatal(got)
+	}
+	if got := consoleURL("::", 8083); got != "http://127.0.0.1:8083/dashboard" {
+		t.Fatal(got)
+	}
+	if got := consoleURL("", 8083); got != "http://127.0.0.1:8083/dashboard" {
+		t.Fatal(got)
+	}
+	if got := consoleURL("::1", 8083); got != "http://[::1]:8083/dashboard" {
+		t.Fatal(got)
+	}
+	if got := consoleURL("127.0.0.1", 9); got != "http://127.0.0.1:9/dashboard" {
+		t.Fatal(got)
 	}
 }
 

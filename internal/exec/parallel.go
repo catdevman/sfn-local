@@ -13,7 +13,7 @@ func (r *Runner) runParallel(ctx context.Context, arn string, st *asl.State, inp
 		r.failCtx(ctx, arn, "States.Runtime", "Parallel has no branches")
 		return "", "", false, true
 	}
-	if !r.emit(arn, store.HistoryEvent{Type: "ParallelStateStarted"}) {
+	if !r.emit(ctx, arn, store.HistoryEvent{Type: "ParallelStateStarted"}) {
 		return "", "", false, true
 	}
 	retries := 0
@@ -29,7 +29,7 @@ func (r *Runner) runParallel(ctx context.Context, arn string, st *asl.State, inp
 		res := r.parallelOnce(ctx, arn, st, effective)
 		switch res.outcome {
 		case outcomeOK:
-			if !r.emit(arn, store.HistoryEvent{Type: "ParallelStateSucceeded"}) {
+			if !r.emit(ctx, arn, store.HistoryEvent{Type: "ParallelStateSucceeded"}) {
 				return "", "", false, true
 			}
 			return r.completeTask(ctx, arn, st, input, res.output, ctxObj)
@@ -51,7 +51,7 @@ func (r *Runner) runParallel(ctx context.Context, arn string, st *asl.State, inp
 			retries++
 			continue
 		}
-		if !r.emit(arn, store.HistoryEvent{Type: "ParallelStateFailed"}) {
+		if !r.emit(ctx, arn, store.HistoryEvent{Type: "ParallelStateFailed"}) {
 			return "", "", false, true
 		}
 		return r.afterFailure(ctx, arn, st, input, ctxObj, res)

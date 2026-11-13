@@ -1,0 +1,276 @@
+{{define "safelist"}}
+<div class="hidden bg-green-50 text-green-700 bg-red-50 text-red-700 bg-sky-50 text-sky-700 bg-amber-50 text-amber-800 bg-slate-100 text-slate-600 fill-white stroke-slate-300 fill-green-50 stroke-green-700 fill-red-50 stroke-red-700 fill-sky-50 stroke-sky-700 fill-slate-100 stroke-slate-500 fill-amber-50 stroke-amber-700 stroke-slate-900 stroke-[1.5] stroke-[2.5] fill-none stroke-slate-400 stroke-red-700 [stroke-dasharray:4_3] motion-safe:animate-pulse" aria-hidden="true"></div>
+{{end}}
+
+{{define "page"}}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Step Functions</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/dashboard/assets/tailwind.css">
+  <script src="/dashboard/assets/htmx.min.js"></script>
+</head>
+<body class="flex h-screen flex-col overflow-hidden bg-slate-50 text-slate-900 antialiased">
+  {{template "safelist" .}}
+  <header class="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 border-b border-slate-800 bg-slate-900 px-4 py-3 text-white">
+    <div class="flex min-w-0 items-baseline gap-2">
+      <span class="truncate font-semibold">Step Functions</span>
+      <span class="shrink-0 text-sm text-slate-400">local</span>
+    </div>
+    <div class="flex items-center gap-3 text-sm">
+      <span id="account" class="max-w-[9rem] truncate text-slate-300 sm:max-w-none">{{.Account}}</span>
+      <a href="{{.RefreshURL}}" class="shrink-0 text-sky-300">Refresh</a>
+    </div>
+  </header>
+  <div class="flex min-h-0 flex-1 flex-col md:flex-row">
+    {{template "rail" .}}
+    {{template "mainel" .}}
+  </div>
+</body>
+</html>
+{{end}}
+
+{{define "fragment"}}
+{{template "mainel" .}}
+{{template "rail" .}}
+<span id="account" class="max-w-[9rem] truncate text-sm text-slate-300 sm:max-w-none" hx-swap-oob="outerHTML">{{.Account}}</span>
+{{end}}
+
+{{define "rail"}}
+<nav id="rail" class="max-h-48 w-full shrink-0 overflow-auto border-b border-slate-200 bg-white md:max-h-none md:w-64 md:border-b-0 md:border-r"{{if .OOB}} hx-swap-oob="outerHTML"{{end}}>
+  <p class="px-3 pb-1 pt-3 text-xs font-medium uppercase tracking-wide text-slate-500">State machines</p>
+  {{if not .Machines}}<p class="px-3 py-4 text-sm text-slate-500">No state machines</p>{{end}}
+  {{range .Machines}}
+  <a href="{{.Href}}" hx-get="{{.Fragment}}" hx-target="#main" hx-swap="outerHTML" hx-push-url="{{.Href}}" class="block border-l-2 px-3 py-2 {{if .Active}}border-l-sky-600 bg-sky-50{{else}}border-l-transparent hover:bg-slate-50{{end}}">
+    <span class="block truncate text-sm font-medium text-slate-900">{{.Name}}</span>
+    <span class="block text-xs text-slate-500">{{.Type}}</span>
+  </a>
+  {{end}}
+</nav>
+{{end}}
+
+{{define "mainel"}}
+<main id="main" class="min-h-0 min-w-0 flex-1 overflow-auto">
+  {{if .Banner}}<div class="border-b border-amber-200 bg-amber-50 px-6 py-3 text-sm text-amber-900">{{.Banner}}</div>{{end}}
+  {{if eq .Kind "empty"}}
+  <p class="p-8 text-slate-500">{{.EmptyCopy}}</p>
+  {{else if eq .Kind "error"}}
+  <p class="p-8 text-red-700">{{.Error}}</p>
+  {{else if eq .Kind "list"}}
+  {{template "list" .}}
+  {{else if eq .Kind "detail"}}
+  {{template "detail" .}}
+  {{end}}
+</main>
+{{end}}
+
+{{define "list"}}
+<div class="p-6">
+  <h1 class="text-xl font-semibold text-slate-900">{{.Title}}</h1>
+  {{if .Sub}}<p class="mt-1 text-sm text-slate-500">{{.Sub}}</p>{{end}}
+  {{template "definition" .}}
+  <h2 class="mt-6 text-sm font-medium text-slate-700">Executions</h2>
+  <label class="mt-2 block">
+    <span class="sr-only">Filter executions</span>
+    <input id="exec-filter" name="q" value="{{.Filter}}" placeholder="Filter by name or status" autocomplete="off" hx-get="{{.RowsURL}}" hx-trigger="keyup changed delay:200ms" hx-target="#exec-rows" hx-swap="outerHTML" class="w-full max-w-md rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+  </label>
+  <div class="mt-4 overflow-auto rounded border border-slate-200 bg-white">
+    <table class="w-full text-left text-sm">
+      <thead class="bg-slate-50 text-xs font-medium uppercase tracking-wide text-slate-500">
+        <tr>
+          <th class="px-3 py-2 font-medium">Name</th>
+          <th class="px-3 py-2 font-medium">Status</th>
+          <th class="px-3 py-2 font-medium">Started</th>
+          <th class="px-3 py-2 font-medium">Stopped</th>
+          <th class="px-3 py-2 text-right font-medium">Duration</th>
+        </tr>
+      </thead>
+      {{template "rows" .}}
+    </table>
+  </div>
+</div>
+{{end}}
+
+{{define "definition"}}
+<section class="mt-4">
+  <h2 class="text-sm font-medium text-slate-700">Definition</h2>
+  <div class="mt-2 flex flex-wrap items-start gap-4">
+    <div class="max-w-full shrink-0 overflow-auto rounded border border-slate-200 bg-white p-3">
+      {{if .Plain}}
+      {{template "svggraph" .Plain}}
+      {{else}}
+      <p class="text-sm text-slate-500">{{.PlainNote}}</p>
+      {{end}}
+    </div>
+    <pre id="definition" class="max-h-96 min-w-72 flex-1 overflow-auto rounded border border-slate-200 bg-white p-3 text-xs">{{.Definition}}</pre>
+  </div>
+</section>
+{{end}}
+
+{{define "svggraph"}}
+<svg class="graph" viewBox="0 0 {{.ViewW}} {{.ViewH}}" width="{{.Width}}" height="{{.Height}}" role="img">
+  <defs>
+    <marker id="{{.Marker}}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="context-stroke"></path>
+    </marker>
+  </defs>
+  {{range .Edges}}
+  <path d="{{.Path}}" class="{{.Class}}" marker-end="url(#{{$.Marker}})"></path>
+  {{end}}
+  {{range .Nodes}}
+  {{if .Href}}
+  <a href="{{.Href}}" hx-get="{{.Fragment}}" hx-target="#live" hx-swap="outerHTML" hx-include="#event-filter" data-state="{{.Name}}" data-status="{{.Status}}" data-graph="{{.Kind}}">
+  {{else}}
+  <g data-state="{{.Name}}" data-status="{{.Status}}" data-graph="{{.Kind}}">
+  {{end}}
+    <title>{{.Title}}</title>
+    <rect x="{{.X}}" y="{{.Y}}" width="{{.W}}" height="{{.H}}" rx="6" class="{{.Fill}} {{.Stroke}} {{.SW}} {{.Extra}}"></rect>
+    <text x="{{.LabelX}}" y="{{.TypeY}}" class="fill-slate-500 text-[11px]">{{.Type}}</text>
+    <text x="{{.LabelX}}" y="{{.NameY}}" class="fill-slate-900 text-[13px]">{{.Short}}</text>
+    {{if .Sub}}<text x="{{.LabelX}}" y="{{.SubY}}" class="fill-slate-500 text-[11px]">{{.Sub}}</text>{{end}}
+  {{if .Href}}
+  </a>
+  {{else}}
+  </g>
+  {{end}}
+  {{if .Start}}<text x="{{.X}}" y="{{.StartY}}" class="fill-slate-500 text-[11px]">Start</text>{{end}}
+  {{end}}
+</svg>
+{{end}}
+
+{{define "rows"}}
+<tbody id="exec-rows"{{if .Poll}} hx-get="{{.RowsURL}}" hx-trigger="every 1s" hx-swap="outerHTML" hx-include="#exec-filter"{{end}}>
+  {{range .Execs}}
+  <tr class="border-t border-slate-100 hover:bg-slate-50">
+    <td class="px-3 py-2"><a href="{{.Href}}" hx-get="{{.Fragment}}" hx-target="#main" hx-swap="outerHTML" hx-push-url="{{.Href}}" class="font-medium text-sky-800">{{.Name}}</a></td>
+    <td class="px-3 py-2"><span class="inline-flex rounded px-2 py-0.5 text-xs font-medium {{.Chip}}">{{.Status}}</span></td>
+    <td class="whitespace-nowrap px-3 py-2">{{.Started}}</td>
+    <td class="whitespace-nowrap px-3 py-2">{{.Stopped}}</td>
+    <td class="px-3 py-2 text-right tabular-nums">{{.Duration}}</td>
+  </tr>
+  {{else}}
+  <tr><td colspan="5" class="px-3 py-6 text-slate-500">{{if .ListError}}{{.ListError}}{{else if .NoMatch}}No executions match that filter.{{else}}No executions yet.{{end}}</td></tr>
+  {{end}}
+</tbody>
+{{end}}
+
+{{define "detail"}}
+<div class="p-6">
+  <a href="{{.BackURL}}" hx-get="{{.BackFragment}}" hx-target="#main" hx-swap="outerHTML" hx-push-url="{{.BackURL}}" class="text-sm text-sky-700">Executions</a>
+  <h1 class="mt-2 text-xl font-semibold text-slate-900">{{.Title}}</h1>
+  {{template "live" .}}
+  <label class="mt-4 block">
+    <span class="sr-only">Filter events</span>
+    <input id="event-filter" name="eq" value="{{.Filter}}" placeholder="Filter events" autocomplete="off" hx-get="/dashboard" hx-include="#live-fields,#event-filter" hx-target="#live" hx-swap="outerHTML" hx-trigger="keyup changed delay:200ms" class="w-full max-w-md rounded border border-slate-300 bg-white px-3 py-2 text-sm">
+  </label>
+</div>
+{{end}}
+
+{{define "live"}}
+<div id="live" class="mt-3"{{if .Poll}} hx-get="{{.LiveURL}}" hx-trigger="every 1s" hx-swap="outerHTML" hx-include="#event-filter"{{end}}>
+  <div id="live-fields" class="hidden">
+    <input type="hidden" name="machine" value="{{.Machine}}">
+    <input type="hidden" name="execution" value="{{.Execution}}">
+    <input type="hidden" name="step" value="{{.Step}}">
+    <input type="hidden" name="mi" value="{{.Index}}">
+    <input type="hidden" name="z" value="{{.ZoomText}}">
+    <input type="hidden" name="part" value="live">
+  </div>
+  <div class="flex flex-wrap items-center gap-3">
+    <span class="inline-flex rounded px-2 py-0.5 text-xs font-medium {{.Chip}}">{{.Status}}</span>
+    <p class="text-sm text-slate-500">{{.Meta}}</p>
+    {{if .ShowStop}}
+    <form action="/dashboard/stop" method="post" hx-post="/dashboard/stop" hx-target="#main" hx-swap="outerHTML" hx-confirm="Stop this execution?" class="ml-auto">
+      <input type="hidden" name="executionArn" value="{{.ExecARN}}">
+      <input type="hidden" name="machine" value="{{.Machine}}">
+      <input type="hidden" name="step" value="{{.Step}}">
+      <input type="hidden" name="mi" value="{{.Index}}">
+      <input type="hidden" name="z" value="{{.ZoomText}}">
+      <button type="submit" class="rounded bg-red-600 px-3 py-1.5 text-sm font-medium text-white">Stop</button>
+    </form>
+    {{end}}
+  </div>
+  {{if or .FailureError .FailureCause}}
+  <div class="mt-3 rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800">
+    {{if .FailureError}}<strong>{{.FailureError}}</strong>{{end}}
+    {{if .FailureCause}}<div>{{.FailureCause}}</div>{{end}}
+  </div>
+  {{end}}
+  {{if .Comment}}<p class="mt-3 truncate text-sm text-slate-500" title="{{.Comment}}">{{.Comment}}</p>{{end}}
+  <div class="mt-3 rounded border border-slate-200 bg-white">
+    <div class="flex flex-wrap items-center gap-2 border-b border-slate-200 px-3 py-2">
+      <a href="{{.PushZoomOut}}" hx-get="{{.ZoomOut}}" hx-target="#live" hx-swap="outerHTML" hx-include="#event-filter" class="rounded border border-slate-300 px-2 py-1 text-sm">−</a>
+      <a href="{{.PushZoomIn}}" hx-get="{{.ZoomIn}}" hx-target="#live" hx-swap="outerHTML" hx-include="#event-filter" class="rounded border border-slate-300 px-2 py-1 text-sm">+</a>
+      <a href="{{.PushFit}}" hx-get="{{.FitURL}}" hx-target="#live" hx-swap="outerHTML" hx-include="#event-filter" class="rounded border border-slate-300 px-2 py-1 text-sm">Fit</a>
+      {{if .Step}}
+      <a href="{{.PushClear}}" hx-get="{{.ClearURL}}" hx-target="#live" hx-swap="outerHTML" hx-include="#event-filter" class="rounded bg-slate-100 px-2 py-1 text-sm text-slate-700">{{.Step}} · Clear</a>
+      {{end}}
+      {{if .Indexes}}
+      <label class="flex items-center gap-2 text-sm text-slate-700">
+        <span class="sr-only">Map index</span>
+        <select id="map-index" name="mi" hx-get="{{.IndexURL}}" hx-include="#event-filter" hx-target="#live" hx-swap="outerHTML" hx-trigger="change" class="rounded border border-slate-300 bg-white px-2 py-1 text-sm">
+          <option value=""{{if not .IndexSet}} selected{{end}}>Whole state</option>
+          {{range .Indexes}}
+          <option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>
+          {{end}}
+        </select>
+      </label>
+      {{end}}
+      <ul class="ml-auto flex flex-wrap gap-3 text-xs text-slate-600">
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-slate-300 bg-white"></span>Not started</li>
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-green-700 bg-green-50"></span>Succeeded</li>
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-red-700 bg-red-50"></span>Failed</li>
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-sky-700 bg-sky-50"></span>Running</li>
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-amber-700 bg-amber-50"></span>Timed out</li>
+        <li class="flex items-center gap-1"><span class="inline-block h-2.5 w-2.5 rounded-sm border border-slate-500 bg-slate-100"></span>Aborted</li>
+      </ul>
+    </div>
+    <div id="graph-scroll" class="overflow-auto p-3">
+      {{if .Graph}}
+      {{template "svggraph" .Graph}}
+      {{else}}
+      <p class="text-sm text-slate-500">{{.GraphNote}}</p>
+      {{end}}
+    </div>
+  </div>
+  {{if .IoNote}}<p id="io-note" class="mt-4 text-sm text-slate-500">{{.IoNote}}</p>{{end}}
+  <div class="{{if .IoNote}}mt-2{{else}}mt-4{{end}} grid gap-4 md:grid-cols-2">
+    <section>
+      <h2 class="text-sm font-medium text-slate-700">Input</h2>
+      <pre id="state-input" class="mt-1 overflow-auto rounded border border-slate-200 bg-white p-3 text-xs">{{.Input}}</pre>
+    </section>
+    <section>
+      <h2 class="text-sm font-medium text-slate-700">Output</h2>
+      <pre id="state-output" class="mt-1 overflow-auto rounded border border-slate-200 bg-white p-3 text-xs">{{.Output}}</pre>
+    </section>
+  </div>
+  <div class="mt-4 flex items-baseline justify-between">
+    <h2 class="text-sm font-medium text-slate-700">Execution history</h2>
+    <p class="text-xs text-slate-500">{{.EventCount}}</p>
+  </div>
+  <div class="mt-2 overflow-auto rounded border border-slate-200 bg-white">
+    <div class="grid grid-cols-[4.5rem_minmax(0,1.4fr)_minmax(0,1fr)_11rem_5.5rem] gap-2 bg-slate-50 px-3 py-2 text-xs font-medium uppercase tracking-wide text-slate-500">
+      <span>ID</span><span>Type</span><span>Step</span><span>Time</span><span class="text-right">Delta</span>
+    </div>
+    {{if .Events}}
+    {{range .Events}}
+    <details class="border-t border-slate-100">
+      <summary class="grid cursor-pointer grid-cols-[4.5rem_minmax(0,1.4fr)_minmax(0,1fr)_11rem_5.5rem] gap-2 px-3 py-2 text-sm">
+        <span class="tabular-nums">{{.ID}}</span>
+        <span>{{.Type}}{{if .Error}} <span class="text-slate-500">{{.Error}}</span>{{end}}</span>
+        <span class="truncate">{{.Step}}</span>
+        <span class="whitespace-nowrap">{{.When}}</span>
+        <span class="text-right tabular-nums text-slate-500">{{.Delta}}</span>
+      </summary>
+      <pre class="overflow-auto bg-slate-50 px-3 py-2 text-xs">{{.Detail}}</pre>
+    </details>
+    {{end}}
+    {{else}}
+    <p class="px-3 py-6 text-sm text-slate-500">{{if .Step}}No events for this state.{{else}}No events.{{end}}</p>
+    {{end}}
+  </div>
+</div>
+{{end}}

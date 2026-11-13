@@ -39,9 +39,15 @@ type access struct {
 	response []byte
 }
 
-// ServeHTTP accepts POST on any path. The operation is the X-Amz-Target
-// value after the first dot.
+// ServeHTTP serves the console for GET /dashboard, its assets, and
+// POST /dashboard/stop. Every other request is AWS JSON 1.0. The operation
+// is the X-Amz-Target value after the first dot. POST is accepted on any
+// path, including /dashboard. The console response is not access-logged.
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if dashboardRequest(r) {
+		s.serveDashboard(w, r)
+		return
+	}
 	acc := access{op: "-", payload: "{}", status: http.StatusInternalServerError}
 	defer s.writeLog(&acc)
 	if r.Method != http.MethodPost {

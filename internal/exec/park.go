@@ -130,10 +130,10 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 		}
 	}
 	if meta.kind == kindActivity {
-		if !r.emitActivityScheduled(arn, meta) {
+		if !r.emitActivityScheduled(ctx, arn, meta) {
 			return "", &taskFailure{Halt: true}
 		}
-	} else if !r.emitScheduled(arn, meta) || !r.emitStarted(arn, meta) || !r.emitSubmitted(arn, meta) {
+	} else if !r.emitScheduled(ctx, arn, meta) || !r.emitStarted(ctx, arn, meta) || !r.emitSubmitted(ctx, arn, meta) {
 		return "", &taskFailure{Halt: true}
 	}
 	tok := newTaskToken(token, arn, meta)
@@ -143,7 +143,7 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 	}
 	if taskWins && !now.Before(limit) {
 		r.Store.KeepExpired(tok)
-		if !r.emitParkEnd(arn, meta, "", &taskFailure{Name: "States.Timeout", Timeout: true}) {
+		if !r.emitParkEnd(ctx, arn, meta, "", &taskFailure{Name: "States.Timeout", Timeout: true}) {
 			return "", &taskFailure{Halt: true}
 		}
 		return "", &taskFailure{Name: "States.Timeout", Timeout: true}
@@ -156,13 +156,13 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 	res := r.awaitToken(ctx, arn, tok, limit, taskWins, hb, hasHB)
 	switch res.status {
 	case store.TokenSucceeded:
-		if !r.emitParkEnd(arn, meta, res.output, nil) {
+		if !r.emitParkEnd(ctx, arn, meta, res.output, nil) {
 			return "", &taskFailure{Halt: true}
 		}
 		return res.output, nil
 	case store.TokenFailed:
 		tf := &taskFailure{Name: res.errName, Cause: res.cause}
-		if !r.emitParkEnd(arn, meta, "", tf) {
+		if !r.emitParkEnd(ctx, arn, meta, "", tf) {
 			return "", &taskFailure{Halt: true}
 		}
 		return "", tf
@@ -173,7 +173,7 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 			return "", &taskFailure{ExecDeadline: true}
 		}
 		tf := &taskFailure{Name: "States.Timeout", Timeout: true}
-		if !r.emitParkEnd(arn, meta, "", tf) {
+		if !r.emitParkEnd(ctx, arn, meta, "", tf) {
 			return "", &taskFailure{Halt: true}
 		}
 		return "", tf
@@ -242,7 +242,7 @@ func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToke
 	limitC := limitTimer.C
 	for {
 		if started && !announced {
-			if tok.Kind == store.TokenActivity && !r.emitActivityStarted(arn, tok.Worker) {
+			if tok.Kind == store.TokenActivity && !r.emitActivityStarted(ctx, arn, tok.Worker) {
 				r.Store.AbortToken(tok.ID)
 				return parkResult{status: store.TokenAborted}
 			}
@@ -267,7 +267,7 @@ func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToke
 				default:
 				}
 				if started {
-					if tok.Kind == store.TokenActivity && !r.emitActivityStarted(arn, tok.Worker) {
+					if tok.Kind == store.TokenActivity && !r.emitActivityStarted(ctx, arn, tok.Worker) {
 						r.Store.AbortToken(tok.ID)
 						return parkResult{status: store.TokenAborted}
 					}
@@ -326,7 +326,7 @@ func newTaskToken(id, arn string, meta taskMeta) *store.TaskToken {
 	return store.NewTaskToken(id, kind, arn, meta.input)
 }
 
-func (r *Runner) emitActivityScheduled(arn string, meta taskMeta) bool {
+func (r *Runner) emitActivityScheduled(ctx context.Context, arn string, meta taskMeta) bool {
 	ev := store.HistoryEvent{
 		Type: "ActivityScheduled", Resource: meta.resource, HasResource: meta.resource != "",
 		Input: meta.input, HasInput: true,
@@ -339,41 +339,41 @@ func (r *Runner) emitActivityScheduled(arn string, meta taskMeta) bool {
 		ev.HeartbeatSeconds = *meta.heartbeat
 		ev.HasHeartbeat = true
 	}
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitActivityStarted(arn, worker string) bool {
+func (r *Runner) emitActivityStarted(ctx context.Context, arn, worker string) bool {
 	ev := store.HistoryEvent{Type: "ActivityStarted"}
 	if worker != "" {
 		ev.Worker = worker
 		ev.HasWorker = true
 	}
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitSubmitted(arn string, meta taskMeta) bool {
+func (r *Runner) emitSubmitted(ctx context.Context, arn string, meta taskMeta) bool {
 	ev := store.HistoryEvent{
 		Type: "TaskSubmitted", Resource: meta.resource, HasResource: meta.resource != "",
 		ResourceType: meta.resourceType, HasResourceType: meta.resourceType != "",
 		Output: "", HasOutput: true,
 	}
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitParkEnd(arn string, meta taskMeta, result string, tf *taskFailure) bool {
+func (r *Runner) emitParkEnd(ctx context.Context, arn string, meta taskMeta, result string, tf *taskFailure) bool {
 	if meta.kind == kindActivity {
-		return r.emitActivityEnd(arn, result, tf)
+		return r.emitActivityEnd(ctx, arn, result, tf)
 	}
-	return r.emitAttemptEnd(arn, meta, result, tf)
+	return r.emitAttemptEnd(ctx, arn, meta, result, tf)
 }
 
-func (r *Runner) emitActivityEnd(arn, result string, tf *taskFailure) bool {
+func (r *Runner) emitActivityEnd(ctx context.Context, arn, result string, tf *taskFailure) bool {
 	ev := store.HistoryEvent{}
 	if tf == nil {
 		ev.Type = "ActivitySucceeded"
 		ev.Output = result
 		ev.HasOutput = true
-		return r.emit(arn, ev)
+		return r.emit(ctx, arn, ev)
 	}
 	if tf.Timeout {
 		ev.Type = "ActivityTimedOut"
@@ -384,7 +384,7 @@ func (r *Runner) emitActivityEnd(arn, result string, tf *taskFailure) bool {
 	ev.HasError = tf.Name != ""
 	ev.Cause = tf.Cause
 	ev.HasCause = tf.Cause != ""
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
 func (r *Runner) deferTaskParameters(ex store.Execution, st *asl.State) bool {

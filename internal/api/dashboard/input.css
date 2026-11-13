@@ -1,0 +1,13 @@
+/* Rebuild from this directory with Node 20 or newer:
+   npm install tailwindcss@4 @tailwindcss/cli@4
+   npx @tailwindcss/cli -i input.css -o tailwind.css --minify
+   Then remove node_modules. The committed file is tailwind.css.
+   htmx.min.js is htmx 2.0.7 from https://unpkg.com/htmx.org@2.0.7/dist/htmx.min.js */
+@import "tailwindcss";
+@source "./templates.html";
+
+/* Tailwind preflight caps SVG at the container width. The graph sets its own width. */
+svg.graph {
+  display: block;
+  max-width: none;
+}

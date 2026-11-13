@@ -13,7 +13,7 @@ import (
 
 func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
 	ctx = r.ensureScope(ctx, arn)
-	if err := r.entered(arn, st, input); err != nil {
+	if err := r.entered(ctx, arn, st, input); err != nil {
 		r.onAppendErr(arn, err)
 		return "", "", false, true
 	}
@@ -176,7 +176,7 @@ func (r *Runner) exit(ctx context.Context, arn string, st *asl.State, output str
 		r.failCtx(ctx, arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
 		return false
 	}
-	if err := r.exited(arn, st, output); err != nil {
+	if err := r.exited(ctx, arn, st, output); err != nil {
 		r.onAppendErr(arn, err)
 		return false
 	}

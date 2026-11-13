@@ -165,7 +165,7 @@ func TestProtocolEdges(t *testing.T) {
 	if got.Code() != "ValidationException" || !strings.Contains(got.Message, "trailing") {
 		t.Fatalf("%+v", got)
 	}
-	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	req = httptest.NewRequest(http.MethodGet, "/not-a-console", nil)
 	rec = httptest.NewRecorder()
 	base.ServeHTTP(rec, req)
 	got = decodeRec(t, rec)
@@ -188,6 +188,84 @@ func TestProtocolEdges(t *testing.T) {
 	got = decodeRec(t, rec)
 	if got.Status != 400 || !strings.Contains(got.Message, "too large") {
 		t.Fatalf("%+v", got)
+	}
+}
+
+func TestConsolePage(t *testing.T) {
+	var log bytes.Buffer
+	base := prodServer(t, ProfileSmithy)
+	base.Log = &log
+	for _, path := range []string{"/", "/console", "/console/", "/dashboard/stop"} {
+		log.Reset()
+		rec := httptest.NewRecorder()
+		base.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusBadRequest {
+			t.Fatalf("%s %d %s", path, rec.Code, rec.Body)
+		}
+		if strings.Contains(rec.Header().Get("Content-Type"), "text/html") {
+			t.Fatalf("%s served html", path)
+		}
+		got := decodeRec(t, rec)
+		if !strings.Contains(got.Message, "HTTP method must be POST") {
+			t.Fatalf("%s %+v", path, got)
+		}
+		if log.Len() == 0 {
+			t.Fatalf("%s was not access-logged", path)
+		}
+	}
+	for _, path := range []string{"/dashboard", "/dashboard/"} {
+		log.Reset()
+		rec := httptest.NewRecorder()
+		base.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, path, nil))
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s %d %s", path, rec.Code, rec.Body)
+		}
+		if !strings.HasPrefix(rec.Header().Get("Content-Type"), "text/html") {
+			t.Fatalf("%s content-type %s", path, rec.Header().Get("Content-Type"))
+		}
+		if rec.Header().Get("Cache-Control") != "no-store" {
+			t.Fatalf("%s cache %s", path, rec.Header().Get("Cache-Control"))
+		}
+		if rec.Header().Get("X-Content-Type-Options") != "nosniff" {
+			t.Fatalf("%s nosniff %s", path, rec.Header().Get("X-Content-Type-Options"))
+		}
+		body := rec.Body.Bytes()
+		if !bytes.Contains(body, []byte("/dashboard/assets/htmx.min.js")) || !bytes.Contains(body, []byte("/dashboard/assets/tailwind.css")) {
+			t.Fatalf("%s missing assets", path)
+		}
+		if !bytes.Contains(body, []byte("Create one with the AWS CLI")) {
+			t.Fatalf("%s empty state %s", path, body)
+		}
+		if log.Len() != 0 {
+			t.Fatalf("%s logged %q", path, log.String())
+		}
+	}
+	for _, asset := range []struct {
+		path, ctype, needle string
+	}{
+		{"/dashboard/assets/htmx.min.js", "text/javascript", "htmx"},
+		{"/dashboard/assets/tailwind.css", "text/css", "fill-red-50"},
+	} {
+		log.Reset()
+		rec := httptest.NewRecorder()
+		base.ServeHTTP(rec, httptest.NewRequest(http.MethodGet, asset.path, nil))
+		if rec.Code != http.StatusOK || !strings.HasPrefix(rec.Header().Get("Content-Type"), asset.ctype) {
+			t.Fatalf("%s %d %s", asset.path, rec.Code, rec.Header().Get("Content-Type"))
+		}
+		if !bytes.Contains(rec.Body.Bytes(), []byte(asset.needle)) {
+			t.Fatalf("%s missing %s", asset.path, asset.needle)
+		}
+		if log.Len() != 0 {
+			t.Fatalf("%s logged %q", asset.path, log.String())
+		}
+	}
+	rec := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodPost, "/dashboard", strings.NewReader(`{}`))
+	req.Header.Set("Content-Type", contentTypeJSON10)
+	req.Header.Set(targetHeader, "AWSStepFunctions.ListStateMachines")
+	base.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != contentTypeJSON10 {
+		t.Fatalf("post /dashboard %d %s %s", rec.Code, rec.Header().Get("Content-Type"), rec.Body)
 	}
 }
 

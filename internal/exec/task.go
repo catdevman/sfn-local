@@ -260,23 +260,23 @@ func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution,
 	}
 	if !now.Before(limit) {
 		if taskWins {
-			if !r.emitScheduled(arn, meta) {
+			if !r.emitScheduled(ctx, arn, meta) {
 				return "", &taskFailure{Halt: true}
 			}
 			tf := &taskFailure{Name: "States.Timeout", Timeout: true}
-			if !r.emitAttemptEnd(arn, meta, "", tf) {
+			if !r.emitAttemptEnd(ctx, arn, meta, "", tf) {
 				return "", &taskFailure{Halt: true}
 			}
 			return "", tf
 		}
 		return "", &taskFailure{ExecDeadline: true}
 	}
-	if !r.emitScheduled(arn, meta) {
+	if !r.emitScheduled(ctx, arn, meta) {
 		return "", &taskFailure{Halt: true}
 	}
 	callCtx, cancel := context.WithDeadline(ctx, limit)
 	defer cancel()
-	if !r.emitStarted(arn, meta) {
+	if !r.emitStarted(ctx, arn, meta) {
 		return "", &taskFailure{Halt: true}
 	}
 	var (
@@ -296,7 +296,7 @@ func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution,
 	if tf != nil && tf.ExecDeadline {
 		return "", tf
 	}
-	if !r.emitAttemptEnd(arn, meta, result, tf) {
+	if !r.emitAttemptEnd(ctx, arn, meta, result, tf) {
 		return "", &taskFailure{Halt: true}
 	}
 	return result, tf
@@ -472,7 +472,7 @@ func (r *Runner) clearAttempts(arn string) {
 	delete(r.attempts, arn)
 }
 
-func (r *Runner) emitScheduled(arn string, meta taskMeta) bool {
+func (r *Runner) emitScheduled(ctx context.Context, arn string, meta taskMeta) bool {
 	ev := store.HistoryEvent{Resource: meta.resource, HasResource: meta.resource != ""}
 	if meta.kind == kindLambda {
 		ev.Type = "LambdaFunctionScheduled"
@@ -495,10 +495,10 @@ func (r *Runner) emitScheduled(arn string, meta taskMeta) bool {
 		ev.TimeoutSeconds = *meta.timeout
 		ev.HasTimeout = true
 	}
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitStarted(arn string, meta taskMeta) bool {
+func (r *Runner) emitStarted(ctx context.Context, arn string, meta taskMeta) bool {
 	ev := store.HistoryEvent{}
 	if meta.kind == kindLambda {
 		ev.Type = "LambdaFunctionStarted"
@@ -509,10 +509,10 @@ func (r *Runner) emitStarted(arn string, meta taskMeta) bool {
 		ev.ResourceType = meta.resourceType
 		ev.HasResourceType = meta.resourceType != ""
 	}
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitAttemptEnd(arn string, meta taskMeta, result string, tf *taskFailure) bool {
+func (r *Runner) emitAttemptEnd(ctx context.Context, arn string, meta taskMeta, result string, tf *taskFailure) bool {
 	ev := store.HistoryEvent{}
 	if tf == nil {
 		if meta.kind == kindLambda {
@@ -526,7 +526,7 @@ func (r *Runner) emitAttemptEnd(arn string, meta taskMeta, result string, tf *ta
 		}
 		ev.Output = result
 		ev.HasOutput = true
-		return r.emit(arn, ev)
+		return r.emit(ctx, arn, ev)
 	}
 	if meta.kind == kindLambda {
 		if tf.Timeout {
@@ -551,10 +551,11 @@ func (r *Runner) emitAttemptEnd(arn string, meta taskMeta, result string, tf *ta
 	ev.HasError = tf.Name != ""
 	ev.Cause = tf.Cause
 	ev.HasCause = tf.Cause != ""
-	return r.emit(arn, ev)
+	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emit(arn string, ev store.HistoryEvent) bool {
+func (r *Runner) emit(ctx context.Context, arn string, ev store.HistoryEvent) bool {
+	stampParent(ctx, &ev)
 	ev.Time = r.now()
 	if err := r.append(arn, ev, store.ExecRunning, ""); err != nil {
 		r.onAppendErr(arn, err)

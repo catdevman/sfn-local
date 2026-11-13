@@ -102,6 +102,10 @@ type HistoryEvent struct {
 	Length    int32
 	HasIndex  bool
 	HasLength bool
+	// ParentIndex is the outermost Map iteration that produced this event.
+	// HasParentIndex is set even when the index is 0. The history API does not copy it.
+	ParentIndex    int32
+	HasParentIndex bool
 	// VersionARN and AliasARN are ExecutionStarted details for a qualified start.
 	VersionARN string
 	AliasARN   string
