@@ -1,5 +1,7 @@
 # stepfunctions-local
 
+Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
+
 The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 0b checks create-time validator messages. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait. Phase 3 runs mocked tasks, direct Lambda invoke, Retry, and Catch. Phase 4 runs Parallel, inline Map, and the eighteen intrinsic functions. Phase V validates definitions and serves state machine versions and aliases. `TestState` runs one state. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. Optimized integrations run when their endpoint is set, including nested `.sync`. Customer-managed KMS and tracing stay deferred. Distributed Map does not run.
 
 Listen on `0.0.0.0:8083`. Point the AWS CLI at `--endpoint-url http://127.0.0.1:8083`. SigV4 is not checked. The store is in memory. Bind `127.0.0.1` unless the port is published on purpose, and do not expose the port beyond the host or the compose network. Open http://127.0.0.1:8083/dashboard for a console of state machines, executions, and history. API calls stay POST.

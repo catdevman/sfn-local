@@ -1,0 +1,71 @@
+sfn-local
+Copyright 2026 Lucas Pearson
+
+This product is licensed under the Apache License, Version 2.0.
+The license text is the LICENSE file in the root of this repository.
+
+The Apache License applies to the original source in this repository.
+The works below keep their own terms. Their notices stay with them.
+
+Amazon States Language specification
+  aws-spec/asl/spec.html
+  Unmodified copy of https://states-language.net/spec.html
+  Copyright 2016-2024 Amazon.com Inc. or Affiliates.
+  The specification's own notice allows copying and distributing it
+  and forbids modifying, merging, sublicensing, or selling copies of
+  the specification. Sample code in that specification, unless the
+  specification says otherwise, is licensed under the Apache License,
+  Version 2.0.
+
+AWS Smithy model for Step Functions
+  aws-spec/states-api/sfn-2016-11-23.json
+  aws-spec/states-api/operations.json is generated from that snapshot.
+  Upstream: https://github.com/aws/api-models-aws
+  License: Apache License, Version 2.0
+  The license text is aws-spec/states-api/LICENSE
+  Attribution for that snapshot is aws-spec/states-api/NOTICE.md
+
+JSONata 2.0.6 language documentation
+  aws-spec/jsonata/2.0.6/
+  Upstream: https://github.com/jsonata-js/jsonata
+  Tag v2.0.6, commit 6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b
+  License: MIT
+  The license text is aws-spec/jsonata/2.0.6/LICENSE
+  These files are the language reference. They are not the runtime.
+
+htmx 2.0.7
+  internal/api/dashboard/htmx.min.js
+  Source: https://unpkg.com/htmx.org@2.0.7/dist/htmx.min.js
+  Upstream: https://github.com/bigskysoftware/htmx tag v2.0.7
+  License: Zero-Clause BSD
+
+Tailwind CSS 4.3.5
+  internal/api/dashboard/tailwind.css
+  https://tailwindcss.com
+  License: MIT
+  The compiled file carries the Tailwind MIT banner.
+
+Go modules linked by the binary, not copied into this tree:
+
+  github.com/recolabs/gnata v0.6.2
+    License: MIT
+    Copyright 2026 RecoLabs Inc.
+    gnata vendors CockroachDB apd under the Apache License, Version 2.0,
+    at internal/third_party/apd in that module.
+    Copyright The Cockroach Authors.
+
+  github.com/tidwall/gjson v1.18.0
+  github.com/tidwall/match v1.1.1
+  github.com/tidwall/pretty v1.2.1
+    License: MIT
+    Copyright Josh Baker (2016 for gjson and match, 2017 for pretty).
+
+aws-spec/document-history.json, release-notes.json, recent-launches.json,
+and sdk-integrations.json contain text parsed from the public AWS Step
+Functions developer guide and release notes. Those pages are not covered
+by the Apache License. aws-spec/page-watch.json stores hashes of developer
+guide pages and does not copy the page text.
+
+The Step Functions Local image amazon/aws-stepfunctions-local is not in
+this repository. It is used only as a black-box test oracle and remains
+under the AWS Customer Agreement.
