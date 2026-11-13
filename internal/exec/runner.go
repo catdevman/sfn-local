@@ -38,10 +38,18 @@ type Runner struct {
 	// Mocks is the SFN_MOCK_CONFIG file. Nil reports the file as missing.
 	Mocks *mock.Repo
 	// LambdaEndpoint is LAMBDA_ENDPOINT. Empty means a direct function ARN
-	// that is not mocked fails as an unsupported resource.
+	// or lambda:invoke that is not mocked fails as an unsupported resource.
 	LambdaEndpoint string
-	Region         string
-	Account        string
+	// SQSEndpoint, SNSEndpoint, DynamoDBEndpoint, StepFunctionsEndpoint, and
+	// EventBridgeEndpoint gate the optimized integrations. Empty means the
+	// resource is unsupported. .sync is states:startExecution only.
+	SQSEndpoint           string
+	SNSEndpoint           string
+	DynamoDBEndpoint      string
+	StepFunctionsEndpoint string
+	EventBridgeEndpoint   string
+	Region                string
+	Account               string
 	// Invoke replaces the Lambda HTTP call. Nil uses LambdaEndpoint.
 	Invoke func(ctx context.Context, call LambdaCall) LambdaReply
 	// Rand returns a FULL-jitter delay in 0..max inclusive. Nil uses math/rand.

@@ -53,6 +53,8 @@ type taskFailure struct {
 	Timeout      bool
 	ExecDeadline bool
 	Halt         bool
+	// Submit marks a .sync start failure. History records TaskSubmitFailed.
+	Submit bool
 }
 
 type lambdaTarget struct {
@@ -229,6 +231,15 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 			return kindGeneric, lambdaTarget{}, true, nil
 		}
 	}
+	if base, mode, ok := integrationResource(st.Resource); ok {
+		if mode != "" && base != "arn:aws:states:::states:startExecution" {
+			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+		}
+		if r.integrationEndpoint(base) == "" {
+			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+		}
+		return kindGeneric, lambdaTarget{}, false, nil
+	}
 	return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
 }
 
@@ -274,8 +285,10 @@ func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution,
 	)
 	if mocked {
 		result, tf = r.readMock(arn, arnName(ex.StateMachineARN, ":stateMachine:"), ex.MockTest, meta.state, meta.kind)
-	} else {
+	} else if meta.kind == kindLambda {
 		result, tf = r.invokeLambda(callCtx, ctx, target, meta.input, taskWins)
+	} else {
+		result, tf = r.invokeService(callCtx, ctx, arn, meta, taskWins)
 	}
 	if tf != nil && tf.Halt {
 		return "", tf
@@ -528,6 +541,8 @@ func (r *Runner) emitAttemptEnd(arn string, meta taskMeta, result string, tf *ta
 		ev.HasResourceType = meta.resourceType != ""
 		if tf.Timeout {
 			ev.Type = "TaskTimedOut"
+		} else if tf.Submit {
+			ev.Type = "TaskSubmitFailed"
 		} else {
 			ev.Type = "TaskFailed"
 		}

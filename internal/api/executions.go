@@ -668,6 +668,21 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 		out.TaskSucceededEventDetails = d
 	case "TaskFailed":
 		out.TaskFailedEventDetails = taskFailedDetails(ev)
+	case "TaskSubmitFailed":
+		d := &gen.TaskSubmitFailedEventDetails{}
+		if ev.HasResourceType {
+			d.ResourceType = sp(ev.ResourceType)
+		}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.TaskSubmitFailedEventDetails = d
 	case "TaskTimedOut":
 		out.TaskTimedOutEventDetails = taskTimedOutDetails(ev)
 	case "TaskSubmitted":

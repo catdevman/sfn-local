@@ -20,7 +20,7 @@ Developers need a local Step Functions control plane and interpreter, including 
 
 This document specifies a clean-room process that speaks the same AWS JSON 1.0 HTTP interface as 2.0.0, runs the JSONPath state set the jar runs, and adds the JSONata and variable semantics AWS documents. Nothing is persisted. Executions, state machines, activities, tokens, and history live in process memory and are gone on exit.
 
-The smallest useful release executes Pass, Succeed, and Fail. The jar-shaped release adds JSONPath data flow, Choice, Wait, mocked and Lambda tasks, Retry, Catch, Parallel, inline Map, the context object, and the eighteen intrinsic functions the jar implements. JSONata and variables are a later phase on top of that engine. Optimized service integrations other than Lambda Invoke, and the reflective SDK layer, are out of scope for the first usable releases.
+The smallest useful release executes Pass, Succeed, and Fail. The jar-shaped release adds JSONPath data flow, Choice, Wait, mocked and Lambda tasks, Retry, Catch, Parallel, inline Map, the context object, and the eighteen intrinsic functions the jar implements. JSONata and variables run on that engine. Phase I adds the optimized integrations named in the service invoker section when their endpoint is set. The reflective SDK layer stays out.
 
 A CreateStateMachine plus StartExecution of a Pass state with a literal `Result` was verified against a rebuilt 2.0.0 jar: status `SUCCEEDED`, output equal to that Result JSON.
 
@@ -53,7 +53,7 @@ Drop-in replacement for clients that already point `aws stepfunctions --endpoint
 2. Accept and run `QueryLanguage` `JSONPath` and `JSONata` per the AWS docs cited in References, including `Assign`, `$states`, and variable scope.
 3. Keep every phase independently runnable and testable.
 4. Stay language-neutral. Expression engines are specified by behavior, not by a host type.
-5. Refuse, at execution time and with a clear error, any service call that is not a mock, a configured Lambda Invoke, or (later) an explicitly allowed integration, once the definition has passed validation. Create-time checks still reject what the jar rejects: EXPRESS activity, `.sync`, and `.waitForTaskToken` resources, and a registered `arn:aws:states:::` connector that omits `Parameters`. Resources that pass those checks and are not implemented fail at execution.
+5. Refuse, at execution time and with a clear error, any service call that is not a mock, a configured direct Lambda Invoke, or a Phase I integration whose endpoint is set, once the definition has passed validation. Create-time checks still reject what the jar rejects: EXPRESS activity, `.sync`, and `.waitForTaskToken` resources, and a registered `arn:aws:states:::` connector that omits `Parameters`. Resources that pass those checks and are not implemented fail at execution.
 6. Bind the control plane in a way that matches the jar's default listen address, and ship a bind-address flag so operators can restrict it.
 
 ### Non-goals
@@ -63,7 +63,7 @@ Drop-in replacement for clients that already point `aws stepfunctions --endpoint
 - Inventing jar behavior for `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, aliases, and versions. The jar returns these as absent. `--compat=sfn-local` still returns `UnsupportedOperation` for that set, except `TestState`. The default profile implements validate, versions, aliases, and `RedriveExecution`. Do not invent jar fixtures for them.
 - Distributed Map (`ProcessorConfig.Mode` other than `INLINE`).
 - The reflective `AwsSdkConnector` path and `service-list.json`.
-- Optimized integrations (SQS, SNS, DynamoDB, ECS, Batch, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, EventBridge, EMR on EKS, nested Step Functions, `.sync`, `.sync:2`) before the phase that names them. `.waitForTaskToken` is Phase 5, not Phase 3.
+- Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, EMR on EKS, and the reflective SDK layer. Phase I runs Lambda `arn:aws:states:::lambda:invoke`, SQS `sendMessage`, SNS `publish`, DynamoDB `getItem`, `putItem`, `updateItem`, `deleteItem`, EventBridge `putEvents`, and nested `states:startExecution` (including `.sync` and `.sync:2` on that resource) when the matching endpoint is set. `.waitForTaskToken` is Phase 5, not Phase 3.
 - CloudWatch log delivery. The logging-configuration field is accepted and validated. It is not shipped anywhere.
 - Copying jar bugs that mislead the CLI, except where an oracle test would otherwise be unsatisfiable. Each such bug is called out. The normative behavior is the corrected one unless a test says otherwise.
 - JSONPath variable assignment before the variables phase. `JsonPathValue` recognizing `$name` is not a reason to implement it early.
@@ -130,7 +130,7 @@ flowchart LR
 | Variable store | Per-execution scope tree. Child scopes for inline Map iterations and Parallel branches | Sibling scopes |
 | History log | Append-only event list per execution ARN | Metrics |
 | Mock resolver | Parsed mock file, keyed by state-machine name plus test-case name | How a Task is scheduled |
-| Service invoker | Lambda Invoke against `LAMBDA_ENDPOINT`, and later an allow-list | Arbitrary URLs taken from ASL |
+| Service invoker | Direct Lambda Invoke, and the Phase I optimized calls when that service's endpoint is set | Arbitrary URLs taken from ASL |
 | Activity table | Activity name and ARN | Task tokens |
 | Token table | Callback and activity tokens, queued work, heartbeat and timeout deadlines | State-machine definitions |
 | Tag table | Up to 50 tags per state machine or activity | AWS tagging service |
@@ -443,7 +443,7 @@ Reference paths (`ResultPath`, `ItemsPath`, `Variable`, `*Path` fields) are a si
 
 **State-name scope.** Names are unique inside one `States` object. The same name may occur in a different branch or iterator. The jar's `WorkflowDefinition.build` flattens every branch into one map and can overwrite collisions. Do not copy that. Transition lookup uses the `States` object that contains the current state.
 
-**Create-time checks beyond the field table.** These are jar parity. They narrow Goal 5. A resource that passes them and is not a mock, a direct Lambda invoke, an activity, or `.waitForTaskToken` still fails at execution as an unsupported resource.
+**Create-time checks beyond the field table.** These are jar parity. They narrow Goal 5. A resource that passes them and is not a mock, a direct Lambda invoke, an activity, `.waitForTaskToken`, or a Phase I integration whose endpoint is set, still fails at execution as an unsupported resource.
 
 - `StartAt`, `Next`, Choice `Next`, Choice `Default`, and Catch `Next` must name a state in the **same** `States` object. A missing target is `MISSING_TRANSITION_TARGET` with message `Missing 'Next' target: <name>` (or `Missing transition pointer` when the field is null). An unreachable state is `MISSING_TRANSITION_TARGET` with `State "<name>" is not reachable.` A workflow with no Succeed, Fail, or `End: true` is `MISSING_END_STATE` / `Workflow has no terminal state`. The jar's name set is global across branches; this server keeps names per `States` object (Key Decision 22) and does not copy that global duplicate check.
 - EXPRESS, at create, rejects an activity ARN (`Express state machine does not support Activity ARN`), a resource ending in `.sync` (`Express state machine does not support '.sync' service integration`), and a resource ending in `.waitForTaskToken` (`Express state machine does not support '.waitForTaskToken' service integration ` — the jar's message has a trailing space). Error code `SCHEMA_VALIDATION_FAILED`. STANDARD machines may contain those resources.
@@ -508,9 +508,12 @@ Terminal execution events also include `ExecutionStarted` (id 1, `previousEventI
 
 - If this execution has a mock map and the state name is in it, return the mock (Phase 3). Do not call the network.
 - Else if the resource matches `arn:aws:lambda:<region>:<account>:function:<name>` and `LAMBDA_ENDPOINT` is non-empty, Invoke (Phase 3).
+- Else if the resource is a Phase I optimized integration and that integration's endpoint is non-empty, call it. `.sync` and `.sync:2` are accepted only on `arn:aws:states:::states:startExecution`. The contract is the service invoker section.
 - Else fail the state at execution time with `States.Runtime` and a cause that includes the resource string and says the resource is not supported. The definition was already accepted. This replaces `AwsSdkConnector`.
 
-Lambda history, in order: `TaskStateEntered`, `LambdaFunctionScheduled` (`resource`, `input`, `timeoutInSeconds`), `LambdaFunctionStarted`, then one of `LambdaFunctionSucceeded` (`output` is the raw payload), `LambdaFunctionFailed` (`error`, `cause`), or `LambdaFunctionTimedOut` (`error` `States.Timeout`). On success, `TaskStateExited`. On uncaught failure, no `TaskStateExited`; the execution fails or a catcher writes the exit (below). The state result of a successful Lambda invoke is the response payload JSON, not the Invoke envelope. `FunctionError` uses the payload's `errorType` string as the error name, or `Lambda.Unknown`.
+Lambda history, in order: `TaskStateEntered`, `LambdaFunctionScheduled` (`resource`, `input`, `timeoutInSeconds`), `LambdaFunctionStarted`, then one of `LambdaFunctionSucceeded` (`output` is the raw payload), `LambdaFunctionFailed` (`error`, `cause`), or `LambdaFunctionTimedOut` (`error` `States.Timeout`). On success, `TaskStateExited`. On uncaught failure, no `TaskStateExited`; the execution fails or a catcher writes the exit (below). The state result of a successful direct function invoke is the response payload JSON, not the Invoke envelope. `FunctionError` uses the payload's `errorType` string as the error name, or `Lambda.Unknown`.
+
+Optimized integration history uses the generic task names: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, then `TaskSucceeded`, `TaskFailed`, or `TaskTimedOut`. `arn:aws:states:::lambda:invoke` is this family, not the `LambdaFunction*` family. A direct function ARN stays on the Lambda event names, and its result stays the raw payload.
 
 Mock history uses the same task events as the resource family being mocked. A mocked Lambda uses the Lambda event names. A mocked anything-else uses `TaskScheduled`, `TaskStarted`, `TaskSucceeded` / `TaskFailed` / `TaskTimedOut`. Phase 3 may emit the generic task events for every mock. That is allowed until Phase 4 history parity, and the acceptance test for Phase 3 compares status and output, not Lambda-versus-Task event names. Phase 4 tightens Lambda event names for real Invoke.
 
@@ -608,7 +611,7 @@ Conformance compares event types **and** these detail member names. It still ign
 
 `ParallelStateStarted`, `ParallelStateSucceeded`, and `ParallelStateFailed` carry no detail object.
 
-**Not emitted in v1.** Do not invent these, even though they sit on the jar's logging allow-list: `ParallelStateAborted`, `TaskStateAborted`, `WaitStateAborted`, `ActivityScheduleFailed`, `LambdaFunctionScheduleFailed`, `LambdaFunctionStartFailed`, `TaskStartFailed`. `MapStateAborted` and `MapIterationAborted` **are** emitted when a Map iteration is aborted (stop or a sibling failure). `TaskSubmitFailed` is emitted only by a `.sync` submit failure. PR 11 is optional, so v1 without that PR does not emit `TaskSubmitFailed`. Stopping a Wait or a Parallel appends `ExecutionAborted`. It does not append `WaitStateAborted` or `ParallelStateAborted`.
+**Not emitted in v1.** Do not invent these, even though they sit on the jar's logging allow-list: `ParallelStateAborted`, `TaskStateAborted`, `WaitStateAborted`, `ActivityScheduleFailed`, `LambdaFunctionScheduleFailed`, `LambdaFunctionStartFailed`, `TaskStartFailed`. `MapStateAborted` and `MapIterationAborted` **are** emitted when a Map iteration is aborted (stop or a sibling failure). `TaskSubmitFailed` is emitted when `states:startExecution.sync` or `.sync:2` fails before the nested execution is accepted. A start that is accepted and then fails while polling appends `TaskFailed`. Stopping a Wait or a Parallel appends `ExecutionAborted`. It does not append `WaitStateAborted` or `ParallelStateAborted`.
 
 ### Intrinsic functions
 
@@ -711,19 +714,14 @@ Phase 3 Lambda, direct function ARN only:
 - Response payload is the state result. Payload over 262144 bytes is `States.DataLimitExceeded`.
 - No SigV4 is required against a local endpoint. If the endpoint returns 403, surface `Lambda.ServiceException`.
 
-Anything else is accepted at create time only when it passes the create-time checks (EXPRESS bans, and `Parameters` when the resource is on the registered-connector list). It then fails at execution time until the phase that implements it. The message must contain the resource and the words `unsupported resource`. That includes `arn:aws:states:::lambda:invoke`, `arn:aws:states:::sqs:sendMessage`, and `arn:aws:states:::states:startExecution` on a STANDARD machine. `.waitForTaskToken` on STANDARD is Phase 5 and does not call a service endpoint. `.sync` stays optional.
+Phase I optimized integrations run only when the matching endpoint is set. An empty endpoint fails the state with `States.Runtime` and a cause that contains the resource and `unsupported resource`. That includes `arn:aws:states:::lambda:invoke`, `arn:aws:states:::sqs:sendMessage`, and `arn:aws:states:::states:startExecution` on a STANDARD machine. No SigV4. Do not call real AWS. `internal/invoke/allow.toml` does not gate these calls. A mock still wins and does not call the endpoint. `.waitForTaskToken` on STANDARD does not call a service endpoint.
 
-Later allow-list, not Phase 3: the user names integrations in configuration. Default allow-list is empty except Lambda-when-endpoint-set. Never reflect over an SDK. Never fetch a URL that appeared inside ASL unless it is the configured endpoint for that integration.
+- `arn:aws:states:::lambda:invoke` uses `LAMBDA_ENDPOINT` and the same Invoke HTTP call as a direct function ARN. `FunctionName` is required. An omitted `Payload` is `{}`. The state result is `{"StatusCode": <http status>, "Payload": <parsed JSON>}`. `FunctionError`, a non-2xx status, and a non-JSON payload fail the task. A direct function ARN still returns the raw payload. History for this resource uses `TaskScheduled`, `TaskStarted`, and `TaskSucceeded`, not the `LambdaFunction*` names.
+- SQS `sendMessage` POSTs `application/x-www-form-urlencoded` to `SQS_ENDPOINT` with `Action=SendMessage` and `Version=2012-11-05`, plus the parameters object. SNS `publish` uses `Action=Publish` and `Version=2010-03-31` against `SNS_ENDPOINT`. A body that starts with `{` or `[` is parsed as the JSON result. Any other body is read as XML, and each leaf's text becomes a field of a JSON object, so a Publish response's `MessageId` is `{"MessageId":"..."}`.
+- DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem` POST `application/x-amz-json-1.0` to `DYNAMODB_ENDPOINT` with `X-Amz-Target` `DynamoDB_20120810.GetItem` and the matching `PutItem`, `UpdateItem`, and `DeleteItem` targets. The body is the parameters JSON. EventBridge `putEvents` uses target `AWSEvents.PutEvents` against `EVENTBRIDGE_ENDPOINT`. Nested `states:startExecution` uses target `AWSStepFunctions.StartExecution` against `STEP_FUNCTIONS_ENDPOINT`. A non-2xx response is `<Service>.ServiceException` with the response body in the cause. The success result is the parsed JSON body.
+- `.sync` and `.sync:2` are accepted only on `arn:aws:states:::states:startExecution`. Any other `.sync` or `.sync:2` resource is an unsupported resource even when that service's endpoint is set. A start that returns 2xx and has no suffix returns the start JSON and does not append `TaskSubmitted`. `.sync` and `.sync:2` append `TaskSubmitted` whose output is that start JSON, then poll `AWSStepFunctions.DescribeExecution` until `SUCCEEDED`, `FAILED`, `TIMED_OUT`, or `ABORTED`. `.sync` returns the describe document. `.sync:2` returns the nested `output` string, which must be JSON, and an empty output becomes `null`. A nested `FAILED`, `TIMED_OUT`, or `ABORTED` fails the task with the describe `error` and `cause`, or `States.TaskFailed` when `error` is empty. A failed start, a non-JSON start body, or a missing `executionArn` on a sync start appends `TaskSubmitFailed` instead of `TaskFailed`.
 
-Suggested later order, by usefulness to local workflows, each optional:
-
-1. `arn:aws:states:::lambda:invoke` (the optimized form, result envelope `{StatusCode, Payload}`).
-2. SQS `sendMessage`, SNS `publish`.
-3. DynamoDB `getItem`, `putItem`, `updateItem`, `deleteItem`.
-4. Nested Step Functions `startExecution` against `STEP_FUNCTIONS_ENDPOINT`, including this process.
-5. EventBridge `putEvents`.
-6. `.sync` and `.sync:2` for the integrations above that have a describe API.
-7. The rest (Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, EMR on EKS). Do not schedule these as committed work.
+Anything else that passed the create-time checks still fails at execution with `unsupported resource`. Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, and EMR on EKS stay in that set. Distributed Map stays deferred. Never reflect over an SDK. Never fetch a URL that appeared inside ASL unless it is the configured endpoint for that integration.
 
 ### JSONata and variables
 
@@ -1274,9 +1272,9 @@ This process is an unauthenticated control plane. Anyone who can open the port c
 
 **`$eval` is forbidden.** Reject the name at validation and do not install the JSONata builtin. Do not add a host escape that evaluates strings as code. `$parse` parses JSON only.
 
-**No arbitrary URL fetch.** ASL cannot carry a URL that the process will GET, except through a configured service endpoint (`LAMBDA_ENDPOINT` and, later, the allow-list). `Resource` is not fetched. A `arn:aws:states:::http:invoke` style integration is out of scope. If it is ever added, it needs its own allow-list and must not default to open.
+**No arbitrary URL fetch.** ASL cannot carry a URL that the process will GET. `Resource` is not fetched. The operator sets `LAMBDA_ENDPOINT`, `SQS_ENDPOINT`, `SNS_ENDPOINT`, `DYNAMODB_ENDPOINT`, `STEP_FUNCTIONS_ENDPOINT`, and `EVENTBRIDGE_ENDPOINT`. An empty endpoint does not call the network. A `arn:aws:states:::http:invoke` style integration is out of scope.
 
-**SSRF.** `LAMBDA_ENDPOINT` is operator configuration, equivalent to the jar's endpoint override. It is not read from the definition. Mock paths are local files. Reject the mock file if it is larger than 1_000_000 bytes. Do not follow a path that escapes a configured root if we add a root later. The jar reads the path as given. So does this server. The operator controls the path.
+**SSRF.** Those endpoints are operator configuration, equivalent to the jar's endpoint override. They are not read from the definition. Mock paths are local files. Reject the mock file if it is larger than 1_000_000 bytes. Do not follow a path that escapes a configured root if we add a root later. The jar reads the path as given. So does this server. The operator controls the path.
 
 **Logging configuration.** Do not honor a caller-supplied filesystem path or log-group ARN as a write location. The jar does. We will not.
 

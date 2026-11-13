@@ -84,13 +84,18 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 	st := store.New()
 	go exec.Sweep(ctx, st)
 	runner := &exec.Runner{
-		Store:          st,
-		Log:            stdout,
-		WaitScale:      waitScale(cfg.WaitTimeScale),
-		Mocks:          &mock.Repo{Path: cfg.MockConfig},
-		LambdaEndpoint: cfg.LambdaEndpoint,
-		Region:         cfg.Region,
-		Account:        cfg.Account,
+		Store:                 st,
+		Log:                   stdout,
+		WaitScale:             waitScale(cfg.WaitTimeScale),
+		Mocks:                 &mock.Repo{Path: cfg.MockConfig},
+		LambdaEndpoint:        cfg.LambdaEndpoint,
+		SQSEndpoint:           cfg.SQSEndpoint,
+		SNSEndpoint:           cfg.SNSEndpoint,
+		DynamoDBEndpoint:      cfg.DynamoDBEndpoint,
+		StepFunctionsEndpoint: cfg.StepFunctionsEndpoint,
+		EventBridgeEndpoint:   cfg.EventBridgeEndpoint,
+		Region:                cfg.Region,
+		Account:               cfg.Account,
 	}
 	srv := &http.Server{
 		Handler: &api.Server{

@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 6, and Phase R checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -37,7 +37,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [5](#phase-5--activities-and-callbacks) | Activity workers after phase 3. Callbacks after phase 4. | 2–3 |
 | [6](#x-phase-6--jsonata-and-variables) | JSONata runner, then JSONPath `Assign`. | 4–7 |
 | [R](#x-phase-r--redrive) | `RedriveExecution` for a failed Standard execution. | 1–2 |
-| [I](#phase-i--service-integrations) | One integration per change. Distributed Map stays deferred. | unbounded |
+| [I](#x-phase-i--service-integrations) | Optimized calls run when the endpoint is set. Distributed Map stays deferred. | unbounded |
 
 Cuts: G is the protocol-compatible process. G + 0 + 1 is the smallest useful runner. V on top of 0 is the definition check. Through 4 is the jar-shaped JSONPath runner. 6 on top of that is the JSONata runner. Phase 5 after 3 is activity workers.
 
@@ -216,7 +216,7 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
 - [x] `.waitForTaskToken` on STANDARD suspends without calling a service endpoint. The token exists before `Parameters` runs, as `$$.Task.Token`.
 - [x] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted` with output `""`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
 - [x] A mock `Return` for a callback state completes through the mock path.
-- [ ] `.sync` is unchecked on purpose until a named integration in phase I needs it. Leave this box open.
+- [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution` when `STEP_FUNCTIONS_ENDPOINT` is set. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
 
 ## [x] Phase 6 — JSONata and variables
 
@@ -256,17 +256,17 @@ Depends on phase 1 history, and on phase 6 for the JSONata context count.
 - [x] `RedriveCount` on the JSONata context is the real count. The JSONPath context still omits it.
 - [x] A redrive of an execution that cannot be redriven returns the modeled `ExecutionNotRedrivable`.
 
-## Phase I — service integrations
+## [x] Phase I — service integrations
 
-Each box is its own change, behind the endpoint flag in docs/spec.md. The default allow-list stays empty except Lambda-when-endpoint-set from phase 3. `internal/invoke/allow.toml` moves that row from `unsupported` to `endpoint` when the box is checked.
+The endpoint flag gates each integration. An empty endpoint is an unsupported resource. `internal/invoke/allow.toml` has no row for these optimized resources, and AWS Lambda Core stays unsupported. `.sync` and `.sync:2` run only for nested `states:startExecution`.
 
-- [ ] `arn:aws:states:::lambda:invoke`, result envelope `{StatusCode, Payload}`.
-- [ ] SQS `sendMessage`.
-- [ ] SNS `publish`.
-- [ ] DynamoDB `getItem`, `putItem`, `updateItem`, `deleteItem`.
-- [ ] Nested Step Functions `startExecution` against `STEP_FUNCTIONS_ENDPOINT`.
-- [ ] EventBridge `putEvents`.
-- [ ] `.sync` for one named integration that has a describe API. `.sync:2` only when the same change tests it.
+- [x] `arn:aws:states:::lambda:invoke` returns `{StatusCode, Payload}`. A direct function ARN still returns the raw payload.
+- [x] SQS `sendMessage` posts the query form to `SQS_ENDPOINT`.
+- [x] SNS `publish` reads the XML response into a JSON object.
+- [x] DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem` post JSON 1.0 to `DYNAMODB_ENDPOINT`.
+- [x] Nested Step Functions `startExecution` posts JSON 1.0 to `STEP_FUNCTIONS_ENDPOINT`.
+- [x] EventBridge `putEvents` posts JSON 1.0 to `EVENTBRIDGE_ENDPOINT`.
+- [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution`. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
 
 These stay deferred for the life of this plan. Their operations return `ValidationException` with a message that says Distributed Map is not supported. A definition with `ProcessorConfig.Mode` other than `INLINE` fails validation.
 
@@ -452,7 +452,7 @@ status = "deferred"
 reason = "KMS encryption is not performed. The public profile rejects a customer-managed key."
 ```
 
-`local_runtime_hint` comes from `aws-spec/tools/sync_aws_spec.py`. CI fails while a behavior page's hash differs from `page-acks.toml`. Documentation-only rows and `unclassified` rows are listed in the pull request and do not fail CI. A new SDK service name gets an `allow.toml` row. Nothing is called until phase I writes that handler.
+`local_runtime_hint` comes from `aws-spec/tools/sync_aws_spec.py`. CI fails while a behavior page's hash differs from `page-acks.toml`. Documentation-only rows and `unclassified` rows are listed in the pull request and do not fail CI. A new SDK service name gets an `allow.toml` row. The Phase I handlers call the endpoint the operator configured. An empty endpoint does not call the network.
 
 The intrinsic algorithms stay in docs/spec.md. The generated Appendix B list is the inventory. Extra validator rules stay handwritten: `States.ALL` placement, EXPRESS resource bans, logging-configuration shape, reachable states, and mutual exclusion of JSONPath and JSONata fields.
 
