@@ -68,7 +68,7 @@ func TestWaitScaleInvalidAndHelp(t *testing.T) {
 		t.Fatalf("help %d %s", code, errb.String())
 	}
 	help := out.String()
-	for _, phrase := range []string{"in memory", "127.0.0.1", "compose network", "Core dumps", "apiGatewayEndpoint", "eventBridgeEndpoint", "MockConfigFile.json", "#TestCase", "sfn-local dev"} {
+	for _, phrase := range []string{"in memory", "127.0.0.1", "compose network", "Core dumps", "apiGatewayEndpoint", "eventBridgeEndpoint", "MockConfigFile.json", "#TestCase", "sfnlocal dev"} {
 		if !strings.Contains(help, phrase) {
 			t.Fatalf("help missing %q\n%s", phrase, help)
 		}
@@ -77,7 +77,7 @@ func TestWaitScaleInvalidAndHelp(t *testing.T) {
 	if code := run([]string{"-v"}, lookup(nil), &out, &errb, context.Background()); code != 0 {
 		t.Fatal(code)
 	}
-	if strings.Count(out.String(), "sfn-local dev") != 2 || strings.Contains(out.String(), "Starting server") {
+	if strings.Count(out.String(), "sfnlocal dev") != 2 || strings.Contains(out.String(), "Starting server") {
 		t.Fatalf("%q", out.String())
 	}
 	out.Reset()
@@ -134,7 +134,7 @@ func TestStartupBanner(t *testing.T) {
 	case <-time.After(3 * time.Second):
 		t.Fatal("shutdown timeout")
 	}
-	if !strings.HasPrefix(text, "sfn-local dev\n") {
+	if !strings.HasPrefix(text, "sfnlocal dev\n") {
 		t.Fatalf("version line %q", text)
 	}
 	if !strings.Contains(text, "Console at http://127.0.0.1:") {

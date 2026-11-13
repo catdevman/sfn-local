@@ -27,14 +27,14 @@ func main() {
 }
 
 func run(args []string, getenv func(string) (string, bool), stdout, stderr io.Writer, ctx context.Context) int {
-	fmt.Fprintln(stdout, "sfn-local "+Version)
+	fmt.Fprintln(stdout, Name+" "+Version)
 	cfg, err := parseArgs(args, getenv)
 	if errors.Is(err, errHelp) {
 		fmt.Fprint(stdout, helpText())
 		return 0
 	}
 	if errors.Is(err, errVersion) {
-		fmt.Fprintln(stdout, "sfn-local "+Version)
+		fmt.Fprintln(stdout, Name+" "+Version)
 		return 0
 	}
 	if err != nil {

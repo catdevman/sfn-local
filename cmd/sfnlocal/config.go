@@ -57,7 +57,7 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 		getenv = func(string) (string, bool) { return "", false }
 	}
 	cfg := Config{}
-	fs := flag.NewFlagSet("sfn-local", flag.ContinueOnError)
+	fs := flag.NewFlagSet(Name, flag.ContinueOnError)
 	fs.SetOutput(ioDiscard{})
 	var help, version bool
 	fs.BoolVar(&help, "h", false, "Print help and exit.")
@@ -182,7 +182,7 @@ func envInt(getenv envFunc, key string, fallback int) (int, error) {
 }
 
 func helpText() string {
-	return `sfn-local ` + Version + `
+	return Name + ` ` + Version + `
 
 Local Step Functions server. The store is in memory. Process exit drops definitions, inputs, outputs, and tokens.
 Bind 127.0.0.1 unless the port is published on purpose. Do not expose this port beyond the host or the compose network. Core dumps and swap can retain inputs, outputs, and tokens.
@@ -200,7 +200,7 @@ Flags override environment variables.
 }
 
 func flagDefaults() string {
-	fs := flag.NewFlagSet("sfn-local", flag.ContinueOnError)
+	fs := flag.NewFlagSet(Name, flag.ContinueOnError)
 	fs.SetOutput(ioDiscard{})
 	var ignored Config
 	var help, version bool
@@ -242,7 +242,7 @@ func flagDefaults() string {
 
 // flagNames returns the registered flag names, for tests.
 func flagNames() []string {
-	fs := flag.NewFlagSet("sfn-local", flag.ContinueOnError)
+	fs := flag.NewFlagSet(Name, flag.ContinueOnError)
 	fs.SetOutput(ioDiscard{})
 	var cfg Config
 	var help, version bool

@@ -213,7 +213,7 @@ func TestSyncWorkflow(t *testing.T) {
 		"internal/api/surface.toml",
 		"internal/asl/catalog.toml",
 		"internal/api/server.go",
-		"cmd/sfn-local/main.go",
+		"cmd/sfnlocal/main.go",
 		"internal/asl/page-acks.toml",
 		"README.md",
 	}

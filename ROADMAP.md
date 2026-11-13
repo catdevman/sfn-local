@@ -58,7 +58,7 @@ Cuts: G is the protocol-compatible process. G + 0 + 1 is the smallest useful run
   - [x] Appendix A error-name list. Appendix B intrinsic-name list.
   - [x] The command fails when it finds no field table, an unknown cell class, or state-type columns other than `Task`, `Parallel`, `Map`, `Pass`, `Wait`, `Choice`, `Succeed`, `Fail`.
 - [x] `//go:generate` in `internal/api/gen/doc.go` and `internal/asl/specgen/doc.go`. `go generate ./...` is the regenerate step, and CI fails when the tree is dirty.
-- [x] `cmd/sfn-local` listens, parses the flag table in docs/spec.md, and adds `--compat`. Flags override environment. `-h` and `-v` exit 0. One version line on start. Banner prints port, account, region, and bind address. Help says the store is in memory and tells operators to bind `127.0.0.1` unless the port is published on purpose.
+- [x] `cmd/sfnlocal` listens, parses the flag table in docs/spec.md, and adds `--compat`. Flags override environment. `-h` and `-v` exit 0. One version line on start. Banner prints port, account, region, and bind address. Help says the store is in memory and tells operators to bind `127.0.0.1` unless the port is published on purpose.
 - [x] HTTP adapter implements the [wire protocol](#wire-protocol). Generated `Validate` runs before the handler. A plain `error` from a handler becomes HTTP 500 `InternalFailure` with a body. The access log line is `<operation> => <payload>` and `[status] <operation> <= <response>`.
 - [x] `internal/api/surface.toml` has a row for all 37 operations. Phase G marks the whole set `deferred` except where a later box in this phase says otherwise. The classification test fails on a generated name with no row, and on `implemented` while the method is still `Unimplemented`.
 - [x] `internal/asl/catalog.toml` classifies every generated ASL field, Appendix A code, and Appendix B name as `implemented` or `deferred`.
@@ -340,7 +340,7 @@ type Expr interface {
 ### Repository layout
 
 ```text
-cmd/sfn-local/           main: flags, listen, signal
+cmd/sfnlocal/           main: flags, listen, signal
 cmd/genapi/              Smithy JSON AST → internal/api/gen
 cmd/genasl/              spec.html tables → internal/asl/specgen
 internal/api/            server, handlers, compat, surface.toml
@@ -360,7 +360,7 @@ docs/spec.md             execution semantics
 
 | Package | Owns |
 |---|---|
-| `cmd/sfn-local` | Process, flags, environment, startup banner. The flag table in docs/spec.md, plus `--compat`. |
+| `cmd/sfnlocal` | Process, flags, environment, startup banner. The flag table in docs/spec.md, plus `--compat`. |
 | `internal/api` | HTTP adapter, dispatcher, compat error map, handlers, the surface manifest. |
 | `internal/store` | In-memory state machines, executions, activities, tokens, tags, history. |
 | `internal/exec` | One sequential loop per execution, timeouts, stop, the deleting sweep. |

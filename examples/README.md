@@ -8,7 +8,7 @@ Parallel, Map, JSONata, and Catch are the machines that use those pieces. Workfl
 
 Money fields are integer cents. `States.MathAdd` adds two numbers, so a price is a base plus a flat addon.
 
-Start the server with `go run ./cmd/sfn-local --bind-address 127.0.0.1`. It ignores SigV4. The AWS CLI still looks up credentials before it sends the request. If `aws` is the 1Password plugin (`op plugin run -- aws`), that lookup waits for an approval and exits with `authorization timeout` before anything reaches port 8083. `command aws` skips the alias. Dummy keys satisfy the CLI:
+Start the server with `go run ./cmd/sfnlocal --bind-address 127.0.0.1`. It ignores SigV4. The AWS CLI still looks up credentials before it sends the request. If `aws` is the 1Password plugin (`op plugin run -- aws`), that lookup waits for an approval and exits with `authorization timeout` before anything reaches port 8083. `command aws` skips the alias. Dummy keys satisfy the CLI:
 
 ```bash
 export AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=us-east-1
