@@ -28,9 +28,35 @@ type DistMap struct {
 
 	Batcher *ItemBatcher
 	Writer  *ResultWriter
-	// Reader is the raw ItemReader. The runner reads it.
-	Reader json.RawMessage
+	Reader  *ItemReader
 }
+
+// ItemReader reads the items from S3 instead of the state input.
+type ItemReader struct {
+	// Resource is arn:aws:states:::s3:getObject or arn:aws:states:::s3:listObjectsV2.
+	Resource string
+	// Parameters is Parameters, or Arguments for JSONata.
+	Parameters json.RawMessage
+	// InputType is CSV, JSON, JSONL, PARQUET, or MANIFEST. Empty lists
+	// object metadata, or reads an S3_INVENTORY manifest.
+	InputType string
+	// Transformation is NONE or LOAD_AND_FLATTEN, for listObjectsV2.
+	Transformation    string
+	ManifestType      string
+	CSVHeaderLocation string
+	CSVHeaders        []string
+	CSVDelimiter      string
+	ItemsPointer      string
+
+	MaxItems     *int64
+	MaxItemsPath string
+	MaxItemsExpr string
+}
+
+const (
+	resourceGetObject   = "arn:aws:states:::s3:getObject"
+	resourceListObjects = "arn:aws:states:::s3:listObjectsV2"
+)
 
 // ItemBatcher groups items into one child input: {"Items":[...],"BatchInput":...}.
 type ItemBatcher struct {
@@ -154,10 +180,185 @@ func checkDistributed(st *State, fields map[string]json.RawMessage, ptr string, 
 		d.Writer = w
 	}
 	if raw, ok := fields["ItemReader"]; ok {
-		if _, err := decodeObject(raw); err != nil {
-			return defErr(codeSchema, "Field 'ItemReader' must be an object", join(ptr, "ItemReader"))
+		if err := atMostOne(fields, "ItemReader", itemsField(st.JSONata), ptr); err != nil {
+			return err
 		}
-		d.Reader = append(json.RawMessage(nil), raw...)
+		reader, err := checkReader(raw, join(ptr, "ItemReader"), st.JSONata)
+		if err != nil {
+			return err
+		}
+		d.Reader = reader
+	}
+	return nil
+}
+
+func itemsField(jsonata bool) string {
+	if jsonata {
+		return "Items"
+	}
+	return "ItemsPath"
+}
+
+func oneOf(raw json.RawMessage, values ...string) (string, bool) {
+	text, err := asString(raw)
+	if err != nil {
+		return "", false
+	}
+	for _, v := range values {
+		if text == v {
+			return text, true
+		}
+	}
+	return "", false
+}
+
+func checkReader(raw json.RawMessage, ptr string, jsonata bool) (*ItemReader, error) {
+	fields, err := decodeObject(raw)
+	if err != nil {
+		return nil, defErr(codeSchema, "Field 'ItemReader' must be an object", ptr)
+	}
+	params := "Parameters"
+	if jsonata {
+		params = "Arguments"
+	}
+	if err := unknown(fields, map[string]bool{"Resource": true, params: true, "ReaderConfig": true}, ptr); err != nil {
+		return nil, err
+	}
+	r := &ItemReader{}
+	var ok bool
+	if r.Resource, ok = oneOf(fields["Resource"], resourceGetObject, resourceListObjects); !ok {
+		return nil, defErr(codeSchema, "ItemReader Resource must be "+resourceGetObject+" or "+resourceListObjects, join(ptr, "Resource"))
+	}
+	p, has := fields[params]
+	if !has {
+		return nil, defErr(codeSchema, "ItemReader needs "+params, ptr)
+	}
+	if _, err := decodeObject(p); err != nil {
+		return nil, defErr(codeSchema, "Field '"+params+"' must be an object", join(ptr, params))
+	}
+	if !jsonata {
+		if err := checkPayload(p, join(ptr, params)); err != nil {
+			return nil, err
+		}
+	} else if err := scanRaw(p, join(ptr, params), false, false); err != nil {
+		return nil, err
+	}
+	r.Parameters = append(json.RawMessage(nil), p...)
+	cfgRaw, hasCfg := fields["ReaderConfig"]
+	if hasCfg {
+		if err := r.readConfig(cfgRaw, join(ptr, "ReaderConfig"), jsonata); err != nil {
+			return nil, err
+		}
+	}
+	cfgPtr := join(ptr, "ReaderConfig")
+	switch r.Resource {
+	case resourceGetObject:
+		if r.InputType == "" && r.ManifestType != "S3_INVENTORY" {
+			return nil, defErr(codeSchema, "ReaderConfig InputType is required for "+resourceGetObject, cfgPtr)
+		}
+		if r.Transformation != "" {
+			return nil, defErr(codeSchema, "ReaderConfig Transformation requires "+resourceListObjects, cfgPtr)
+		}
+	case resourceListObjects:
+		if r.Transformation == "LOAD_AND_FLATTEN" && r.InputType == "" {
+			return nil, defErr(codeSchema, "ReaderConfig LOAD_AND_FLATTEN requires InputType", cfgPtr)
+		}
+		if r.Transformation != "LOAD_AND_FLATTEN" && r.InputType != "" {
+			return nil, defErr(codeSchema, "ReaderConfig InputType with "+resourceListObjects+" requires Transformation LOAD_AND_FLATTEN", cfgPtr)
+		}
+		if r.ManifestType != "" {
+			return nil, defErr(codeSchema, "ReaderConfig ManifestType requires "+resourceGetObject, cfgPtr)
+		}
+	}
+	if r.ManifestType == "S3_INVENTORY" && r.InputType != "" {
+		return nil, defErr(codeSchema, "ReaderConfig InputType is not allowed with ManifestType S3_INVENTORY", cfgPtr)
+	}
+	if r.InputType == "CSV" && r.CSVHeaderLocation == "" {
+		return nil, defErr(codeSchema, "ReaderConfig CSVHeaderLocation is required for InputType CSV", cfgPtr)
+	}
+	if r.CSVHeaderLocation == "GIVEN" && len(r.CSVHeaders) == 0 {
+		return nil, defErr(codeSchema, "ReaderConfig CSVHeaders is required for CSVHeaderLocation GIVEN", cfgPtr)
+	}
+	if r.CSVHeaderLocation != "GIVEN" && len(r.CSVHeaders) > 0 {
+		return nil, defErr(codeSchema, "ReaderConfig CSVHeaders requires CSVHeaderLocation GIVEN", cfgPtr)
+	}
+	csvLike := r.InputType == "CSV" || r.InputType == "MANIFEST" || r.ManifestType != ""
+	if (r.CSVHeaderLocation != "" || r.CSVDelimiter != "") && !csvLike {
+		return nil, defErr(codeSchema, "ReaderConfig CSV fields require InputType CSV or MANIFEST", cfgPtr)
+	}
+	if r.ItemsPointer != "" && r.InputType != "JSON" {
+		return nil, defErr(codeSchema, "ReaderConfig ItemsPointer requires InputType JSON", cfgPtr)
+	}
+	return r, nil
+}
+
+func (r *ItemReader) readConfig(raw json.RawMessage, ptr string, jsonata bool) error {
+	cfg, err := decodeObject(raw)
+	if err != nil {
+		return defErr(codeSchema, "Field 'ReaderConfig' must be an object", ptr)
+	}
+	allowed := map[string]bool{"InputType": true, "Transformation": true, "ManifestType": true, "CSVHeaderLocation": true,
+		"CSVHeaders": true, "CSVDelimiter": true, "ItemsPointer": true, "MaxItems": true}
+	if !jsonata {
+		allowed["MaxItemsPath"] = true
+	}
+	if err := unknown(cfg, allowed, ptr); err != nil {
+		return err
+	}
+	for _, f := range []struct {
+		name   string
+		dest   *string
+		values []string
+	}{
+		{"InputType", &r.InputType, []string{"CSV", "JSON", "JSONL", "PARQUET", "MANIFEST"}},
+		{"Transformation", &r.Transformation, []string{"NONE", "LOAD_AND_FLATTEN"}},
+		{"ManifestType", &r.ManifestType, []string{"ATHENA_DATA", "S3_INVENTORY"}},
+		{"CSVHeaderLocation", &r.CSVHeaderLocation, []string{"FIRST_ROW", "GIVEN"}},
+		{"CSVDelimiter", &r.CSVDelimiter, []string{"COMMA", "PIPE", "SEMICOLON", "SPACE", "TAB"}},
+	} {
+		v, has := cfg[f.name]
+		if !has {
+			continue
+		}
+		text, ok := oneOf(v, f.values...)
+		if !ok {
+			return defErr(codeSchema, "Field '"+f.name+"' must be one of "+strings.Join(f.values, ", "), join(ptr, f.name))
+		}
+		*f.dest = text
+	}
+	if v, has := cfg["CSVHeaders"]; has {
+		headers, err := stringList(v, join(ptr, "CSVHeaders"))
+		if err != nil || len(headers) == 0 {
+			return defErr(codeSchema, "Field 'CSVHeaders' must be a non-empty array of strings", join(ptr, "CSVHeaders"))
+		}
+		r.CSVHeaders = headers
+	}
+	if v, has := cfg["ItemsPointer"]; has {
+		text, err := asString(v)
+		if err != nil || (text != "" && !strings.HasPrefix(text, "/")) || len(text) >= 2000 {
+			return defErr(codeSchema, "Field 'ItemsPointer' must be a JSON Pointer", join(ptr, "ItemsPointer"))
+		}
+		r.ItemsPointer = text
+	}
+	if err := atMostOne(cfg, "MaxItems", "MaxItemsPath", ptr); err != nil {
+		return err
+	}
+	if r.MaxItemsPath, err = pathField(cfg, "MaxItemsPath", ptr); err != nil {
+		return err
+	}
+	if v, has := cfg["MaxItems"]; has {
+		if body, isExpr := expressionBody(v); isExpr && jsonata {
+			if err := scanExpr(body, join(ptr, "MaxItems"), false, false); err != nil {
+				return err
+			}
+			r.MaxItemsExpr = body
+		} else {
+			n, err := asInt(v, 0, 100000000)
+			if err != nil {
+				return defErr(codeSchema, "Field 'MaxItems' must be an integer in 0..100000000", join(ptr, "MaxItems"))
+			}
+			r.MaxItems = &n
+		}
 	}
 	return nil
 }

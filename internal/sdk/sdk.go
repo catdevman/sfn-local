@@ -20,6 +20,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	awshttp "github.com/aws/aws-sdk-go-v2/aws/transport/http"
 	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
 )
 
@@ -123,6 +124,8 @@ type Caller struct {
 	cfg    Config
 	mu     sync.Mutex
 	tables map[string]map[string]handler
+	// s3c serves the Distributed Map reader and writer.
+	s3c *s3.Client
 }
 
 // New returns a Caller. A nil Caller supports nothing.

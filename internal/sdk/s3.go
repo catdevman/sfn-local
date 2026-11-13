@@ -19,14 +19,7 @@ var s3Service = service{
 	env:         "S3",
 	client:      (*s3.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
-		c := s3.NewFromConfig(cfg, func(o *s3.Options) {
-			o.BaseEndpoint = aws.String(endpoint)
-			// A local endpoint has no bucket subdomains.
-			o.UsePathStyle = true
-			// Local emulators do not all accept the default CRC32 trailer.
-			o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
-			o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
-		})
+		c := newS3Client(cfg, endpoint)
 		return map[string]handler{
 			"abortMultipartUpload":    op(c.AbortMultipartUpload),
 			"completeMultipartUpload": op(c.CompleteMultipartUpload),
@@ -55,6 +48,17 @@ var s3Service = service{
 			"putObjectTagging":        op(c.PutObjectTagging),
 		}
 	},
+}
+
+func newS3Client(cfg aws.Config, endpoint string) *s3.Client {
+	return s3.NewFromConfig(cfg, func(o *s3.Options) {
+		o.BaseEndpoint = aws.String(endpoint)
+		// A local endpoint has no bucket subdomains.
+		o.UsePathStyle = true
+		// Local emulators do not all accept the default CRC32 trailer.
+		o.RequestChecksumCalculation = aws.RequestChecksumCalculationWhenRequired
+		o.ResponseChecksumValidation = aws.ResponseChecksumValidationWhenRequired
+	})
 }
 
 // s3GetObject returns Body as a string, the way Step Functions does.

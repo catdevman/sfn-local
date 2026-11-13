@@ -2,6 +2,7 @@ package exec
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"math"
 	"strconv"
@@ -11,6 +12,7 @@ import (
 
 	"github.com/catdevman/sfn-local/internal/asl"
 	"github.com/catdevman/sfn-local/internal/jsonpath"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -29,6 +31,9 @@ type distPlan struct {
 	maxConcurrency int64
 	tolerancePct   *float64
 	toleranceCount *int64
+	// writeBucket is set when ResultWriter exports to S3.
+	writeBucket string
+	writePrefix string
 }
 
 // runDistributed runs a Distributed Map. Each attempt, a retry included, is a
@@ -77,16 +82,18 @@ func (r *Runner) runDistributed(ctx context.Context, arn string, st *asl.State, 
 // expression.
 func (r *Runner) planDistributed(ctx context.Context, arn string, st *asl.State, root, ctxObj any, retries int) (distPlan, error) {
 	d := st.Dist
-	if len(d.Reader) > 0 {
-		return distPlan{}, &jsonpath.EvalError{Name: "States.ItemReaderFailed", Cause: "ItemReader is not supported by this local server yet"}
-	}
-	if d.Writer != nil && d.Writer.Resource != "" {
-		return distPlan{}, &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: "ResultWriter export to S3 is not supported by this local server yet"}
-	}
 	vars := entryVars(ctx)
 	var items []any
 	var err error
-	if st.JSONata {
+	var plan distPlan
+	if d.Writer != nil && d.Writer.Resource != "" {
+		if plan.writeBucket, plan.writePrefix, err = r.writerTarget(ctx, st, root, ctxObj, vars); err != nil {
+			return distPlan{}, err
+		}
+	}
+	if d.Reader != nil {
+		items, err = r.readItems(ctx, st, root, ctxObj, vars)
+	} else if st.JSONata {
 		obj, _ := ctxObj.(map[string]any)
 		items, err = r.evalItems(ctx, st, root, obj, vars)
 	} else {
@@ -95,7 +102,6 @@ func (r *Runner) planDistributed(ctx context.Context, arn string, st *asl.State,
 	if err != nil {
 		return distPlan{}, err
 	}
-	var plan distPlan
 	num := func(fixed *float64, path, expr, label string, min, max float64) (*float64, error) {
 		return r.distNumber(ctx, st, fixed, path, expr, root, ctxObj, vars, label, min, max)
 	}
@@ -435,6 +441,11 @@ dispatch:
 		return branchResult{outcome: outcomeHalt}
 	}
 	if failure != nil {
+		if plan.writeBucket != "" {
+			// The failed and pending records are still exported. A write
+			// error does not replace the threshold error.
+			_, _ = r.writeResults(ctx, run, plan, children, d.Writer)
+		}
 		r.closeMapRun(run.ARN, store.MapRunFailed)
 		if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunFailed", Error: failure.errName, HasError: true, Cause: failure.cause, HasCause: failure.cause != ""}) {
 			return branchResult{outcome: outcomeHalt}
@@ -444,6 +455,13 @@ dispatch:
 	r.closeMapRun(run.ARN, store.MapRunSucceeded)
 	if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunSucceeded"}) {
 		return branchResult{outcome: outcomeHalt}
+	}
+	if plan.writeBucket != "" {
+		out, err := r.writeResults(ctx, run, plan, children, d.Writer)
+		if err != nil {
+			return failureFrom(err)
+		}
+		return branchResult{outcome: outcomeOK, output: out}
 	}
 	out, err := distOutput(children, d.Writer)
 	if err != nil {
@@ -615,4 +633,138 @@ func childRecord(ex store.Execution) map[string]any {
 		rec["Cause"] = ex.Cause
 	}
 	return rec
+}
+
+// writerTarget evaluates ResultWriter Parameters (Arguments for JSONata)
+// to a bucket and an optional prefix.
+func (r *Runner) writerTarget(ctx context.Context, st *asl.State, root, ctxObj any, vars map[string]any) (string, string, error) {
+	var val any
+	var err error
+	if st.JSONata {
+		val, err = r.evalRaw(ctx, st.Dist.Writer.Parameters, root, r.bindings(root, ctxObj, vars))
+	} else {
+		val, _, err = evalParameters(st.Dist.Writer.Parameters, root, ctxObj, vars)
+	}
+	if err != nil {
+		return "", "", err
+	}
+	obj, _ := val.(map[string]any)
+	bucket, _ := obj["Bucket"].(string)
+	prefix, _ := obj["Prefix"].(string)
+	if bucket == "" {
+		return "", "", &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: "ResultWriter needs a Bucket"}
+	}
+	for key := range obj {
+		if key != "Bucket" && key != "Prefix" {
+			return "", "", &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: "ResultWriter does not take " + key}
+		}
+	}
+	return bucket, strings.Trim(prefix, "/"), nil
+}
+
+// writeResults exports a Map Run to <prefix>/<run id>/: SUCCEEDED_0, FAILED_0
+// (failed, timed out, and aborted children), and PENDING_0 (items that never
+// started), each written only when it has entries, then manifest.json. The
+// state result points at the manifest.
+func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPlan, children []store.Execution, w *asl.ResultWriter) (string, error) {
+	transform := "NONE"
+	if w.Transformation != "" {
+		transform = w.Transformation
+	}
+	var succeeded, failed, pending []any
+	var written, writtenItems int64
+	for i, ex := range children {
+		switch {
+		case ex.ARN == "":
+			pending = append(pending, map[string]any{"Input": plan.inputs[i], "Status": "PENDING"})
+			continue
+		case ex.Status != store.ExecSucceeded:
+			failed = append(failed, childRecord(ex))
+		case transform == "NONE":
+			succeeded = append(succeeded, childRecord(ex))
+		default:
+			val, err := parseJSON(ex.Output)
+			if err != nil {
+				return "", &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: "child execution output is not JSON"}
+			}
+			if arr, ok := val.([]any); ok && transform == "FLATTEN" {
+				succeeded = append(succeeded, arr...)
+			} else {
+				succeeded = append(succeeded, val)
+			}
+		}
+		written++
+		writtenItems += plan.sizes[i]
+	}
+	runID := run.ARN[strings.LastIndex(run.ARN, ":")+1:]
+	dir := runID
+	if plan.writePrefix != "" {
+		dir = plan.writePrefix + "/" + runID
+	}
+	ext := ".json"
+	if w.OutputType == "JSONL" {
+		ext = ".jsonl"
+	}
+	files := map[string][]any{}
+	for _, group := range []struct {
+		name    string
+		entries []any
+	}{{"SUCCEEDED", succeeded}, {"FAILED", failed}, {"PENDING", pending}} {
+		files[group.name] = []any{}
+		if len(group.entries) == 0 {
+			continue
+		}
+		body, err := encodeResults(group.entries, w.OutputType == "JSONL")
+		if err != nil {
+			return "", err
+		}
+		key := dir + "/" + group.name + "_0" + ext
+		if err := r.SDK.S3Write(ctx, plan.writeBucket, key, body); err != nil {
+			return "", writerFailed(err)
+		}
+		files[group.name] = []any{map[string]any{"Key": key, "Size": len(body)}}
+	}
+	manifest := map[string]any{"DestinationBucket": plan.writeBucket, "MapRunArn": run.ARN, "ResultFiles": files}
+	body, err := json.Marshal(manifest)
+	if err != nil {
+		return "", err
+	}
+	manifestKey := dir + "/manifest.json"
+	if err := r.SDK.S3Write(ctx, plan.writeBucket, manifestKey, body); err != nil {
+		return "", writerFailed(err)
+	}
+	r.Store.UpdateMapRun(run.ARN, func(m *store.MapRun) {
+		m.Items.ResultsWritten = writtenItems
+		m.Executions.ResultsWritten = written
+	})
+	return compactValue(map[string]any{
+		"MapRunArn":           run.ARN,
+		"ResultWriterDetails": map[string]any{"Bucket": plan.writeBucket, "Key": manifestKey},
+	})
+}
+
+func encodeResults(entries []any, lines bool) ([]byte, error) {
+	if !lines {
+		text, err := compactValue(entries)
+		return []byte(text), err
+	}
+	var b strings.Builder
+	for _, e := range entries {
+		text, err := compactValue(e)
+		if err != nil {
+			return nil, err
+		}
+		b.WriteString(text)
+		b.WriteByte('\n')
+	}
+	return []byte(b.String()), nil
+}
+
+func writerFailed(err error) error {
+	cause := err.Error()
+	var se *sdk.ServiceError
+	if errors.As(err, &se) {
+		cause = se.Name + ": " + se.Cause
+	}
+	return &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: cause}
 }

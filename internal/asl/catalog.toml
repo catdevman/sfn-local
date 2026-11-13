@@ -135,11 +135,11 @@ status = "implemented"
 
 [[code]]
 name = "States.ItemReaderFailed"
-status = "deferred"
+status = "implemented"
 
 [[code]]
 name = "States.ResultWriterFailed"
-status = "deferred"
+status = "implemented"
 
 [[intrinsic]]
 name = "States.Format"
