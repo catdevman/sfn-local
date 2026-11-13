@@ -222,4 +222,11 @@ func TestSDKEndpoints(t *testing.T) {
 	if cfg.SDKEndpoints["s3"] != "http://flag" {
 		t.Fatalf("flag %v", cfg.SDKEndpoints)
 	}
+	cfg, err = parseArgs([]string{"--dynamodb-endpoint", "http://ddb"}, lookup(map[string]string{"AWS_ENDPOINT_URL": "http://shared"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SDKEndpoints["dynamodb"] != "http://ddb" || cfg.SDKEndpoints["s3"] != "http://shared" {
+		t.Fatalf("dynamodb flag %v", cfg.SDKEndpoints)
+	}
 }

@@ -61,7 +61,8 @@ type service struct {
 
 // services is every integration this package runs, keyed by service id.
 var services = map[string]service{
-	"s3": s3Service,
+	"dynamodb": dynamodbService,
+	"s3":       s3Service,
 }
 
 // Services returns the service ids in order.

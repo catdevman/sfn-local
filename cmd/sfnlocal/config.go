@@ -149,7 +149,7 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 		}
 	})
 	cfg.WaitRaw = waitRaw
-	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, getenv)
+	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, map[string]string{"dynamodb": cfg.DynamoDBEndpoint}, getenv)
 	if visitedWait || waitFromEnv {
 		f, err := strconv.ParseFloat(strings.TrimSpace(waitRaw), 64)
 		if err != nil {
@@ -164,11 +164,15 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 
 const awsEndpointUsage = "Endpoint for aws-sdk: tasks. AWS_ENDPOINT_URL_<SERVICE> overrides it per service. Empty leaves aws-sdk: tasks unsupported."
 
-// sdkEndpoints resolves each aws-sdk service: its own variable, then the shared URL.
-func sdkEndpoints(shared string, getenv envFunc) map[string]string {
+// sdkEndpoints resolves each aws-sdk service: AWS_ENDPOINT_URL_<SERVICE>, then
+// the service's own endpoint flag such as --dynamodb-endpoint, then the shared URL.
+func sdkEndpoints(shared string, own map[string]string, getenv envFunc) map[string]string {
 	out := map[string]string{}
 	for _, id := range sdk.Services() {
 		url := shared
+		if own[id] != "" {
+			url = own[id]
+		}
 		if v, ok := getenv(sdk.EndpointEnv(id)); ok && v != "" {
 			url = v
 		}
