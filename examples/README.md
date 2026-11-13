@@ -1,10 +1,10 @@
 # Examples
 
-State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs all seven and checks those outputs.
+State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs all eight and checks those outputs.
 
 The small, medium, and large machines use Pass, Choice, and Fail. They change the document as it moves: `Parameters` replaces it, `ResultPath` adds a field, `InputPath` narrows what a state sees, and the last Pass publishes a smaller result. Change a field in `input.json` to take another branch.
 
-Parallel, Map, JSONata, and Catch are the machines that use those pieces. Each one still finishes without a worker or a service endpoint.
+Parallel, Map, JSONata, and Catch are the machines that use those pieces. Workflow runs them in one order, then waits zero seconds and succeeds. Each one still finishes without a worker or a service endpoint.
 
 Money fields are integer cents. `States.MathAdd` adds two numbers, so a price is a base plus a flat addon.
 
@@ -26,7 +26,7 @@ command aws stepfunctions start-execution \
   --input file://examples/small/input.json
 ```
 
-The default account is `123456789012` and the default region is `us-east-1`.
+The default account is `123456789012` and the default region is `us-east-1`. Open http://127.0.0.1:8083/dashboard to see the execution and its history.
 
 ## small
 
@@ -77,3 +77,15 @@ Output: `ada / gold / 3`.
 A Parallel checks stock. The sample has `inStock: false`, so one branch fails with `InventoryMissing`. The Catch writes that error onto `$.failure`, and `Explain` turns it into a stock response. `inStock: true` takes `BothOk` and returns status `reserved`.
 
 Output: status `needs-stock`, detail `pen is unavailable`.
+
+## workflow
+
+One order uses the pieces above together. `Prepare` copies the order and Assign stores the order id. `Plan` is a Parallel: one branch chooses ground shipping from the country, and the other chooses rush, standard, or review. Rush is priority plus a channel matching `web*`. `Stamp` reads that assigned id through `States.Format` and writes the label back with `ResultPath`.
+
+`Lines` is an inline Map at concurrency 2. A back-ordered line enters a Parallel whose second branch fails with `InventoryMissing`. Catch records the error on that line and the Map still finishes. A line over 5000 cents is `bulky`. A line with `gift: true` is `gift`. Anything else is `pick`.
+
+`Choose` sends a non-priority order to `manual`. The sample is priority, shipping to CA, and rush, so the status is `ready`. `Publish` merges the ship quote and the service fee with `States.JsonMerge`, adds those cents, and `OutputPath` drops a scratch field. `Pause` waits zero seconds. `Done` is Succeed.
+
+A country other than `CA` ships for 900 cents. Priority false, or channel `store`, selects standard and then `manual` because the Not rule is first. Any other channel with priority still set is `review`. Clear `backorder` on the desk and its 12000 cents takes `bulky`. Clear `gift` on the book and it is `pick`.
+
+Output: label `order ord-7`, status `ready`, handling 1200, four lines. Desk is `backorder` with detail `desk is unavailable`. Lamp is `bulky`, book is `gift`, pen is `pick`.

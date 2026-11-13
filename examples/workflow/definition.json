@@ -1,0 +1,369 @@
+{
+  "Comment": "One order: Parallel plans the shipment, Map classifies each line, and a back-ordered line is caught inside the item.",
+  "StartAt": "Prepare",
+  "States": {
+    "Prepare": {
+      "Type": "Pass",
+      "Parameters": {
+        "orderId.$": "$.orderId",
+        "channel.$": "$.channel",
+        "priority.$": "$.priority",
+        "country.$": "$.shipTo.country",
+        "items.$": "$.items"
+      },
+      "Assign": {
+        "orderId.$": "$.orderId"
+      },
+      "Next": "Plan"
+    },
+    "Plan": {
+      "Type": "Parallel",
+      "Parameters": {
+        "channel.$": "$.channel",
+        "priority.$": "$.priority",
+        "country.$": "$.country"
+      },
+      "Branches": [
+        {
+          "StartAt": "ShipChoice",
+          "States": {
+            "ShipChoice": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "Variable": "$.country",
+                  "StringEquals": "CA",
+                  "Next": "ShipCA"
+                }
+              ],
+              "Default": "ShipOther"
+            },
+            "ShipCA": {
+              "Type": "Pass",
+              "Parameters": {
+                "method": "ground",
+                "cents": 700,
+                "country.$": "$.country"
+              },
+              "End": true
+            },
+            "ShipOther": {
+              "Type": "Pass",
+              "Parameters": {
+                "method": "ground",
+                "cents": 900,
+                "country.$": "$.country"
+              },
+              "End": true
+            }
+          }
+        },
+        {
+          "StartAt": "LaneChoice",
+          "States": {
+            "LaneChoice": {
+              "Type": "Choice",
+              "Choices": [
+                {
+                  "And": [
+                    {
+                      "Variable": "$.priority",
+                      "BooleanEquals": true
+                    },
+                    {
+                      "Variable": "$.channel",
+                      "StringMatches": "web*"
+                    }
+                  ],
+                  "Next": "Rush"
+                },
+                {
+                  "Or": [
+                    {
+                      "Variable": "$.priority",
+                      "BooleanEquals": false
+                    },
+                    {
+                      "Variable": "$.channel",
+                      "StringEquals": "store"
+                    }
+                  ],
+                  "Next": "Standard"
+                }
+              ],
+              "Default": "ServiceReview"
+            },
+            "Rush": {
+              "Type": "Pass",
+              "Parameters": {
+                "name": "rush",
+                "fee": 500
+              },
+              "End": true
+            },
+            "Standard": {
+              "Type": "Pass",
+              "Parameters": {
+                "name": "standard",
+                "fee": 0
+              },
+              "End": true
+            },
+            "ServiceReview": {
+              "Type": "Pass",
+              "Parameters": {
+                "name": "review",
+                "fee": 200
+              },
+              "End": true
+            }
+          }
+        }
+      ],
+      "ResultSelector": {
+        "ship.$": "$[0]",
+        "service.$": "$[1]"
+      },
+      "ResultPath": "$.plan",
+      "Next": "Stamp"
+    },
+    "Stamp": {
+      "Type": "Pass",
+      "Comment": "InputPath narrows this state. The label reads the assigned order id, and ResultPath writes it back onto the whole document.",
+      "InputPath": "$.orderId",
+      "Parameters": {
+        "text.$": "States.Format('order {}', $orderId)"
+      },
+      "ResultPath": "$.stamp",
+      "Next": "Lines"
+    },
+    "Lines": {
+      "Type": "Map",
+      "ItemsPath": "$.items",
+      "MaxConcurrency": 2,
+      "ItemSelector": {
+        "index.$": "$$.Map.Item.Index",
+        "sku.$": "$$.Map.Item.Value.sku",
+        "qty.$": "$$.Map.Item.Value.qty",
+        "cents.$": "$$.Map.Item.Value.cents",
+        "backorder.$": "$$.Map.Item.Value.backorder",
+        "gift.$": "$$.Map.Item.Value.gift"
+      },
+      "ItemProcessor": {
+        "ProcessorConfig": {
+          "Mode": "INLINE"
+        },
+        "StartAt": "Classify",
+        "States": {
+          "Classify": {
+            "Type": "Choice",
+            "Choices": [
+              {
+                "Variable": "$.backorder",
+                "BooleanEquals": true,
+                "Next": "StockCheck"
+              },
+              {
+                "Variable": "$.cents",
+                "NumericGreaterThan": 5000,
+                "Next": "Bulky"
+              },
+              {
+                "And": [
+                  {
+                    "Variable": "$.gift",
+                    "IsPresent": true
+                  },
+                  {
+                    "Variable": "$.gift",
+                    "BooleanEquals": true
+                  }
+                ],
+                "Next": "Wrap"
+              }
+            ],
+            "Default": "Pick"
+          },
+          "StockCheck": {
+            "Type": "Parallel",
+            "Branches": [
+              {
+                "StartAt": "KeepSku",
+                "States": {
+                  "KeepSku": {
+                    "Type": "Pass",
+                    "Parameters": {
+                      "sku.$": "$.sku",
+                      "ok": true
+                    },
+                    "End": true
+                  }
+                }
+              },
+              {
+                "StartAt": "NoteMissing",
+                "States": {
+                  "NoteMissing": {
+                    "Type": "Pass",
+                    "Parameters": {
+                      "sku.$": "$.sku",
+                      "reason.$": "States.Format('{} is unavailable', $.sku)"
+                    },
+                    "Next": "Missing"
+                  },
+                  "Missing": {
+                    "Type": "Fail",
+                    "Error": "InventoryMissing",
+                    "CausePath": "$.reason"
+                  }
+                }
+              }
+            ],
+            "Catch": [
+              {
+                "ErrorEquals": ["InventoryMissing"],
+                "ResultPath": "$.failure",
+                "Next": "Held"
+              }
+            ],
+            "Next": "Reserved"
+          },
+          "Held": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "cents.$": "$.cents",
+              "lane": "backorder",
+              "error.$": "$.failure.Error",
+              "detail.$": "$.failure.Cause"
+            },
+            "End": true
+          },
+          "Reserved": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "cents.$": "$.cents",
+              "lane": "reserved"
+            },
+            "End": true
+          },
+          "Bulky": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "cents.$": "$.cents",
+              "lane": "bulky"
+            },
+            "End": true
+          },
+          "Wrap": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "cents.$": "$.cents",
+              "lane": "gift"
+            },
+            "End": true
+          },
+          "Pick": {
+            "Type": "Pass",
+            "Parameters": {
+              "index.$": "$.index",
+              "sku.$": "$.sku",
+              "qty.$": "$.qty",
+              "cents.$": "$.cents",
+              "lane": "pick"
+            },
+            "End": true
+          }
+        }
+      },
+      "ResultSelector": {
+        "lines.$": "$"
+      },
+      "ResultPath": "$.fulfillment",
+      "Next": "Choose"
+    },
+    "Choose": {
+      "Type": "Choice",
+      "Choices": [
+        {
+          "Not": {
+            "Variable": "$.priority",
+            "BooleanEquals": true
+          },
+          "Next": "Manual"
+        },
+        {
+          "And": [
+            {
+              "Variable": "$.plan.ship.country",
+              "StringEquals": "CA"
+            },
+            {
+              "Variable": "$.plan.service.name",
+              "StringEquals": "rush"
+            }
+          ],
+          "Next": "Ready"
+        }
+      ],
+      "Default": "Review"
+    },
+    "Ready": {
+      "Type": "Pass",
+      "Result": "ready",
+      "ResultPath": "$.status",
+      "Next": "Publish"
+    },
+    "Manual": {
+      "Type": "Pass",
+      "Result": "manual",
+      "ResultPath": "$.status",
+      "Next": "Publish"
+    },
+    "Review": {
+      "Type": "Pass",
+      "Result": "review",
+      "ResultPath": "$.status",
+      "Next": "Publish"
+    },
+    "Publish": {
+      "Type": "Pass",
+      "Parameters": {
+        "body": {
+          "orderId.$": "$.orderId",
+          "label.$": "$.stamp.text",
+          "status.$": "$.status",
+          "ship.$": "$.plan.ship",
+          "service.$": "$.plan.service",
+          "quote.$": "States.JsonMerge($.plan.ship, $.plan.service, false)",
+          "handlingCents.$": "States.MathAdd($.plan.ship.cents, $.plan.service.fee)",
+          "lineCount.$": "States.ArrayLength($.fulfillment.lines)",
+          "firstSku.$": "$.fulfillment.lines[0].sku",
+          "lines.$": "$.fulfillment.lines"
+        },
+        "scratch": true
+      },
+      "OutputPath": "$.body",
+      "Next": "Pause"
+    },
+    "Pause": {
+      "Type": "Wait",
+      "Seconds": 0,
+      "Next": "Done"
+    },
+    "Done": {
+      "Type": "Succeed"
+    }
+  }
+}

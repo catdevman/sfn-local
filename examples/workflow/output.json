@@ -1,0 +1,56 @@
+{
+  "orderId": "ord-7",
+  "label": "order ord-7",
+  "status": "ready",
+  "ship": {
+    "method": "ground",
+    "cents": 700,
+    "country": "CA"
+  },
+  "service": {
+    "name": "rush",
+    "fee": 500
+  },
+  "quote": {
+    "method": "ground",
+    "cents": 700,
+    "country": "CA",
+    "name": "rush",
+    "fee": 500
+  },
+  "handlingCents": 1200,
+  "lineCount": 4,
+  "firstSku": "pen",
+  "lines": [
+    {
+      "index": 0,
+      "sku": "pen",
+      "qty": 2,
+      "cents": 400,
+      "lane": "pick"
+    },
+    {
+      "index": 1,
+      "sku": "desk",
+      "qty": 1,
+      "cents": 12000,
+      "lane": "backorder",
+      "error": "InventoryMissing",
+      "detail": "desk is unavailable"
+    },
+    {
+      "index": 2,
+      "sku": "lamp",
+      "qty": 1,
+      "cents": 8000,
+      "lane": "bulky"
+    },
+    {
+      "index": 3,
+      "sku": "book",
+      "qty": 1,
+      "cents": 1800,
+      "lane": "gift"
+    }
+  ]
+}

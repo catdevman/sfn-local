@@ -1,0 +1,14 @@
+{
+  "orderId": "ord-7",
+  "channel": "web",
+  "priority": true,
+  "shipTo": {
+    "country": "CA"
+  },
+  "items": [
+    {"sku": "pen", "qty": 2, "cents": 400, "backorder": false, "gift": false},
+    {"sku": "desk", "qty": 1, "cents": 12000, "backorder": true, "gift": false},
+    {"sku": "lamp", "qty": 1, "cents": 8000, "backorder": false, "gift": false},
+    {"sku": "book", "qty": 1, "cents": 1800, "backorder": false, "gift": true}
+  ]
+}

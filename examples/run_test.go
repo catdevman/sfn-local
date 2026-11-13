@@ -17,7 +17,7 @@ import (
 )
 
 func TestDefinitions(t *testing.T) {
-	for _, name := range []string{"small", "medium", "large", "parallel", "map", "jsonata", "catch"} {
+	for _, name := range []string{"small", "medium", "large", "parallel", "map", "jsonata", "catch", "workflow"} {
 		t.Run(name, func(t *testing.T) {
 			def := readExample(t, name, "definition.json")
 			input := readExample(t, name, "input.json")
