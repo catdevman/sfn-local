@@ -36,9 +36,9 @@ func TestDeferredOperationsAreModeled(t *testing.T) {
 	if code != 200 || !strings.Contains(string(raw), "stateMachineArn") {
 		t.Fatalf("create %d %s", code, raw)
 	}
-	valid := call(t, srv, "AWSStepFunctions.ValidateStateMachineDefinition", `{"definition":`+jsonString(def)+`}`, "")
-	if valid.Code() != "ValidationException" || !strings.Contains(valid.Message, "ValidateStateMachineDefinition is not implemented") {
-		t.Fatalf("%+v", valid)
+	code, raw = callRaw(t, srv, "AWSStepFunctions.ValidateStateMachineDefinition", `{"definition":`+jsonString(def)+`}`)
+	if code != 200 || !strings.Contains(string(raw), `"result":"OK"`) || !strings.Contains(string(raw), `"diagnostics":[]`) {
+		t.Fatalf("validate %d %s", code, raw)
 	}
 	code, raw = callRaw(t, srv, "AWSStepFunctions.TestState", `{"definition":`+jsonString(def)+`}`)
 	if code != 200 || !strings.Contains(string(raw), `"status":"SUCCEEDED"`) || !strings.Contains(string(raw), `"output":"{}"`) {

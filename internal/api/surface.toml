@@ -14,7 +14,7 @@ message = "CreateStateMachine is not implemented by this local server."
 
 [[operation]]
 name = "CreateStateMachineAlias"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "CreateStateMachineAlias is not implemented by this local server."
 
@@ -32,13 +32,13 @@ message = "DeleteStateMachine is not implemented by this local server."
 
 [[operation]]
 name = "DeleteStateMachineAlias"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DeleteStateMachineAlias is not implemented by this local server."
 
 [[operation]]
 name = "DeleteStateMachineVersion"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DeleteStateMachineVersion is not implemented by this local server."
 
@@ -68,7 +68,7 @@ message = "DescribeStateMachine is not implemented by this local server."
 
 [[operation]]
 name = "DescribeStateMachineAlias"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "DescribeStateMachineAlias is not implemented by this local server."
 
@@ -110,7 +110,7 @@ message = "Distributed Map is not supported by this local server."
 
 [[operation]]
 name = "ListStateMachineAliases"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListStateMachineAliases is not implemented by this local server."
 
@@ -122,7 +122,7 @@ message = "ListStateMachines is not implemented by this local server."
 
 [[operation]]
 name = "ListStateMachineVersions"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ListStateMachineVersions is not implemented by this local server."
 
@@ -134,7 +134,7 @@ message = "ListTagsForResource is not implemented by this local server."
 
 [[operation]]
 name = "PublishStateMachineVersion"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "PublishStateMachineVersion is not implemented by this local server."
 
@@ -212,13 +212,13 @@ message = "UpdateStateMachine is not implemented by this local server."
 
 [[operation]]
 name = "UpdateStateMachineAlias"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "UpdateStateMachineAlias is not implemented by this local server."
 
 [[operation]]
 name = "ValidateStateMachineDefinition"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "ValidateStateMachineDefinition is not implemented by this local server."
 
@@ -1662,7 +1662,7 @@ status = "deferred"
 
 [[error]]
 name = "ConflictException"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "ExecutionAlreadyExists"
@@ -1738,7 +1738,7 @@ status = "implemented"
 
 [[error]]
 name = "ServiceQuotaExceededException"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "StateMachineAlreadyExists"

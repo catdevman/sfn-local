@@ -261,6 +261,10 @@ func TestTestStateDoesNotPublish(t *testing.T) {
 	if _, ok := s.Store.Machine(*sm.StateMachineArn); !ok {
 		t.Fatal("real machine disappeared")
 	}
+	vers, err := s.ListStateMachineVersions(context.Background(), &gen.ListStateMachineVersionsInput{StateMachineArn: sm.StateMachineArn})
+	if err != nil || vers.StateMachineVersions == nil || len(*vers.StateMachineVersions) != 0 {
+		t.Fatalf("published versions %+v %v", vers, err)
+	}
 }
 
 func mustTest(t *testing.T, s *Service, def, input string) *gen.TestStateOutput {

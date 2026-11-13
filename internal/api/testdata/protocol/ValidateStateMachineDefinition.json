@@ -1,0 +1,22 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ValidateStateMachineDefinition",
+    "body": {
+      "definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"Type\":\"Pass\",\"End\":true}}}",
+      "type": "STANDARD",
+      "severity": "ERROR"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "result": "OK",
+      "diagnostics": [],
+      "truncated": false
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ValidationException"
+  }
+}

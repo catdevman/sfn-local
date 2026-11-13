@@ -35,7 +35,9 @@ var jarErrorTypes = map[string]string{}
 
 // jarAbsent is the Step Functions Local 2.0.0 operation set that this process
 // still refuses before decode. TestState is implemented, so it is not in the set.
-// The other names stay deferred. The default profile returns their deferred error.
+// The default profile implements validate, versions, and aliases. This profile
+// still returns the jar's HTTP 500 for every name here. Redrive and Map Run
+// stay deferred on the default profile too.
 var jarAbsent = map[string]bool{
 	"CreateStateMachineAlias":        true,
 	"DeleteStateMachineAlias":        true,

@@ -205,6 +205,7 @@ func (s *Store) Sweep() {
 			}
 		}
 		if !alive {
+			s.dropQualifiedLocked(arn)
 			delete(s.machines, arn)
 			delete(s.machineBy, m.Name)
 			delete(s.tags, arn)

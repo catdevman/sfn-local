@@ -1,0 +1,26 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.CreateStateMachineAlias",
+    "body": {
+      "name": "prod",
+      "description": "live",
+      "routingConfiguration": [
+        {
+          "stateMachineVersionArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:1",
+          "weight": 100
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachineAliasArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:prod",
+      "creationDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ValidationException"
+  }
+}

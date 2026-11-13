@@ -45,6 +45,8 @@ type Logging struct {
 }
 
 // Machine is one state machine. Definition is the text the client submitted.
+// Revision changes when the mutable configuration is created or updated.
+// A published version records the revision it snapped.
 type Machine struct {
 	ARN        string
 	Name       string
@@ -55,6 +57,7 @@ type Machine struct {
 	Created    time.Time
 	Updated    *time.Time
 	Logging    *Logging
+	Revision   string
 }
 
 // Activity is one activity row. Phase 1 does not schedule tokens.
@@ -99,6 +102,11 @@ type HistoryEvent struct {
 	Length    int32
 	HasIndex  bool
 	HasLength bool
+	// VersionARN and AliasARN are ExecutionStarted details for a qualified start.
+	VersionARN string
+	AliasARN   string
+	HasVersion bool
+	HasAlias   bool
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken
@@ -126,6 +134,10 @@ type Execution struct {
 	// MockTest is the suffix after one '#' on the start ARN. Empty means the
 	// execution does not read the mock file.
 	MockTest string
+	// VersionARN and AliasARN are set when StartExecution used a qualified ARN.
+	// StateMachineARN stays the unqualified machine ARN.
+	VersionARN string
+	AliasARN   string
 }
 
 // ExistsError is a duplicate name whose definition differs.
@@ -140,13 +152,19 @@ func Terminal(status string) bool { return status != "" && status != ExecRunning
 
 // Store is the process-wide table set. One mutex guards every map.
 type Store struct {
-	mu         sync.Mutex
-	machines   map[string]*Machine
-	machineBy  map[string]string
-	activities map[string]*Activity
-	activityBy map[string]string
-	tags       map[string][]Tag
-	execs      map[string]*execRec
+	mu               sync.Mutex
+	machines         map[string]*Machine
+	machineBy        map[string]string
+	activities       map[string]*Activity
+	activityBy       map[string]string
+	tags             map[string][]Tag
+	execs            map[string]*execRec
+	versions         map[string]*Version
+	byMachineVersion map[string][]*Version
+	nextVersion      map[string]int
+	aliases          map[string]*Alias
+	byMachineAlias   map[string][]*Alias
+	aliasName        map[string]string
 }
 
 type execRec struct {
@@ -173,12 +191,18 @@ func (h *RunHandle) Finish() {
 // New returns an empty store.
 func New() *Store {
 	return &Store{
-		machines:   map[string]*Machine{},
-		machineBy:  map[string]string{},
-		activities: map[string]*Activity{},
-		activityBy: map[string]string{},
-		tags:       map[string][]Tag{},
-		execs:      map[string]*execRec{},
+		machines:         map[string]*Machine{},
+		machineBy:        map[string]string{},
+		activities:       map[string]*Activity{},
+		activityBy:       map[string]string{},
+		tags:             map[string][]Tag{},
+		execs:            map[string]*execRec{},
+		versions:         map[string]*Version{},
+		byMachineVersion: map[string][]*Version{},
+		nextVersion:      map[string]int{},
+		aliases:          map[string]*Alias{},
+		byMachineAlias:   map[string][]*Alias{},
+		aliasName:        map[string]string{},
 	}
 }
 

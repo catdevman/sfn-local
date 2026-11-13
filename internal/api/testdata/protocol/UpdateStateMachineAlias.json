@@ -1,0 +1,19 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.UpdateStateMachineAlias",
+    "body": {
+      "stateMachineAliasArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:prod",
+      "description": "next"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "updateDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ValidationException"
+  }
+}

@@ -32,7 +32,12 @@ var (
 	expressARNPattern = regexp.MustCompile(
 		`^arn:aws:states:[a-z0-9-]+:[0-9]{12}:express:.+:.+$`,
 	)
+	versionQualifier   = regexp.MustCompile(`^[1-9][0-9]*$`)
+	aliasQualifier     = regexp.MustCompile(`^[A-Za-z0-9_.-]+$`)
+	aliasQualifierMark = regexp.MustCompile(`[A-Za-z_.-]`)
 )
+
+const stateMachineMarker = ":stateMachine:"
 
 const expressPlaceholderMessage = "Resource type not valid in this context: express"
 
@@ -66,9 +71,46 @@ func ExecutionARN(region, account, machineName, execName string, express bool) s
 }
 
 // ValidStateMachineARN reports whether arn has the state-machine shape.
-// Lookup is still an exact map key.
+// Lookup is still an exact map key. A version or alias suffix still matches.
 func ValidStateMachineARN(arn string) bool {
 	return stateMachineARNPattern.MatchString(arn)
+}
+
+// splitQualifiedARN splits a state-machine ARN into the unqualified ARN and
+// the suffix after the machine name. Machine names cannot contain ':'.
+// ok is false when the shape is not a state-machine ARN or the suffix is empty.
+func splitQualifiedARN(arn string) (base, qual string, ok bool) {
+	if !ValidStateMachineARN(arn) {
+		return "", "", false
+	}
+	i := strings.Index(arn, stateMachineMarker)
+	if i < 0 {
+		return "", "", false
+	}
+	rest := arn[i+len(stateMachineMarker):]
+	j := strings.IndexByte(rest, ':')
+	if j < 0 {
+		return arn, "", true
+	}
+	if j == 0 || j == len(rest)-1 || strings.Contains(rest[j+1:], ":") {
+		return "", "", false
+	}
+	return arn[:i+len(stateMachineMarker)+j], rest[j+1:], true
+}
+
+// qualifierKind classifies the suffix from splitQualifiedARN.
+// machine, version, alias, or invalid.
+func qualifierKind(qual string) string {
+	switch {
+	case qual == "":
+		return "machine"
+	case versionQualifier.MatchString(qual):
+		return "version"
+	case len(qual) <= 80 && aliasQualifier.MatchString(qual) && aliasQualifierMark.MatchString(qual):
+		return "alias"
+	default:
+		return "invalid"
+	}
 }
 
 // ValidActivityARN reports whether arn has the activity shape.

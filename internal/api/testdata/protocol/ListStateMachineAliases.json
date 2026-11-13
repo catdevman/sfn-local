@@ -1,0 +1,19 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.ListStateMachineAliases",
+    "body": {
+      "stateMachineArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check",
+      "maxResults": 100
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachineAliases": []
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#StateMachineDoesNotExist"
+  }
+}

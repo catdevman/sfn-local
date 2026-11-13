@@ -1,0 +1,16 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DeleteStateMachineVersion",
+    "body": {
+      "stateMachineVersionArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:1"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 409,
+    "type": "com.amazonaws.sfn#ConflictException"
+  }
+}

@@ -1,6 +1,10 @@
 package store
 
-import "time"
+import (
+	"crypto/rand"
+	"fmt"
+	"time"
+)
 
 // PutMachine inserts a machine or, when the name exists with the same
 // definition, returns that row without changing its status. A different
@@ -20,6 +24,9 @@ func (s *Store) PutMachine(m Machine, tags []Tag) (Machine, error) {
 	}
 	stored := m
 	stored.Logging = copyLogging(m.Logging)
+	if stored.Revision == "" {
+		stored.Revision = newRevision()
+	}
 	s.machines[m.ARN] = &stored
 	s.machineBy[m.Name] = m.ARN
 	if tags != nil {
@@ -70,7 +77,16 @@ func (s *Store) UpdateMachine(arn string, definition, role *string, logging *Log
 	}
 	updated := when
 	m.Updated = &updated
+	m.Revision = newRevision()
 	return copyMachine(m), true
+}
+
+func newRevision() string {
+	var b [16]byte
+	_, _ = rand.Read(b[:])
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }
 
 // MarkDeleting sets status to DELETING. An unknown ARN returns false.

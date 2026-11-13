@@ -72,17 +72,43 @@ func (s *Service) DescribeStateMachineForExecution(_ context.Context, in *gen.De
 	if !ok {
 		return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+ex.StateMachineARN+"'")
 	}
-	out := &gen.DescribeStateMachineForExecutionOutput{
-		StateMachineArn:      sp(m.ARN),
-		Name:                 sp(m.Name),
-		Definition:           sp(m.Definition),
-		LoggingConfiguration: toGenLogging(m.Logging),
-	}
-	if m.RoleArn != "" {
-		out.RoleArn = sp(m.RoleArn)
-	}
+	definition := m.Definition
+	role := m.RoleArn
+	logging := m.Logging
+	revision := m.Revision
+	smARN := m.ARN
+	var updated *time.Time
 	if m.Updated != nil {
-		out.UpdateDate = ts(*m.Updated)
+		updated = m.Updated
+	}
+	if ex.VersionARN != "" {
+		smARN = ex.VersionARN
+		definition = ex.Definition
+		role = ex.RoleArn
+		logging = nil
+		revision = ""
+		updated = nil
+		if v, found := s.Store.Version(ex.VersionARN); found {
+			definition = v.Definition
+			role = v.RoleArn
+			logging = v.Logging
+			revision = v.Revision
+		}
+	}
+	out := &gen.DescribeStateMachineForExecutionOutput{
+		StateMachineArn:      sp(smARN),
+		Name:                 sp(m.Name),
+		Definition:           sp(definition),
+		LoggingConfiguration: toGenLogging(logging),
+	}
+	if role != "" {
+		out.RoleArn = sp(role)
+	}
+	if revision != "" {
+		out.RevisionId = sp(revision)
+	}
+	if updated != nil {
+		out.UpdateDate = ts(*updated)
 	}
 	return out, nil
 }
@@ -117,7 +143,7 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 	if in == nil || in.StateMachineArn == nil || *in.StateMachineArn == "" {
 		return nil, modeled("ValidationException", "1 validation error detected: Value null at 'stateMachineArn' failed to satisfy constraint: Member must not be null")
 	}
-	m, err := s.machineByARN(in.StateMachineArn)
+	m, versionFilter, aliasFilter, err := s.listedMachine(*in.StateMachineArn)
 	if err != nil {
 		return nil, err
 	}
@@ -130,6 +156,19 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 		}
 	}
 	rows := s.Store.Executions(m.ARN)
+	if versionFilter != "" || aliasFilter != "" {
+		filtered := make([]store.Execution, 0, len(rows))
+		for _, row := range rows {
+			if versionFilter != "" && row.VersionARN != versionFilter {
+				continue
+			}
+			if aliasFilter != "" && row.AliasARN != aliasFilter {
+				continue
+			}
+			filtered = append(filtered, row)
+		}
+		rows = filtered
+	}
 	if in.StatusFilter != nil {
 		filtered := rows[:0]
 		for _, row := range rows {
@@ -161,6 +200,12 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 		}
 		if row.Stopped != nil {
 			item.StopDate = ts(*row.Stopped)
+		}
+		if row.VersionARN != "" {
+			item.StateMachineVersionArn = sp(row.VersionARN)
+		}
+		if row.AliasARN != "" {
+			item.StateMachineAliasArn = sp(row.AliasARN)
 		}
 		list = append(list, item)
 	}
@@ -217,10 +262,11 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 	if !ValidStateMachineARN(base) {
 		return store.Execution{}, nil, modeled("InvalidArn", "Invalid Arn: '"+base+"'")
 	}
-	m, ok := s.Store.Machine(base)
-	if !ok {
-		return store.Execution{}, nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+base+"'")
+	ref, err := s.resolveStart(base)
+	if err != nil {
+		return store.Execution{}, nil, err
 	}
+	m := ref.machine
 	if sync && m.Type != store.TypeExpress {
 		return store.Execution{}, nil, modeled("StateMachineTypeNotSupported", "State Machine Type Not Supported: 'StartSyncExecution is not supported for STANDARD State Machines'")
 	}
@@ -237,7 +283,7 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 	} else if err := checkExecutionInput(input); err != nil {
 		return store.Execution{}, nil, err
 	}
-	prog, err := asl.ValidateType(m.Definition, m.Type)
+	prog, err := asl.ValidateType(ref.definition, m.Type)
 	if err != nil {
 		return store.Execution{}, nil, modeled("InvalidDefinition", err.Error())
 	}
@@ -263,8 +309,8 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 		ARN:             arn,
 		Name:            name,
 		StateMachineARN: m.ARN,
-		Definition:      m.Definition,
-		RoleArn:         m.RoleArn,
+		Definition:      ref.definition,
+		RoleArn:         ref.role,
 		Input:           input,
 		Status:          store.ExecRunning,
 		Type:            m.Type,
@@ -272,6 +318,8 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 		Started:         now,
 		Deadline:        executionDeadline(now, prog.TimeoutSeconds, express),
 		MockTest:        test,
+		VersionARN:      ref.versionARN,
+		AliasARN:        ref.aliasARN,
 	}
 	stored, handle, existed := s.Store.PutExecution(ex)
 	if existed {
@@ -281,9 +329,17 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 		return store.Execution{}, nil, modeled("ExecutionAlreadyExists", "Execution Already Exists: '"+stored.ARN+"'")
 	}
 	ev := store.HistoryEvent{Type: "ExecutionStarted", Time: now, Input: input, HasInput: true}
-	if m.RoleArn != "" {
-		ev.RoleArn = m.RoleArn
+	if ref.role != "" {
+		ev.RoleArn = ref.role
 		ev.HasRole = true
+	}
+	if ref.versionARN != "" {
+		ev.VersionARN = ref.versionARN
+		ev.HasVersion = true
+	}
+	if ref.aliasARN != "" {
+		ev.AliasARN = ref.aliasARN
+		ev.HasAlias = true
 	}
 	if err := s.Store.Append(stored.ARN, ev); err != nil {
 		s.Store.Drop(stored.ARN)
@@ -363,6 +419,12 @@ func describeExecution(ex store.Execution) *gen.DescribeExecutionOutput {
 		out.Output = sp(ex.Output)
 		out.OutputDetails = &gen.CloudWatchEventsExecutionDataDetails{Included: &included}
 	}
+	if ex.VersionARN != "" {
+		out.StateMachineVersionArn = sp(ex.VersionARN)
+	}
+	if ex.AliasARN != "" {
+		out.StateMachineAliasArn = sp(ex.AliasARN)
+	}
 	return out
 }
 
@@ -415,6 +477,12 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 		}
 		if ev.HasRole {
 			d.RoleArn = sp(ev.RoleArn)
+		}
+		if ev.HasVersion {
+			d.StateMachineVersionArn = sp(ev.VersionARN)
+		}
+		if ev.HasAlias {
+			d.StateMachineAliasArn = sp(ev.AliasARN)
 		}
 		out.ExecutionStartedEventDetails = d
 	case "ExecutionSucceeded":

@@ -1,0 +1,20 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.DescribeStateMachineAlias",
+    "body": {
+      "stateMachineAliasArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:prod"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "stateMachineAliasArn": "arn:aws:states:us-east-1:123456789012:stateMachine:rebuild-check:prod",
+      "name": "prod",
+      "creationDate": 1715990400.123
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#StateMachineDoesNotExist"
+  }
+}

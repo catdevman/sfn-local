@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, and Phase 4 checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, and Phase V checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -28,7 +28,7 @@ Estimates are person-weeks for one engineer who knows Step Functions, including 
 | [G](#x-phase-g--protocol-shell) | Every modeled call parses. Nothing executes yet. | 1.5–2.5 |
 | [0](#x-phase-0--control-plane) | Create, describe, list, update, and delete machines and activities. | 1.5–2.5 |
 | [0b](#x-phase-0b--validator-messages) | Create-time messages match the jar fixtures. Can land beside phase 1. | 1–2 |
-| [V](#phase-v--validate-versions-aliases) | `validate-state-machine-definition`, publish, and alias. | 1–2 |
+| [V](#x-phase-v--validate-versions-aliases) | `validate-state-machine-definition`, publish, and alias. | 1–2 |
 | [1](#x-phase-1--pass-succeed-fail) | Smallest useful runner. Pass, Succeed, Fail. | 1.5–2.5 |
 | [2](#x-phase-2--jsonpath-choice-wait) | JSONPath data flow, Choice, Wait. | 2–4 |
 | [3](#x-phase-3--mocks-lambda-retry-catch) | Mock file, one Lambda endpoint, Retry, Catch. | 2–3 |
@@ -106,16 +106,16 @@ Depends on phase 0. Phase 1 does not wait on this.
 - [x] `States.ALL` is alone in `ErrorEquals` and that Retry or Catch object is the last entry. Message `States.ALL must appear alone and at end of list`.
 - [x] Tag length failures use `Member must have length less than or equal to 80` in `--compat=sfn-local`.
 
-## Phase V — validate, versions, aliases
+## [x] Phase V — validate, versions, aliases
 
 Depends on phase 0. The validator already exists. These operations replace their deferred rows.
 
-- [ ] `ValidateStateMachineDefinition` returns diagnostics in the generated output shape.
-- [ ] `PublishStateMachineVersion`, `ListStateMachineVersions`, `DeleteStateMachineVersion`.
-- [ ] `CreateStateMachineAlias`, `DescribeStateMachineAlias`, `ListStateMachineAliases`, `UpdateStateMachineAlias`, `DeleteStateMachineAlias`.
-- [ ] `publish: true` on create publishes a version and returns `stateMachineVersionArn`.
-- [ ] `StartExecution` accepts a version ARN and an alias ARN once phase 1 exists. Until then the acceptance rule is in the store and covered by a unit test.
-- [ ] Customer-managed KMS and tracing stay `deferred` and return a modeled error. The server does not call KMS.
+- [x] `ValidateStateMachineDefinition` returns diagnostics in the generated output shape.
+- [x] `PublishStateMachineVersion`, `ListStateMachineVersions`, `DeleteStateMachineVersion`.
+- [x] `CreateStateMachineAlias`, `DescribeStateMachineAlias`, `ListStateMachineAliases`, `UpdateStateMachineAlias`, `DeleteStateMachineAlias`.
+- [x] `publish: true` on create publishes a version and returns `stateMachineVersionArn`.
+- [x] `StartExecution` accepts a version ARN and an alias ARN once phase 1 exists. Until then the acceptance rule is in the store and covered by a unit test.
+- [x] Customer-managed KMS and tracing stay `deferred` and return a modeled error. The server does not call KMS.
 
 ## [x] Phase 1 — Pass, Succeed, Fail
 
@@ -397,7 +397,7 @@ Botocore matches `com.amazonaws.sfn#StateMachineDoesNotExist` and the jar's `com
 Handler rules that keep scripts working:
 
 - Return an error value from `internal/api/gen`, or `ValidationException` from generated `Validate`.
-- A deferred behavior-changing field returns a modeled client error that names the field. `publish: true` is in that class until phase V.
+- A deferred behavior-changing field returns a modeled client error that names the field. `encryptionConfiguration` and `tracingConfiguration` stay in that class. `publish: true` publishes a version and returns `stateMachineVersionArn`. The server does not call KMS.
 - Pagination tokens are opaque to the client. The server may use the decimal index from docs/spec.md.
 - The history enum contains types this server does not emit (`ParallelStateAborted`, `TaskStateAborted`, `WaitStateAborted`, schedule-failed variants, Map Run events). A new enum value does not force emission.
 - `previousEventId` is a correct chain. Conformance compares event types and detail member names.

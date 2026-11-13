@@ -20,6 +20,9 @@ type Service struct {
 	Region  string
 	Profile Profile
 	Log     io.Writer
+	// AliasRoll, when set, returns an integer in [0, 100) for alias routing.
+	// Nil uses crypto/rand. A single route of weight 100 does not depend on it.
+	AliasRoll func() int
 }
 
 func (s *Service) now() time.Time {

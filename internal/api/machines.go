@@ -16,7 +16,10 @@ func (s *Service) CreateStateMachine(_ context.Context, in *gen.CreateStateMachi
 	if name == "" || NameRejected(name) {
 		return nil, modeled("InvalidName", "Invalid Name: '"+name+"'")
 	}
-	if err := rejectMachineExtras(in.EncryptionConfiguration != nil, in.TracingConfiguration != nil, in.Publish != nil, in.VersionDescription != nil); err != nil {
+	if err := rejectEncryptionTracing(in.EncryptionConfiguration != nil, in.TracingConfiguration != nil); err != nil {
+		return nil, err
+	}
+	if err := rejectVersionDescription(in.Publish, in.VersionDescription); err != nil {
 		return nil, err
 	}
 	role, err := s.roleForCreate(in.RoleArn)
@@ -55,18 +58,70 @@ func (s *Service) CreateStateMachine(_ context.Context, in *gen.CreateStateMachi
 		}
 		return nil, err
 	}
-	return &gen.CreateStateMachineOutput{
+	out := &gen.CreateStateMachineOutput{
 		StateMachineArn: sp(stored.ARN),
 		CreationDate:    ts(stored.Created),
-	}, nil
+	}
+	if in.Publish != nil && *in.Publish {
+		v, err := s.publishVersion(stored.ARN, "", valueOf(in.VersionDescription))
+		if err != nil {
+			return nil, err
+		}
+		out.StateMachineVersionArn = sp(v.ARN)
+	}
+	return out, nil
 }
 
 func (s *Service) DescribeStateMachine(_ context.Context, in *gen.DescribeStateMachineInput) (*gen.DescribeStateMachineOutput, error) {
-	m, err := s.machineByARN(in.StateMachineArn)
-	if err != nil {
-		return nil, err
+	text := valueOf(in.StateMachineArn)
+	base, qual, ok := splitQualifiedARN(text)
+	if !ok {
+		return nil, modeled("InvalidArn", "Invalid Arn: '"+text+"'")
 	}
-	return machineDescription(m), nil
+	switch qualifierKind(qual) {
+	case "machine":
+		m, err := s.machineByARN(&base)
+		if err != nil {
+			return nil, err
+		}
+		return machineDescription(m), nil
+	case "version":
+		return s.describeVersion(text)
+	case "alias":
+		return nil, validationReason("DescribeStateMachine does not accept an alias ARN", gen.ValidationExceptionReasonAPI_DOES_NOT_SUPPORT_LABELED_ARNS)
+	default:
+		return nil, modeled("InvalidArn", "Invalid Arn: '"+text+"'")
+	}
+}
+
+func (s *Service) describeVersion(arn string) (*gen.DescribeStateMachineOutput, error) {
+	v, ok := s.Store.Version(arn)
+	if !ok {
+		return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+arn+"'")
+	}
+	m, found := s.Store.Machine(v.MachineARN)
+	if !found {
+		return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+v.MachineARN+"'")
+	}
+	status := gen.StateMachineStatus(m.Status)
+	typ := gen.StateMachineType(v.Type)
+	out := &gen.DescribeStateMachineOutput{
+		Name:                 sp(m.Name),
+		Status:               &status,
+		Definition:           sp(v.Definition),
+		CreationDate:         ts(v.Created),
+		StateMachineArn:      sp(v.ARN),
+		Type:                 &typ,
+		LoggingConfiguration: toGenLogging(v.Logging),
+		RevisionId:           sp(v.Revision),
+	}
+	if v.RoleArn != "" {
+		out.RoleArn = sp(v.RoleArn)
+	}
+	if v.Description != "" {
+		out.Description = sp(v.Description)
+	}
+	return out, nil
 }
 
 func (s *Service) ListStateMachines(_ context.Context, in *gen.ListStateMachinesInput) (*gen.ListStateMachinesOutput, error) {
@@ -96,10 +151,14 @@ func (s *Service) ListStateMachines(_ context.Context, in *gen.ListStateMachines
 }
 
 func (s *Service) UpdateStateMachine(_ context.Context, in *gen.UpdateStateMachineInput) (*gen.UpdateStateMachineOutput, error) {
-	if err := rejectMachineExtras(in.EncryptionConfiguration != nil, in.TracingConfiguration != nil, in.Publish != nil, in.VersionDescription != nil); err != nil {
+	if err := rejectEncryptionTracing(in.EncryptionConfiguration != nil, in.TracingConfiguration != nil); err != nil {
 		return nil, err
 	}
-	if in.Definition == nil && in.RoleArn == nil && in.LoggingConfiguration == nil {
+	if err := rejectVersionDescription(in.Publish, in.VersionDescription); err != nil {
+		return nil, err
+	}
+	publish := in.Publish != nil && *in.Publish
+	if in.Definition == nil && in.RoleArn == nil && in.LoggingConfiguration == nil && !publish {
 		return nil, modeled("ValidationException", "At least one of definition, roleArn, or loggingConfiguration is required")
 	}
 	m, err := s.machineByARN(in.StateMachineArn)
@@ -119,12 +178,29 @@ func (s *Service) UpdateStateMachine(_ context.Context, in *gen.UpdateStateMachi
 		return nil, err
 	}
 	when := s.now()
-	updated, ok := s.Store.UpdateMachine(m.ARN, in.Definition, in.RoleArn, logging, in.LoggingConfiguration != nil, when)
-	if !ok {
-		return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+m.ARN+"'")
+	updated := m
+	changed := in.Definition != nil || in.RoleArn != nil || in.LoggingConfiguration != nil
+	if changed {
+		var ok bool
+		updated, ok = s.Store.UpdateMachine(m.ARN, in.Definition, in.RoleArn, logging, in.LoggingConfiguration != nil, when)
+		if !ok {
+			return nil, modeled("StateMachineDoesNotExist", "State Machine Does Not Exist: '"+m.ARN+"'")
+		}
+	} else if m.Updated != nil {
+		when = *m.Updated
+	} else {
+		when = m.Created
 	}
-	_ = updated
-	return &gen.UpdateStateMachineOutput{UpdateDate: ts(when)}, nil
+	out := &gen.UpdateStateMachineOutput{UpdateDate: ts(when), RevisionId: sp(updated.Revision)}
+	if !publish {
+		return out, nil
+	}
+	v, err := s.publishVersion(updated.ARN, "", valueOf(in.VersionDescription))
+	if err != nil {
+		return nil, err
+	}
+	out.StateMachineVersionArn = sp(v.ARN)
+	return out, nil
 }
 
 func (s *Service) DeleteStateMachine(_ context.Context, in *gen.DeleteStateMachineInput) (*gen.DeleteStateMachineOutput, error) {
@@ -147,16 +223,12 @@ func (s *Service) DeleteStateMachine(_ context.Context, in *gen.DeleteStateMachi
 	return &gen.DeleteStateMachineOutput{}, nil
 }
 
-func rejectMachineExtras(encryption, tracing, publish, version bool) error {
+func rejectEncryptionTracing(encryption, tracing bool) error {
 	switch {
 	case encryption:
 		return modeled("InvalidEncryptionConfiguration", "encryptionConfiguration is not supported by this local server.")
 	case tracing:
 		return modeled("InvalidTracingConfiguration", "tracingConfiguration is not supported by this local server.")
-	case publish:
-		return modeled("ValidationException", "publish is not supported by this local server.")
-	case version:
-		return modeled("ValidationException", "versionDescription is not supported by this local server.")
 	default:
 		return nil
 	}
@@ -205,6 +277,9 @@ func machineDescription(m store.Machine) *gen.DescribeStateMachineOutput {
 	}
 	if m.RoleArn != "" {
 		out.RoleArn = sp(m.RoleArn)
+	}
+	if m.Revision != "" {
+		out.RevisionId = sp(m.Revision)
 	}
 	return out
 }

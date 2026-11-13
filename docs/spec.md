@@ -60,7 +60,7 @@ Drop-in replacement for clients that already point `aws stepfunctions --endpoint
 
 - Persistence, clustering, or durability across process restart.
 - SigV4. Credentials are not required to call the local API.
-- `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, aliases, and versions. The jar returns these as absent. Do not invent them.
+- Inventing jar behavior for `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, aliases, and versions. The jar returns these as absent. `--compat=sfn-local` still returns `UnsupportedOperation` for that set, except `TestState`. The default profile implements validate, versions, and aliases. `RedriveExecution` stays deferred. Do not invent jar fixtures for them.
 - Distributed Map (`ProcessorConfig.Mode` other than `INLINE`).
 - The reflective `AwsSdkConnector` path and `service-list.json`.
 - Optimized integrations (SQS, SNS, DynamoDB, ECS, Batch, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, EventBridge, EMR on EKS, nested Step Functions, `.sync`, `.sync:2`) before the phase that names them. `.waitForTaskToken` is Phase 5, not Phase 3.
@@ -243,7 +243,7 @@ Runtime failures inside an execution are not HTTP errors. They end the execution
 
 All 23. Names are the simple handler names: `CreateActivity`, `CreateStateMachine`, `DeleteActivity`, `DeleteStateMachine`, `DescribeActivity`, `DescribeExecution`, `DescribeStateMachine`, `DescribeStateMachineForExecution`, `GetActivityTask`, `GetExecutionHistory`, `ListActivities`, `ListExecutions`, `ListStateMachines`, `ListTagsForResource`, `SendTaskFailure`, `SendTaskHeartbeat`, `SendTaskSuccess`, `StartExecution`, `StartSyncExecution`, `StopExecution`, `TagResource`, `UntagResource`, `UpdateStateMachine`.
 
-Not registered, and not in scope: `TestState`, `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, alias and version operations. They hit `UnsupportedOperation`.
+Not registered on the jar, and returned as `UnsupportedOperation` by `--compat=sfn-local`: `ValidateStateMachineDefinition`, `RedriveExecution`, `PublishStateMachineVersion`, alias and version operations. `TestState` is implemented in both profiles. The default profile implements validate, versions, and aliases. `RedriveExecution` stays deferred.
 
 #### Names, ARNs, pagination
 
@@ -278,7 +278,7 @@ arn:[\w-]+:iam::\d{12}:role((/)|(/[!-\u007f]+/))[\w+=,.@-]+
 - `StopExecution` cancels the execution task, appends `ExecutionAborted`, sets status `ABORTED` and `stopDate`. Returns `stopDate`. Error and cause are length-checked (256 and 32768). Stopping an already-terminal execution still returns the existing `stopDate` and does not append a second terminal event.
 - `StartSyncExecution` is EXPRESS only, rejects `#` in the ARN, starts the execution, and blocks the HTTP call until the execution finishes. The response is the describe shape plus `error`, `cause`, and `status`. `billingDetails` stays null. Do not hold the accept loop; block only that request's worker. EXPRESS history is discarded when the execution completes (`ExecutionHistoryRepo.addExecutionCompletedEvent` removes it). Standard history is kept until process exit or the deleting sweep. `GetExecutionHistory` on a finished EXPRESS execution therefore returns `ExecutionDoesNotExist` in the jar once the row is gone. Match that.
 - `DescribeStateMachineForExecution` returns the state machine fields for the execution's state machine ARN.
-- `DescribeStateMachine` returns `name`, `status`, `definition`, `creationDate`, `roleArn`, `stateMachineArn`, `type`, `loggingConfiguration`. It does not set `revisionId` or version fields. Omit them. Do not emit nulls for fields the handler never set if that is easy; the jar's HTTP mapper does emit null bean properties. Oracle comparison ignores unknown and null extra fields.
+- `DescribeStateMachine` returns `name`, `status`, `definition`, `creationDate`, `roleArn`, `stateMachineArn`, `type`, `loggingConfiguration`, and `revisionId`. A version ARN returns that version's snapshot, description, and revision. The jar omits `revisionId`. Oracle comparison ignores the extra field. Do not emit nulls for fields the handler never set if that is easy; the jar's HTTP mapper does emit null bean properties.
 
 #### Create, start, describe shapes
 

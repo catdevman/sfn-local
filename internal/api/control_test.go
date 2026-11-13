@@ -122,7 +122,7 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 	if err := json.Unmarshal(descRaw, &desc); err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"name", "status", "definition", "creationDate", "roleArn", "stateMachineArn", "type"} {
+	for _, key := range []string{"name", "status", "definition", "creationDate", "roleArn", "stateMachineArn", "type", "revisionId"} {
 		if desc[key] == nil {
 			t.Fatalf("missing %s in %s", key, descRaw)
 		}
@@ -130,7 +130,8 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 	if desc["status"] != "ACTIVE" || desc["type"] != "STANDARD" || desc["roleArn"] != rolePath {
 		t.Fatalf("%s", descRaw)
 	}
-	if _, ok := desc["revisionId"]; ok {
+	firstRev, _ := desc["revisionId"].(string)
+	if firstRev == "" {
 		t.Fatal("revisionId")
 	}
 	if _, ok := desc["loggingConfiguration"]; ok {
@@ -186,6 +187,9 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 	if err != nil || *described.RoleArn != roleARN || *described.Definition != passDef {
 		t.Fatal(described, err)
 	}
+	if described.RevisionId == nil || *described.RevisionId == firstRev {
+		t.Fatal("revision did not change", described.RevisionId)
+	}
 
 	if _, err := s.DeleteStateMachine(context.Background(), &gen.DeleteStateMachineInput{StateMachineArn: sp(arn)}); err != nil {
 		t.Fatal(err)
@@ -228,11 +232,11 @@ func TestMachineExtrasLoggingAndRoleProfile(t *testing.T) {
 		t.Fatal(api)
 	}
 	pub := false
-	_, err = s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
+	unpublished, err := s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
 		Name: sp("p"), Definition: sp(passDef), RoleArn: sp(roleARN), Publish: &pub,
 	})
-	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "publish") {
-		t.Fatal(api)
+	if err != nil || unpublished.StateMachineVersionArn != nil {
+		t.Fatal(err, unpublished)
 	}
 	_, err = s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
 		Name: sp("v"), Definition: sp(passDef), RoleArn: sp(roleARN), VersionDescription: sp("note"),

@@ -1235,11 +1235,31 @@ func hasStatesAll(names []string) bool {
 	return false
 }
 
+// DefinitionError is one create-time diagnostic. Error text stays the
+// InvalidDefinition message Create and Update already return.
+type DefinitionError struct {
+	Code     string
+	Message  string
+	Location string
+}
+
+func (e *DefinitionError) Error() string {
+	ptr := "/"
+	code, message := "", ""
+	if e != nil {
+		code, message = e.Code, e.Message
+		if e.Location != "" {
+			ptr = e.Location
+		}
+	}
+	return fmt.Sprintf("Invalid State Machine Definition: '%s: %s at %s', ", code, message, ptr)
+}
+
 func defErr(code, message, ptr string) error {
 	if ptr == "" {
 		ptr = "/"
 	}
-	return fmt.Errorf("Invalid State Machine Definition: '%s: %s at %s', ", code, message, ptr)
+	return &DefinitionError{Code: code, Message: message, Location: ptr}
 }
 
 func join(ptr, name string) string {
