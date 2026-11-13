@@ -17,6 +17,7 @@ import (
 	"github.com/catdevman/sfn-local/internal/asl"
 	"github.com/catdevman/sfn-local/internal/jsonpath"
 	"github.com/catdevman/sfn-local/internal/mock"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -230,6 +231,12 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 		if on {
 			return kindGeneric, lambdaTarget{}, true, nil
 		}
+	}
+	if id, action, ok := sdk.ParseResource(st.Resource); ok {
+		if !r.SDK.Supports(id, action) {
+			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+		}
+		return kindGeneric, lambdaTarget{}, false, nil
 	}
 	if base, mode, ok := integrationResource(st.Resource); ok {
 		if mode != "" && base != "arn:aws:states:::states:startExecution" {

@@ -17,6 +17,7 @@ import (
 
 	"github.com/catdevman/sfn-local/internal/asl"
 	"github.com/catdevman/sfn-local/internal/mock"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -50,6 +51,8 @@ type Runner struct {
 	EventBridgeEndpoint   string
 	Region                string
 	Account               string
+	// SDK runs arn:aws:states:::aws-sdk: resources. Nil means they are unsupported.
+	SDK *sdk.Caller
 	// AccessKeyID and SecretAccessKey sign DynamoDB calls. Empty sends them unsigned.
 	AccessKeyID     string
 	SecretAccessKey string

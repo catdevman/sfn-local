@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -70,6 +71,9 @@ func (r *Runner) integrationEndpoint(base string) string {
 }
 
 func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta taskMeta, taskWins bool) (string, *taskFailure) {
+	if id, action, ok := sdk.ParseResource(meta.resource); ok {
+		return r.invokeSDK(callCtx, parent, id, action, meta.input, taskWins)
+	}
 	base, mode, ok := integrationResource(meta.resource)
 	if !ok || (mode != "" && base != "arn:aws:states:::states:startExecution") {
 		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
@@ -298,6 +302,19 @@ func (r *Runner) invokeJSON10(callCtx, parent context.Context, endpoint, target,
 		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 	}
 	return text, nil
+}
+
+// invokeSDK runs an aws-sdk: resource. A service error keeps its mapped name.
+func (r *Runner) invokeSDK(callCtx, parent context.Context, id, action, raw string, taskWins bool) (string, *taskFailure) {
+	out, err := r.SDK.Call(callCtx, id, action, []byte(raw))
+	if err != nil {
+		var se *sdk.ServiceError
+		if errors.As(err, &se) {
+			return "", &taskFailure{Name: se.Name, Cause: clip(se.Cause, 300)}
+		}
+		return "", transportFailure(err, parent, callCtx, taskWins, sdk.FallbackName(id))
+	}
+	return out, nil
 }
 
 func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn string, meta taskMeta, endpoint, mode string, taskWins bool) (string, *taskFailure) {

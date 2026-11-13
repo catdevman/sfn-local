@@ -14,6 +14,7 @@ import (
 
 	"github.com/catdevman/sfn-local/internal/asl/specgen"
 	"github.com/catdevman/sfn-local/internal/manifest"
+	"github.com/catdevman/sfn-local/internal/sdk"
 )
 
 func TestGenerateClean(t *testing.T) {
@@ -172,6 +173,47 @@ func TestAllowList(t *testing.T) {
 		if _, ok := got[name]; !ok {
 			t.Fatalf("missing service %s", name)
 		}
+	}
+}
+
+// TestOperations checks internal/invoke/operations.toml against internal/sdk.
+// TestGenerateClean checks that the file is current. This test checks what a
+// row may say.
+func TestOperations(t *testing.T) {
+	root := moduleRoot(t)
+	tables := mustParse(t, filepath.Join(root, "internal/invoke/operations.toml"))
+	rows := map[string]map[string]string{}
+	for _, table := range tables {
+		if table.Name != "operation" {
+			t.Fatalf("table %s", table.Name)
+		}
+		id, action, status := table.Values["service"], table.Values["action"], table.Values["status"]
+		switch status {
+		case "implemented":
+			if table.Values["opaque"] != "" {
+				t.Fatalf("%s:%s runs through op with opaque members %s", id, action, table.Values["opaque"])
+			}
+		case "codec", "unsupported":
+		default:
+			t.Fatalf("%s:%s status %s", id, action, status)
+		}
+		if rows[id] == nil {
+			rows[id] = map[string]string{}
+		}
+		rows[id][action] = status
+	}
+	for _, id := range sdk.Services() {
+		if len(rows[id]) == 0 {
+			t.Fatalf("no operations for %s", id)
+		}
+		for _, action := range sdk.Actions(id) {
+			if status := rows[id][action]; status != "implemented" && status != "codec" {
+				t.Fatalf("%s:%s runs but its row says %q", id, action, status)
+			}
+		}
+	}
+	if len(rows) != len(sdk.Services()) {
+		t.Fatalf("operations.toml has %d services, internal/sdk has %d", len(rows), len(sdk.Services()))
 	}
 }
 

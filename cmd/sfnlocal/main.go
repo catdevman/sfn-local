@@ -17,6 +17,7 @@ import (
 	"github.com/catdevman/sfn-local/internal/api"
 	"github.com/catdevman/sfn-local/internal/exec"
 	"github.com/catdevman/sfn-local/internal/mock"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -114,6 +115,12 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		Account:               cfg.Account,
 		AccessKeyID:           cfg.AccessKeyID,
 		SecretAccessKey:       cfg.SecretAccessKey,
+		SDK: sdk.New(sdk.Config{
+			Region:          cfg.Region,
+			AccessKeyID:     cfg.AccessKeyID,
+			SecretAccessKey: cfg.SecretAccessKey,
+			Endpoints:       cfg.SDKEndpoints,
+		}),
 	}
 	srv := &http.Server{
 		Handler: &api.Server{

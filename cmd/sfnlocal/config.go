@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/catdevman/sfn-local/internal/api"
+	"github.com/catdevman/sfn-local/internal/sdk"
 )
 
 var (
@@ -45,6 +46,10 @@ type Config struct {
 	APIGatewayEndpoint    string
 	EventBridgeEndpoint   string
 	EMROnEKSEndpoint      string
+	// AWSEndpointURL is the aws-sdk endpoint for every service without its own
+	// AWS_ENDPOINT_URL_<SERVICE>. SDKEndpoints is the result per service id.
+	AWSEndpointURL string
+	SDKEndpoints   map[string]string
 
 	AccessKeyID     string
 	SecretAccessKey string
@@ -83,6 +88,7 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 	stringFlag(fs, &cfg.APIGatewayEndpoint, "apiGatewayEndpoint", "api-gateway-endpoint", "API_GATEWAY_ENDPOINT", "", "API Gateway endpoint.", getenv)
 	stringFlag(fs, &cfg.EventBridgeEndpoint, "eventBridgeEndpoint", "eventbridge-endpoint", "EVENTBRIDGE_ENDPOINT", "", "EventBridge endpoint.", getenv)
 	stringFlag(fs, &cfg.EMROnEKSEndpoint, "emronEKSEndpoint", "emr-on-eks-endpoint", "EMR_ON_EKS_ENDPOINT", "", "EMR on EKS endpoint.", getenv)
+	stringFlag(fs, &cfg.AWSEndpointURL, "aws-endpoint-url", "aws-endpoint-url", "AWS_ENDPOINT_URL", "", awsEndpointUsage, getenv)
 
 	portDefault, err := envInt(getenv, "PORT", 8083)
 	if err != nil {
@@ -143,6 +149,7 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 		}
 	})
 	cfg.WaitRaw = waitRaw
+	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, getenv)
 	if visitedWait || waitFromEnv {
 		f, err := strconv.ParseFloat(strings.TrimSpace(waitRaw), 64)
 		if err != nil {
@@ -153,6 +160,23 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 		}
 	}
 	return cfg, nil
+}
+
+const awsEndpointUsage = "Endpoint for aws-sdk: tasks. AWS_ENDPOINT_URL_<SERVICE> overrides it per service. Empty leaves aws-sdk: tasks unsupported."
+
+// sdkEndpoints resolves each aws-sdk service: its own variable, then the shared URL.
+func sdkEndpoints(shared string, getenv envFunc) map[string]string {
+	out := map[string]string{}
+	for _, id := range sdk.Services() {
+		url := shared
+		if v, ok := getenv(sdk.EndpointEnv(id)); ok && v != "" {
+			url = v
+		}
+		if url != "" {
+			out[id] = url
+		}
+	}
+	return out
 }
 
 func stringFlag(fs *flag.FlagSet, dest *string, short, long, envKey, fallback, usage string, getenv envFunc) {
@@ -194,6 +218,8 @@ Step Functions Local 2.0.0 leaves API Gateway and EventBridge endpoint options o
 
 The mock file defaults to ./MockConfigFile.json (SFN_MOCK_CONFIG). An execution name may end in #TestCase, the same suffix Step Functions Local and LocalStack use. This process reads the file when a StartExecution state machine ARN contains one # test suffix.
 
+aws-sdk: tasks run through the AWS SDK for Go v2 when --aws-endpoint-url (AWS_ENDPOINT_URL) or AWS_ENDPOINT_URL_<SERVICE> is set. The per-service variable wins. internal/invoke/operations.toml lists the operations that run.
+
 Flags override environment variables.
 
 ` + flagDefaults()
@@ -227,6 +253,7 @@ func flagDefaults() string {
 	stringFlag(fs, &ignored.APIGatewayEndpoint, "apiGatewayEndpoint", "api-gateway-endpoint", "API_GATEWAY_ENDPOINT", "", "API Gateway endpoint.", none)
 	stringFlag(fs, &ignored.EventBridgeEndpoint, "eventBridgeEndpoint", "eventbridge-endpoint", "EVENTBRIDGE_ENDPOINT", "", "EventBridge endpoint.", none)
 	stringFlag(fs, &ignored.EMROnEKSEndpoint, "emronEKSEndpoint", "emr-on-eks-endpoint", "EMR_ON_EKS_ENDPOINT", "", "EMR on EKS endpoint.", none)
+	stringFlag(fs, &ignored.AWSEndpointURL, "aws-endpoint-url", "aws-endpoint-url", "AWS_ENDPOINT_URL", "", awsEndpointUsage, none)
 	fs.IntVar(&ignored.Port, "port", 8083, "Listen port.")
 	stringFlag(fs, &ignored.BindAddress, "bindAddress", "bind-address", "BIND_ADDRESS", "0.0.0.0", "Bind address.", none)
 	var compat string
@@ -268,6 +295,7 @@ func flagNames() []string {
 	stringFlag(fs, &cfg.DataBrewEndpoint, "stepFunctionsDataBrew", "step-functions-databrew", "STEP_FUNCTIONS_DATABREW", "", "", none)
 	stringFlag(fs, &cfg.APIGatewayEndpoint, "apiGatewayEndpoint", "api-gateway-endpoint", "API_GATEWAY_ENDPOINT", "", "", none)
 	stringFlag(fs, &cfg.EventBridgeEndpoint, "eventBridgeEndpoint", "eventbridge-endpoint", "EVENTBRIDGE_ENDPOINT", "", "", none)
+	stringFlag(fs, &cfg.AWSEndpointURL, "aws-endpoint-url", "aws-endpoint-url", "AWS_ENDPOINT_URL", "", "", none)
 	stringFlag(fs, &cfg.EMROnEKSEndpoint, "emronEKSEndpoint", "emr-on-eks-endpoint", "EMR_ON_EKS_ENDPOINT", "", "", none)
 	fs.IntVar(&cfg.Port, "port", 8083, "")
 	stringFlag(fs, &cfg.BindAddress, "bindAddress", "bind-address", "BIND_ADDRESS", "0.0.0.0", "", none)

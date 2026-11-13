@@ -192,3 +192,34 @@ func (s *safeBuf) String() string {
 	defer s.mu.Unlock()
 	return s.b.String()
 }
+
+func TestSDKEndpoints(t *testing.T) {
+	cfg, err := parseArgs(nil, lookup(nil))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(cfg.SDKEndpoints) != 0 {
+		t.Fatalf("no endpoint %v", cfg.SDKEndpoints)
+	}
+	cfg, err = parseArgs(nil, lookup(map[string]string{"AWS_ENDPOINT_URL": "http://shared"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SDKEndpoints["s3"] != "http://shared" {
+		t.Fatalf("shared %v", cfg.SDKEndpoints)
+	}
+	cfg, err = parseArgs([]string{"--aws-endpoint-url", "http://flag"}, lookup(map[string]string{"AWS_ENDPOINT_URL": "http://shared", "AWS_ENDPOINT_URL_S3": "http://s3"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.AWSEndpointURL != "http://flag" || cfg.SDKEndpoints["s3"] != "http://s3" {
+		t.Fatalf("per service %+v", cfg)
+	}
+	cfg, err = parseArgs([]string{"--aws-endpoint-url", "http://flag"}, lookup(map[string]string{"AWS_ENDPOINT_URL": "http://shared"}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cfg.SDKEndpoints["s3"] != "http://flag" {
+		t.Fatalf("flag %v", cfg.SDKEndpoints)
+	}
+}
