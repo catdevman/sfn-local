@@ -283,7 +283,7 @@ These stay deferred for the life of this plan. Their operations return `Validati
 - [x] `internal/sdk`: the `op` adapter, error names `<Prefix>.<Code>Exception`, and per-service endpoints.
 - [x] `internal/invoke/operations.toml` from `cmd/genops`, kept current by `TestGenerateClean` and checked by `TestOperations`.
 - [x] S3: 25 operations, with `getObject` and `putObject` bodies as strings.
-- [ ] DynamoDB, with a codec for `AttributeValue`.
+- [x] DynamoDB: 23 operations, with a codec for `AttributeValue`. Parameter names match exactly at every depth.
 - [ ] Move the Phase I DynamoDB, SQS, SNS, and EventBridge calls onto the same clients.
 - [ ] Check error names and result shapes against AWS.
 
