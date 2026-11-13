@@ -149,7 +149,12 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 		}
 	})
 	cfg.WaitRaw = waitRaw
-	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, map[string]string{"dynamodb": cfg.DynamoDBEndpoint}, getenv)
+	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, map[string]string{
+		"dynamodb":    cfg.DynamoDBEndpoint,
+		"eventbridge": cfg.EventBridgeEndpoint,
+		"sns":         cfg.SNSEndpoint,
+		"sqs":         cfg.SQSEndpoint,
+	}, getenv)
 	if visitedWait || waitFromEnv {
 		f, err := strconv.ParseFloat(strings.TrimSpace(waitRaw), 64)
 		if err != nil {

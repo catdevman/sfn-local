@@ -61,8 +61,11 @@ type service struct {
 
 // services is every integration this package runs, keyed by service id.
 var services = map[string]service{
-	"dynamodb": dynamodbService,
-	"s3":       s3Service,
+	"dynamodb":    dynamodbService,
+	"eventbridge": eventbridgeService,
+	"s3":          s3Service,
+	"sns":         snsService,
+	"sqs":         sqsService,
 }
 
 // Services returns the service ids in order.
@@ -136,13 +139,19 @@ func (c *Caller) Supports(id, action string) bool {
 // Call runs one action. A service failure is a *ServiceError. Any other error
 // is a transport failure, and FallbackName names it.
 func (c *Caller) Call(ctx context.Context, id, action string, params []byte) (string, error) {
+	return c.call(ctx, id, action, services[id].errorPrefix, FallbackName(id), params)
+}
+
+// call runs one action and names its errors with prefix. An error the
+// service did not name is fallback.
+func (c *Caller) call(ctx context.Context, id, action, prefix, fallback string, params []byte) (string, error) {
 	h, ok := c.lookup(id, action)
 	if !ok {
 		return "", fmt.Errorf("unsupported resource: %s%s:%s", resourcePrefix, id, action)
 	}
 	out, err := h(ctx, params)
 	if err != nil {
-		return "", mapError(services[id].errorPrefix, err)
+		return "", mapError(prefix, fallback, err)
 	}
 	return out, nil
 }
@@ -194,9 +203,22 @@ func (c *Caller) awsConfig() aws.Config {
 	return cfg
 }
 
+// errorCode drops a namespace and a suffix from an AWS JSON error type, so
+// com.amazonaws.sqs#QueueDoesNotExist:http://... is QueueDoesNotExist.
+func errorCode(code string) string {
+	if i := strings.LastIndexByte(code, '#'); i >= 0 {
+		code = code[i+1:]
+	}
+	if i := strings.IndexByte(code, ':'); i >= 0 {
+		code = code[:i]
+	}
+	return code
+}
+
 // mapError turns an SDK API error into a ServiceError and passes any other
-// error through. The cause follows the AWS SDK for Java v2 message shape.
-func mapError(prefix string, err error) error {
+// error through. The cause follows the AWS SDK for Java v2 message shape. A
+// response with no error code, which the SDK calls UnknownError, is fallback.
+func mapError(prefix, fallback string, err error) error {
 	var se *ServiceError
 	if errors.As(err, &se) {
 		return se
@@ -205,13 +227,16 @@ func mapError(prefix string, err error) error {
 	if !errors.As(err, &apiErr) {
 		return err
 	}
-	code := apiErr.ErrorCode()
-	if !strings.HasSuffix(code, "Exception") {
-		code += "Exception"
+	code := errorCode(apiErr.ErrorCode())
+	name := prefix + "." + code
+	if code == "" || code == "UnknownError" {
+		name = fallback
+	} else if !strings.HasSuffix(code, "Exception") {
+		name += "Exception"
 	}
 	msg := apiErr.ErrorMessage()
 	if msg == "" {
-		msg = apiErr.ErrorCode()
+		msg = code
 	}
 	detail := "Service: " + prefix
 	var respErr *awshttp.ResponseError
@@ -221,5 +246,5 @@ func mapError(prefix string, err error) error {
 			detail += ", Request ID: " + id
 		}
 	}
-	return &ServiceError{Name: prefix + "." + code, Cause: msg + " (" + detail + ")"}
+	return &ServiceError{Name: name, Cause: msg + " (" + detail + ")"}
 }

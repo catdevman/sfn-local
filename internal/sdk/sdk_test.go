@@ -167,3 +167,15 @@ func TestS3Errors(t *testing.T) {
 		t.Fatal(FallbackName("s3"))
 	}
 }
+
+func TestErrorCode(t *testing.T) {
+	for in, want := range map[string]string{
+		"NoSuchKey":                           "NoSuchKey",
+		"com.amazonaws.sqs#QueueDoesNotExist": "QueueDoesNotExist",
+		"QueueDoesNotExist:http://internal.amazon.com/coral/com.amazon.coral.validate/": "QueueDoesNotExist",
+	} {
+		if got := errorCode(in); got != want {
+			t.Errorf("%s: %s", in, got)
+		}
+	}
+}

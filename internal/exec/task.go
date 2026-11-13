@@ -242,7 +242,7 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 		if mode != "" && base != "arn:aws:states:::states:startExecution" {
 			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
 		}
-		if r.integrationEndpoint(base) == "" {
+		if !r.integrationReady(base) {
 			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
 		}
 		return kindGeneric, lambdaTarget{}, false, nil

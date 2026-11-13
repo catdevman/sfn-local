@@ -2,6 +2,9 @@ package api
 
 import (
 	"context"
+	"crypto/md5"
+	"encoding/hex"
+	"encoding/json"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -10,6 +13,7 @@ import (
 	"testing"
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -86,32 +90,28 @@ func TestPhaseILambdaInvoke(t *testing.T) {
 
 func TestPhaseIQueryIntegrations(t *testing.T) {
 	s := newService()
-	var sqsBody string
+	var sqsTarget, sqsBody string
 	sqs := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/x-www-form-urlencoded" {
+		if r.Header.Get("Content-Type") != "application/x-amz-json-1.0" {
 			t.Errorf("content type %s", r.Header.Get("Content-Type"))
 		}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Error(err)
 		}
-		sqsBody = string(body)
-		w.Header().Set("Content-Type", "application/json")
-		w.Write([]byte(`{"MD5OfMessageBody":"abc","MessageId":"m1"}`))
+		sqsTarget, sqsBody = r.Header.Get("X-Amz-Target"), string(body)
+		w.Header().Set("Content-Type", "application/x-amz-json-1.0")
+		if strings.Contains(sqsBody, "missing") {
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"__type":"com.amazonaws.sqs#QueueDoesNotExist","message":"The specified queue does not exist."}`))
+			return
+		}
+		var req struct{ MessageBody string }
+		json.Unmarshal(body, &req)
+		sum := md5.Sum([]byte(req.MessageBody))
+		w.Write([]byte(`{"MD5OfMessageBody":"` + hex.EncodeToString(sum[:]) + `","MessageId":"m1"}`))
 	}))
 	defer sqs.Close()
-	s.Runner.SQSEndpoint = sqs.URL
-	sqsDef := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{"QueueUrl":"https://sqs.local/q","MessageBody":"hello"},"End":true}}}`
-	sx := runMachine(t, s, "sqs", sqsDef, "s", `{}`)
-	if sx.Status != store.ExecSucceeded {
-		t.Fatalf("sqs %s %s", sx.Error, sx.Cause)
-	}
-	jsonEqual(t, sx.Output, `{"MD5OfMessageBody":"abc","MessageId":"m1"}`)
-	for _, part := range []string{"Action=SendMessage", "Version=2012-11-05", "QueueUrl=https%3A%2F%2Fsqs.local%2Fq", "MessageBody=hello"} {
-		if !strings.Contains(sqsBody, part) {
-			t.Fatalf("form %s missing %s", sqsBody, part)
-		}
-	}
 
 	var snsBody string
 	sns := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -121,10 +121,28 @@ func TestPhaseIQueryIntegrations(t *testing.T) {
 		}
 		snsBody = string(body)
 		w.Header().Set("Content-Type", "text/xml")
-		w.Write([]byte(`<PublishResponse><PublishResult><MessageId>mid</MessageId></PublishResult></PublishResponse>`))
+		w.Write([]byte(`<PublishResponse xmlns="http://sns.amazonaws.com/doc/2010-03-31/"><PublishResult><MessageId>mid</MessageId></PublishResult><ResponseMetadata><RequestId>r1</RequestId></ResponseMetadata></PublishResponse>`))
 	}))
 	defer sns.Close()
-	s.Runner.SNSEndpoint = sns.URL
+	s.Runner.SDK = sdk.New(sdk.Config{Region: "us-east-1", Endpoints: map[string]string{"sqs": sqs.URL, "sns": sns.URL}})
+
+	sqsDef := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{"QueueUrl":"https://sqs.local/q","MessageBody":{"order":"o1"},"DelaySeconds":5},"End":true}}}`
+	sx := runMachine(t, s, "sqs", sqsDef, "s", `{}`)
+	if sx.Status != store.ExecSucceeded {
+		t.Fatalf("sqs %s %s", sx.Error, sx.Cause)
+	}
+	jsonEqual(t, sx.Output, `{"MD5OfMessageBody":"e7203d3d5a2f2356e399e2fde28cb2e8","MessageId":"m1"}`)
+	if sqsTarget != "AmazonSQS.SendMessage" {
+		t.Fatal(sqsTarget)
+	}
+	jsonEqual(t, sqsBody, `{"QueueUrl":"https://sqs.local/q","MessageBody":"{\"order\":\"o1\"}","DelaySeconds":5}`)
+
+	missing := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage","Parameters":{"QueueUrl":"https://sqs.local/missing","MessageBody":"hi"},"End":true}}}`
+	mx := runMachine(t, s, "sqs-missing", missing, "m", `{}`)
+	if mx.Status != store.ExecFailed || mx.Error != "SQS.QueueDoesNotExistException" || !strings.HasPrefix(mx.Cause, "The specified queue does not exist. (Service: SQS, Status Code: 400") {
+		t.Fatalf("sqs missing %s %s", mx.Error, mx.Cause)
+	}
+
 	snsDef := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sns:publish","Parameters":{"TopicArn":"arn:aws:sns:us-east-1:123456789012:t","Message":"hi"},"End":true}}}`
 	nx := runMachine(t, s, "sns", snsDef, "n", `{}`)
 	if nx.Status != store.ExecSucceeded || nx.Output != `{"MessageId":"mid"}` {
@@ -144,48 +162,36 @@ func TestPhaseIDynamoDBAndEventBridge(t *testing.T) {
 		if r.Header.Get("Content-Type") != "application/x-amz-json-1.0" {
 			t.Errorf("content type %s", r.Header.Get("Content-Type"))
 		}
+		if auth := r.Header.Get("Authorization"); !strings.HasPrefix(auth, "AWS4-HMAC-SHA256 Credential=local/") || !strings.Contains(auth, "/us-east-1/dynamodb/aws4_request") {
+			t.Errorf("authorization %q", auth)
+		}
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
 			t.Error(err)
 		}
-		if auth := r.Header.Get("Authorization"); !strings.HasPrefix(auth, "AWS4-HMAC-SHA256 Credential=local/") || !strings.Contains(auth, "/us-east-1/dynamodb/aws4_request, SignedHeaders=content-type;host;x-amz-date;x-amz-target, Signature=") {
-			t.Errorf("authorization %q", auth)
-		}
+		target := r.Header.Get("X-Amz-Target")
 		mu.Lock()
-		targets = append(targets, r.Header.Get("X-Amz-Target"))
+		targets = append(targets, target)
 		bodies = append(bodies, string(body))
 		mu.Unlock()
-		w.Write([]byte(`{"ok":true}`))
+		w.Header().Set("Content-Type", "application/x-amz-json-1.0")
+		switch {
+		case strings.Contains(string(body), "attribute_not_exists"):
+			w.WriteHeader(http.StatusBadRequest)
+			w.Write([]byte(`{"__type":"com.amazonaws.dynamodb.v20120810#ConditionalCheckFailedException","message":"The conditional request failed"}`))
+		case target == "DynamoDB_20120810.GetItem":
+			w.Write([]byte(`{"Item":{"pk":{"S":"a"},"n":{"N":"1"}}}`))
+		case target == "DynamoDB_20120810.DeleteItem":
+			w.Write([]byte(`{"Attributes":{"pk":{"S":"a"}}}`))
+		default:
+			w.Write([]byte(`{}`))
+		}
 	}))
 	defer ddb.Close()
-	s.Runner.DynamoDBEndpoint = ddb.URL
-	s.Runner.AccessKeyID = "local"
-	s.Runner.SecretAccessKey = "local"
-	def := `{"StartAt":"Get","States":{` +
-		`"Get":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:getItem","Parameters":{"TableName":"T","Op":"get"},"Next":"Put"},` +
-		`"Put":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:putItem","Parameters":{"TableName":"T","Op":"put"},"Next":"Update"},` +
-		`"Update":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:updateItem","Parameters":{"TableName":"T","Op":"update"},"Next":"Delete"},` +
-		`"Delete":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:deleteItem","Parameters":{"TableName":"T","Op":"delete"},"End":true}}}`
-	ex := runMachine(t, s, "ddb", def, "d", `{}`)
-	if ex.Status != store.ExecSucceeded || ex.Output != `{"ok":true}` {
-		t.Fatalf("dynamodb %s %s %s %v", ex.Status, ex.Output, ex.Cause, typesOf(ex))
-	}
-	wantTargets := []string{
-		"DynamoDB_20120810.GetItem",
-		"DynamoDB_20120810.PutItem",
-		"DynamoDB_20120810.UpdateItem",
-		"DynamoDB_20120810.DeleteItem",
-	}
-	if strings.Join(targets, ",") != strings.Join(wantTargets, ",") {
-		t.Fatalf("targets %v", targets)
-	}
-	for i, op := range []string{"get", "put", "update", "delete"} {
-		jsonEqual(t, bodies[i], `{"Op":"`+op+`","TableName":"T"}`)
-	}
 
 	var ebTarget, ebBody string
 	eb := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Content-Type") != "application/x-amz-json-1.0" {
+		if r.Header.Get("Content-Type") != "application/x-amz-json-1.1" {
 			t.Errorf("content type %s", r.Header.Get("Content-Type"))
 		}
 		body, err := io.ReadAll(r.Body)
@@ -197,8 +203,36 @@ func TestPhaseIDynamoDBAndEventBridge(t *testing.T) {
 		w.Write([]byte(`{"FailedEntryCount":0,"Entries":[{"EventId":"e1"}]}`))
 	}))
 	defer eb.Close()
-	s.Runner.EventBridgeEndpoint = eb.URL
-	ebDef := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::events:putEvents","Parameters":{"Entries":[{"Source":"app","DetailType":"x","Detail":"{}"}]},"End":true}}}`
+	s.Runner.SDK = sdk.New(sdk.Config{Region: "us-east-1", AccessKeyID: "local", SecretAccessKey: "local", Endpoints: map[string]string{"dynamodb": ddb.URL, "eventbridge": eb.URL}})
+
+	def := `{"StartAt":"Get","States":{` +
+		`"Get":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:getItem","Parameters":{"TableName":"T","Key":{"pk":{"S":"a"}}},"ResultPath":"$.got","Next":"Put"},` +
+		`"Put":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:putItem","Parameters":{"TableName":"T","Item":{"pk":{"S":"a"}}},"ResultPath":null,"Next":"Update"},` +
+		`"Update":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:updateItem","Parameters":{"TableName":"T","Key":{"pk":{"S":"a"}},"UpdateExpression":"SET n = :n","ExpressionAttributeValues":{":n":{"N":"2"}}},"ResultPath":null,"Next":"Delete"},` +
+		`"Delete":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:deleteItem","Parameters":{"TableName":"T","Key":{"pk":{"S":"a"}},"ReturnValues":"ALL_OLD"},"ResultPath":"$.deleted","End":true}}}`
+	ex := runMachine(t, s, "ddb", def, "d", `{}`)
+	if ex.Status != store.ExecSucceeded {
+		t.Fatalf("dynamodb %s %s %s %v", ex.Status, ex.Output, ex.Cause, typesOf(ex))
+	}
+	jsonEqual(t, ex.Output, `{"got":{"Item":{"pk":{"S":"a"},"n":{"N":"1"}}},"deleted":{"Attributes":{"pk":{"S":"a"}}}}`)
+	wantTargets := []string{
+		"DynamoDB_20120810.GetItem",
+		"DynamoDB_20120810.PutItem",
+		"DynamoDB_20120810.UpdateItem",
+		"DynamoDB_20120810.DeleteItem",
+	}
+	if strings.Join(targets, ",") != strings.Join(wantTargets, ",") {
+		t.Fatalf("targets %v", targets)
+	}
+	jsonEqual(t, bodies[0], `{"TableName":"T","Key":{"pk":{"S":"a"}}}`)
+
+	cond := `{"StartAt":"Put","States":{"Put":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:putItem","Parameters":{"TableName":"T","Item":{"pk":{"S":"a"}},"ConditionExpression":"attribute_not_exists(pk)"},"End":true}}}`
+	cx := runMachine(t, s, "ddb-cond", cond, "c", `{}`)
+	if cx.Status != store.ExecFailed || cx.Error != "DynamoDB.ConditionalCheckFailedException" || !strings.HasPrefix(cx.Cause, "The conditional request failed (Service: DynamoDB, Status Code: 400") {
+		t.Fatalf("condition %s %s", cx.Error, cx.Cause)
+	}
+
+	ebDef := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::events:putEvents","Parameters":{"Entries":[{"Source":"app","DetailType":"x","Detail":{"k":1}}]},"End":true}}}`
 	bx := runMachine(t, s, "events", ebDef, "b", `{}`)
 	if bx.Status != store.ExecSucceeded {
 		t.Fatalf("events %s %s", bx.Error, bx.Cause)
@@ -207,7 +241,7 @@ func TestPhaseIDynamoDBAndEventBridge(t *testing.T) {
 	if ebTarget != "AWSEvents.PutEvents" {
 		t.Fatal(ebTarget)
 	}
-	jsonEqual(t, ebBody, `{"Entries":[{"Detail":"{}","DetailType":"x","Source":"app"}]}`)
+	jsonEqual(t, ebBody, `{"Entries":[{"Detail":"{\"k\":1}","DetailType":"x","Source":"app"}]}`)
 }
 
 func TestPhaseIStartExecutionSync(t *testing.T) {
@@ -352,7 +386,7 @@ func TestPhaseIStartExecutionSync(t *testing.T) {
 		w.WriteHeader(http.StatusOK)
 	}))
 	defer sqs.Close()
-	s.Runner.SQSEndpoint = sqs.URL
+	s.Runner.SDK = sdk.New(sdk.Config{Endpoints: map[string]string{"sqs": sqs.URL}})
 	sqsSync := `{"StartAt":"Call","States":{"Call":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage.sync","Parameters":{"QueueUrl":"https://sqs.local/q","MessageBody":"hello"},"End":true}}}`
 	qx := runMachine(t, s, "sqs-sync", sqsSync, "q", `{}`)
 	if qx.Status != store.ExecFailed || qx.Error != "States.Runtime" || !strings.Contains(qx.Cause, "unsupported resource") || !strings.Contains(qx.Cause, "sqs:sendMessage.sync") || sqsSyncHits != 0 || countEvents(qx, "TaskScheduled") != 0 {

@@ -41,21 +41,14 @@ type Runner struct {
 	// LambdaEndpoint is LAMBDA_ENDPOINT. Empty means a direct function ARN
 	// or lambda:invoke that is not mocked fails as an unsupported resource.
 	LambdaEndpoint string
-	// SQSEndpoint, SNSEndpoint, DynamoDBEndpoint, StepFunctionsEndpoint, and
-	// EventBridgeEndpoint gate the optimized integrations. Empty means the
-	// resource is unsupported. .sync is states:startExecution only.
-	SQSEndpoint           string
-	SNSEndpoint           string
-	DynamoDBEndpoint      string
+	// StepFunctionsEndpoint gates nested states:startExecution. Empty means
+	// the resource is unsupported. .sync is states:startExecution only.
 	StepFunctionsEndpoint string
-	EventBridgeEndpoint   string
 	Region                string
 	Account               string
-	// SDK runs arn:aws:states:::aws-sdk: resources. Nil means they are unsupported.
+	// SDK runs arn:aws:states:::aws-sdk: resources and the DynamoDB, SQS,
+	// SNS, and EventBridge integrations. Nil means they are unsupported.
 	SDK *sdk.Caller
-	// AccessKeyID and SecretAccessKey sign DynamoDB calls. Empty sends them unsigned.
-	AccessKeyID     string
-	SecretAccessKey string
 	// Invoke replaces the Lambda HTTP call. Nil uses LambdaEndpoint.
 	Invoke func(ctx context.Context, call LambdaCall) LambdaReply
 	// Rand returns a FULL-jitter delay in 0..max inclusive. Nil uses math/rand.

@@ -2,11 +2,9 @@ package exec
 
 import (
 	"context"
-	"encoding/xml"
 	"errors"
 	"io"
 	"net/http"
-	"net/url"
 	"strings"
 	"time"
 
@@ -48,25 +46,19 @@ func integrationResource(resource string) (base, mode string, ok bool) {
 	}
 }
 
-func (r *Runner) integrationEndpoint(base string) string {
+// integrationReady reports whether an optimized integration can be called.
+// DynamoDB, SQS, SNS, and EventBridge run through internal/sdk.
+func (r *Runner) integrationReady(base string) bool {
 	if r == nil {
-		return ""
+		return false
 	}
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
-		return r.LambdaEndpoint
-	case "arn:aws:states:::sqs:sendMessage":
-		return r.SQSEndpoint
-	case "arn:aws:states:::sns:publish":
-		return r.SNSEndpoint
-	case "arn:aws:states:::dynamodb:getItem", "arn:aws:states:::dynamodb:putItem", "arn:aws:states:::dynamodb:updateItem", "arn:aws:states:::dynamodb:deleteItem":
-		return r.DynamoDBEndpoint
+		return r.LambdaEndpoint != ""
 	case "arn:aws:states:::states:startExecution":
-		return r.StepFunctionsEndpoint
-	case "arn:aws:states:::events:putEvents":
-		return r.EventBridgeEndpoint
+		return r.StepFunctionsEndpoint != ""
 	default:
-		return ""
+		return r.SDK.SupportsIntegration(base)
 	}
 }
 
@@ -78,31 +70,17 @@ func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta
 	if !ok || (mode != "" && base != "arn:aws:states:::states:startExecution") {
 		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
 	}
-	endpoint := r.integrationEndpoint(base)
-	if endpoint == "" {
+	if !r.integrationReady(base) {
 		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
 	}
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
 		return r.invokeLambdaOptimized(callCtx, parent, meta.input, taskWins)
-	case "arn:aws:states:::sqs:sendMessage":
-		return r.invokeQuery(callCtx, parent, endpoint, "SendMessage", "2012-11-05", meta.input, "SQS", taskWins)
-	case "arn:aws:states:::sns:publish":
-		return r.invokeQuery(callCtx, parent, endpoint, "Publish", "2010-03-31", meta.input, "SNS", taskWins)
-	case "arn:aws:states:::dynamodb:getItem":
-		return r.invokeJSON10(callCtx, parent, endpoint, "DynamoDB_20120810.GetItem", meta.input, "DynamoDB", taskWins)
-	case "arn:aws:states:::dynamodb:putItem":
-		return r.invokeJSON10(callCtx, parent, endpoint, "DynamoDB_20120810.PutItem", meta.input, "DynamoDB", taskWins)
-	case "arn:aws:states:::dynamodb:updateItem":
-		return r.invokeJSON10(callCtx, parent, endpoint, "DynamoDB_20120810.UpdateItem", meta.input, "DynamoDB", taskWins)
-	case "arn:aws:states:::dynamodb:deleteItem":
-		return r.invokeJSON10(callCtx, parent, endpoint, "DynamoDB_20120810.DeleteItem", meta.input, "DynamoDB", taskWins)
-	case "arn:aws:states:::events:putEvents":
-		return r.invokeJSON10(callCtx, parent, endpoint, "AWSEvents.PutEvents", meta.input, "EventBridge", taskWins)
 	case "arn:aws:states:::states:startExecution":
-		return r.invokeStartExecution(callCtx, parent, arn, meta, endpoint, mode, taskWins)
+		return r.invokeStartExecution(callCtx, parent, arn, meta, r.StepFunctionsEndpoint, mode, taskWins)
 	default:
-		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
+		out, err := r.SDK.CallIntegration(callCtx, base, []byte(meta.input))
+		return out, sdkFailure(err, parent, callCtx, taskWins, sdk.IntegrationFallback(base))
 	}
 }
 
@@ -178,147 +156,27 @@ func lambdaInvokeRequest(raw, region, account string) (lambdaTarget, string, err
 	return target, payload, nil
 }
 
-func (r *Runner) invokeQuery(callCtx, parent context.Context, endpoint, action, version, raw, service string, taskWins bool) (string, *taskFailure) {
-	params, err := queryParams(raw)
-	if err != nil {
-		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
-	}
-	form := url.Values{}
-	form.Set("Action", action)
-	form.Set("Version", version)
-	for key, val := range params {
-		form.Set(key, val)
-	}
-	body, status, err := postBody(callCtx, strings.TrimRight(endpoint, "/"), "application/x-www-form-urlencoded", form.Encode(), nil)
-	if err != nil {
-		return "", transportFailure(err, parent, callCtx, taskWins, service+".ServiceException")
-	}
-	if status < 200 || status > 299 {
-		return "", &taskFailure{Name: service + ".ServiceException", Cause: clip(body, 300)}
-	}
-	text, err := queryResult(body)
-	if err != nil {
-		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
-	}
-	return text, nil
-}
-
-func queryParams(raw string) (map[string]string, error) {
-	doc, err := parseJSON(raw)
-	if err != nil {
-		return nil, err
-	}
-	obj, ok := doc.(map[string]any)
-	if !ok {
-		return nil, errors.New("service parameters must be an object")
-	}
-	out := make(map[string]string, len(obj))
-	for key, val := range obj {
-		switch x := val.(type) {
-		case string:
-			out[key] = x
-		case bool:
-			if x {
-				out[key] = "true"
-			} else {
-				out[key] = "false"
-			}
-		case int64:
-			out[key] = itoa(int(x))
-		default:
-			text, err := compactValue(x)
-			if err != nil {
-				return nil, err
-			}
-			out[key] = text
-		}
-	}
-	return out, nil
-}
-
-func queryResult(body string) (string, error) {
-	trim := strings.TrimSpace(body)
-	if strings.HasPrefix(trim, "{") || strings.HasPrefix(trim, "[") {
-		parsed, err := parseJSON(trim)
-		if err != nil {
-			return "", err
-		}
-		return compactValue(parsed)
-	}
-	leaves := xmlLeaves(trim)
-	if len(leaves) == 0 {
-		return "", errors.New("service response is not JSON")
-	}
-	obj := make(map[string]any, len(leaves))
-	for key, val := range leaves {
-		obj[key] = val
-	}
-	return compactValue(obj)
-}
-
-func xmlLeaves(body string) map[string]string {
-	dec := xml.NewDecoder(strings.NewReader(body))
-	var stack []string
-	out := map[string]string{}
-	for {
-		tok, err := dec.Token()
-		if err != nil {
-			return out
-		}
-		switch t := tok.(type) {
-		case xml.StartElement:
-			stack = append(stack, t.Name.Local)
-		case xml.EndElement:
-			if len(stack) > 0 {
-				stack = stack[:len(stack)-1]
-			}
-		case xml.CharData:
-			text := strings.TrimSpace(string(t))
-			if text != "" && len(stack) > 0 {
-				out[stack[len(stack)-1]] = text
-			}
-		}
-	}
-}
-
-func (r *Runner) invokeJSON10(callCtx, parent context.Context, endpoint, target, raw, service string, taskWins bool) (string, *taskFailure) {
-	var sign *sigv4
-	if service == "DynamoDB" {
-		sign = r.signer("dynamodb")
-	}
-	body, status, err := postJSON10(callCtx, endpoint, target, raw, sign)
-	if err != nil {
-		return "", transportFailure(err, parent, callCtx, taskWins, service+".ServiceException")
-	}
-	if status < 200 || status > 299 {
-		return "", &taskFailure{Name: service + ".ServiceException", Cause: clip(body, 300)}
-	}
-	parsed, err := parseJSON(body)
-	if err != nil {
-		return "", &taskFailure{Name: "States.Runtime", Cause: "service response is not JSON"}
-	}
-	text, err := compactValue(parsed)
-	if err != nil {
-		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
-	}
-	return text, nil
-}
-
 // invokeSDK runs an aws-sdk: resource. A service error keeps its mapped name.
 func (r *Runner) invokeSDK(callCtx, parent context.Context, id, action, raw string, taskWins bool) (string, *taskFailure) {
 	out, err := r.SDK.Call(callCtx, id, action, []byte(raw))
-	if err != nil {
-		var se *sdk.ServiceError
-		if errors.As(err, &se) {
-			return "", &taskFailure{Name: se.Name, Cause: clip(se.Cause, 300)}
-		}
-		return "", transportFailure(err, parent, callCtx, taskWins, sdk.FallbackName(id))
+	return out, sdkFailure(err, parent, callCtx, taskWins, sdk.FallbackName(id))
+}
+
+// sdkFailure keeps a service error's mapped name. Any other error is a
+// transport failure named fallback.
+func sdkFailure(err error, parent, callCtx context.Context, taskWins bool, fallback string) *taskFailure {
+	if err == nil {
+		return nil
 	}
-	return out, nil
+	var se *sdk.ServiceError
+	if errors.As(err, &se) {
+		return &taskFailure{Name: se.Name, Cause: clip(se.Cause, 300)}
+	}
+	return transportFailure(err, parent, callCtx, taskWins, fallback)
 }
 
 func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn string, meta taskMeta, endpoint, mode string, taskWins bool) (string, *taskFailure) {
-	body, status, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.StartExecution", meta.input, nil)
+	body, status, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.StartExecution", meta.input)
 	if err != nil {
 		tf := transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		tf.Submit = tf.Name != "" && !tf.Timeout && !tf.Halt && !tf.ExecDeadline
@@ -354,7 +212,7 @@ func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn strin
 		if err != nil {
 			return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 		}
-		descBody, descStatus, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.DescribeExecution", reqBody, nil)
+		descBody, descStatus, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.DescribeExecution", reqBody)
 		if err != nil {
 			return "", transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		}
@@ -423,12 +281,11 @@ func transportFailure(err error, parent, callCtx context.Context, taskWins bool,
 	return &taskFailure{Name: name, Cause: err.Error()}
 }
 
-func postJSON10(ctx context.Context, endpoint, target, body string, sign *sigv4) (string, int, error) {
-	return postBody(ctx, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, sign, target)
+func postJSON10(ctx context.Context, endpoint, target, body string) (string, int, error) {
+	return postBody(ctx, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, target)
 }
 
-// postBody signs the request when sign is not nil.
-func postBody(ctx context.Context, endpoint, contentType, body string, sign *sigv4, target ...string) (string, int, error) {
+func postBody(ctx context.Context, endpoint, contentType, body string, target ...string) (string, int, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
 	if err != nil {
 		return "", 0, err
@@ -437,7 +294,6 @@ func postBody(ctx context.Context, endpoint, contentType, body string, sign *sig
 	if len(target) > 0 && target[0] != "" {
 		req.Header.Set("X-Amz-Target", target[0])
 	}
-	sign.sign(req, body, time.Now())
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", 0, err

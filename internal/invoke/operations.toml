@@ -3,7 +3,10 @@
 # implemented runs through op. codec runs through a hand-written handler.
 # unsupported has no handler. opaque lists members the codec cannot carry.
 # dynamodb: 23 of 62 operations run.
+# eventbridge: 14 of 57 operations run.
 # s3: 25 of 112 operations run.
+# sns: 14 of 42 operations run.
+# sqs: 16 of 23 operations run.
 
 [[operation]]
 service = "dynamodb"
@@ -314,6 +317,291 @@ status = "unsupported"
 service = "dynamodb"
 action = "updateTimeToLive"
 status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "activateEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "cancelReplay"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "createApiDestination"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "createArchive"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "createConnection"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "createEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "createEventBus"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "createPartnerEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deactivateEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deauthorizeConnection"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteApiDestination"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteArchive"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteConnection"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteEventBus"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "deletePartnerEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "deleteRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "describeApiDestination"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeArchive"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeConnection"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeEventBus"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "describeEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describePartnerEventSource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeReplay"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "describeRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "disableRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "enableRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "listApiDestinations"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listArchives"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listConnections"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listEndpoints"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listEventBuses"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "listEventSources"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listPartnerEventSourceAccounts"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listPartnerEventSources"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listReplays"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listRuleNamesByTarget"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listRules"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "listTagsForResource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "listTargetsByRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "putEvents"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "putPartnerEvents"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "putPermission"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "putRule"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "putTargets"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "removePermission"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "removeTargets"
+status = "implemented"
+
+[[operation]]
+service = "eventbridge"
+action = "startReplay"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "tagResource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "testEventPattern"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "untagResource"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "updateApiDestination"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "updateArchive"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "updateConnection"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "updateEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "eventbridge"
+action = "updateEventBus"
+status = "unsupported"
 
 [[operation]]
 service = "s3"
@@ -888,3 +1176,328 @@ service = "s3"
 action = "writeGetObjectResponse"
 status = "unsupported"
 opaque = "input.Body"
+
+[[operation]]
+service = "sns"
+action = "addPermission"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "checkIfPhoneNumberIsOptedOut"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "confirmSubscription"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "createPlatformApplication"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "createPlatformEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "createSMSSandboxPhoneNumber"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "createTopic"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "deleteEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "deletePlatformApplication"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "deleteSMSSandboxPhoneNumber"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "deleteTopic"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "getDataProtectionPolicy"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getEndpointAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getPlatformApplicationAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getSMSAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getSMSSandboxAccountStatus"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getSubscriptionAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "getTopicAttributes"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "listEndpointsByPlatformApplication"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "listOriginationNumbers"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "listPhoneNumbersOptedOut"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "listPlatformApplications"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "listSMSSandboxPhoneNumbers"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "listSubscriptions"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "listSubscriptionsByTopic"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "listTagsForResource"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "listTopics"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "optInPhoneNumber"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "publish"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "publishBatch"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "putDataProtectionPolicy"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "removePermission"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "setEndpointAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "setPlatformApplicationAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "setSMSAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "setSubscriptionAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "sns"
+action = "setTopicAttributes"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "subscribe"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "unsubscribe"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "sns"
+action = "verifySMSSandboxPhoneNumber"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "addPermission"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "cancelMessageMoveTask"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "changeMessageVisibility"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "changeMessageVisibilityBatch"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "createQueue"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "deleteMessage"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "deleteMessageBatch"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "deleteQueue"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "getQueueAttributes"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "getQueueUrl"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "listDeadLetterSourceQueues"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "listMessageMoveTasks"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "listQueueTags"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "listQueues"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "purgeQueue"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "receiveMessage"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "removePermission"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "sendMessage"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "sendMessageBatch"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "setQueueAttributes"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "startMessageMoveTask"
+status = "unsupported"
+
+[[operation]]
+service = "sqs"
+action = "tagQueue"
+status = "implemented"
+
+[[operation]]
+service = "sqs"
+action = "untagQueue"
+status = "implemented"
