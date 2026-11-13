@@ -60,7 +60,7 @@ type Machine struct {
 	Revision   string
 }
 
-// Activity is one activity row. Phase 1 does not schedule tokens.
+// Activity is one activity row. Tokens for that ARN live in the token table.
 type Activity struct {
 	ARN     string
 	Name    string
@@ -107,6 +107,9 @@ type HistoryEvent struct {
 	AliasARN   string
 	HasVersion bool
 	HasAlias   bool
+	// Worker is activityStartedEventDetails.workerName.
+	Worker    string
+	HasWorker bool
 }
 
 // Execution is one standard or express run. Definition is the snapshot taken
@@ -165,6 +168,10 @@ type Store struct {
 	aliases          map[string]*Alias
 	byMachineAlias   map[string][]*Alias
 	aliasName        map[string]string
+	tokens           map[string]*TaskToken
+	tokensByExec     map[string]map[string]*TaskToken
+	activityQ        map[string][]*TaskToken
+	activityWait     map[string][]activityWaiter
 }
 
 type execRec struct {
@@ -203,6 +210,10 @@ func New() *Store {
 		aliases:          map[string]*Alias{},
 		byMachineAlias:   map[string][]*Alias{},
 		aliasName:        map[string]string{},
+		tokens:           map[string]*TaskToken{},
+		tokensByExec:     map[string]map[string]*TaskToken{},
+		activityQ:        map[string][]*TaskToken{},
+		activityWait:     map[string][]activityWaiter{},
 	}
 }
 

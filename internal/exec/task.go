@@ -43,6 +43,8 @@ type taskKind int
 const (
 	kindLambda taskKind = iota
 	kindGeneric
+	kindActivity
+	kindCallback
 )
 
 type taskFailure struct {
@@ -83,6 +85,9 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 	if err != nil {
 		r.failCtx(ctx, arn, "States.Runtime", err.Error())
 		return "", "", false, true
+	}
+	if kind == kindActivity || kind == kindCallback {
+		return r.runParked(ctx, arn, st, input, effective, effVal, ctxObj, kind)
 	}
 	meta := taskMeta{
 		kind: kind, state: st.Name, resource: st.Resource, resourceType: resourceTypeOf(st.Resource),
@@ -162,7 +167,19 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 				return 0, lambdaTarget{}, false, errors.New("activity state " + st.Name + " cannot be mocked")
 			}
 		}
-		return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+		return kindActivity, lambdaTarget{}, false, nil
+	}
+	if isCallbackResource(st.Resource) {
+		if ex.MockTest != "" {
+			on, err := r.Mocks.Mocked(machine, ex.MockTest, st.Name)
+			if err != nil {
+				return 0, lambdaTarget{}, false, err
+			}
+			if on {
+				return kindGeneric, lambdaTarget{}, true, nil
+			}
+		}
+		return kindCallback, lambdaTarget{}, false, nil
 	}
 	if fn, ok := parseLambdaARN(st.Resource, r.Region, r.Account); ok {
 		if ex.MockTest != "" {
@@ -732,6 +749,10 @@ func matchesError(equals []string, name string) bool {
 func isActivityARN(resource string) bool {
 	parts := strings.Split(resource, ":")
 	return len(parts) >= 7 && parts[0] == "arn" && parts[1] == "aws" && parts[2] == "states" && parts[5] == "activity" && parts[6] != ""
+}
+
+func isCallbackResource(resource string) bool {
+	return strings.HasSuffix(resource, ".waitForTaskToken")
 }
 
 func parseLambdaARN(resource, region, account string) (lambdaTarget, bool) {

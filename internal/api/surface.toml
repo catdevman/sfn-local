@@ -80,7 +80,7 @@ message = "DescribeStateMachineForExecution is not implemented by this local ser
 
 [[operation]]
 name = "GetActivityTask"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "GetActivityTask is not implemented by this local server."
 
@@ -146,19 +146,19 @@ message = "RedriveExecution is not implemented by this local server."
 
 [[operation]]
 name = "SendTaskFailure"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "SendTaskFailure is not implemented by this local server."
 
 [[operation]]
 name = "SendTaskHeartbeat"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "SendTaskHeartbeat is not implemented by this local server."
 
 [[operation]]
 name = "SendTaskSuccess"
-status = "deferred"
+status = "implemented"
 error = "ValidationException"
 message = "SendTaskSuccess is not implemented by this local server."
 
@@ -1706,7 +1706,7 @@ status = "implemented"
 
 [[error]]
 name = "InvalidOutput"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "InvalidToken"
@@ -1762,11 +1762,11 @@ status = "implemented"
 
 [[error]]
 name = "TaskDoesNotExist"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "TaskTimedOut"
-status = "deferred"
+status = "implemented"
 
 [[error]]
 name = "TooManyTags"

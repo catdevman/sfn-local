@@ -19,8 +19,8 @@ import (
 
 func TestDeferredOperationsAreModeled(t *testing.T) {
 	srv := prodServer(t, ProfileSmithy)
-	body := call(t, srv, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
-	if body.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(body.Message, "GetActivityTask is not implemented") {
+	body := call(t, srv, "AWSStepFunctions.RedriveExecution", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
+	if body.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(body.Message, "RedriveExecution is not implemented") {
 		t.Fatalf("%+v", body)
 	}
 	if body.Status != 400 || body.Header.Get("Content-Type") != contentTypeJSON10 {
@@ -94,6 +94,9 @@ func TestCompatProfile(t *testing.T) {
 		if name == "GetActivityTask" {
 			body = `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`
 		}
+		if name == "DescribeMapRun" {
+			body = `{"mapRunArn":"arn:aws:states:us-east-1:123456789012:mapRun:sm:1"}`
+		}
 		got := call(t, smithy, "AWSStepFunctions."+name, body, contentTypeJSON10)
 		for _, bad := range forbidden {
 			if strings.Contains(got.Type, bad) || strings.Contains(string(got.Raw), bad) {
@@ -111,8 +114,8 @@ func TestCompatProfile(t *testing.T) {
 		}
 	}
 	task := call(t, compat, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
-	if task.Type != "com.amazonaws.sfn#ValidationException" || !strings.Contains(task.Message, "GetActivityTask is not implemented") {
-		t.Fatalf("compat kept an empty jar map, got %+v", task)
+	if task.Type != "com.amazonaws.sfn#ActivityDoesNotExist" || !strings.Contains(task.Message, "Activity Does Not Exist:") {
+		t.Fatalf("compat activity %+v", task)
 	}
 	for name := range jarAbsent {
 		got := call(t, compat, "AWSStepFunctions."+name, `{}`, contentTypeJSON10)
@@ -269,7 +272,7 @@ func TestDeferredDoesNotCallHandler(t *testing.T) {
 	stub := &listStub{}
 	srv := prodServer(t, ProfileSmithy)
 	srv.Handlers = stub
-	call(t, srv, "AWSStepFunctions.GetActivityTask", `{"activityArn":"arn:aws:states:us-east-1:123456789012:activity:a"}`, contentTypeJSON10)
+	call(t, srv, "AWSStepFunctions.RedriveExecution", `{"executionArn":"arn:aws:states:us-east-1:123456789012:execution:sm:run"}`, contentTypeJSON10)
 	if stub.called {
 		t.Fatal("deferred operation called the handler")
 	}
@@ -294,7 +297,7 @@ func (s *listStub) ListStateMachines(_ context.Context, in *gen.ListStateMachine
 	return s.out, nil
 }
 
-func (s *listStub) GetActivityTask(context.Context, *gen.GetActivityTaskInput) (*gen.GetActivityTaskOutput, error) {
+func (s *listStub) RedriveExecution(context.Context, *gen.RedriveExecutionInput) (*gen.RedriveExecutionOutput, error) {
 	s.called = true
 	return nil, errors.New("called")
 }

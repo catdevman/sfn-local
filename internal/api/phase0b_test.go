@@ -13,7 +13,7 @@ import (
 func TestExpressResourceBansAndParameters(t *testing.T) {
 	s := newService()
 	express := gen.StateMachineTypeEXPRESS
-	activity := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:us-east-1:123456789012:activity:work","End":true}}}`
+	activity := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:us-east-1:123456789012:activity:work","TimeoutSeconds":0,"End":true}}}`
 	_, err := s.CreateStateMachine(context.Background(), &gen.CreateStateMachineInput{
 		Name: sp("act-ex"), Definition: sp(activity), RoleArn: sp(roleARN), Type: &express,
 	})
@@ -38,7 +38,7 @@ func TestExpressResourceBansAndParameters(t *testing.T) {
 	stdActivity := createMachine(t, s, "act-std", activity, roleARN)
 	arun := startExec(t, s, *stdActivity.StateMachineArn, "a", `{}`)
 	aex := waitExec(t, s, *arun.ExecutionArn)
-	if aex.Status != store.ExecFailed || countEvents(aex, "ActivityScheduled") != 0 {
+	if aex.Status != store.ExecFailed || aex.Error != "States.Timeout" || countEvents(aex, "ActivityScheduled") != 1 || countEvents(aex, "ActivityStarted") != 0 {
 		t.Fatalf("%s %s %v", aex.Error, aex.Cause, typesOf(aex))
 	}
 	stdSync := createMachine(t, s, "sync-std", `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage.sync","Parameters":{},"End":true}}}`, roleARN)

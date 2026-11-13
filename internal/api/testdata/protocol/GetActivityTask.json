@@ -1,0 +1,20 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.GetActivityTask",
+    "body": {
+      "activityArn": "arn:aws:states:us-east-1:123456789012:activity:work",
+      "workerName": "worker"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "taskToken": "token",
+      "input": "{}"
+    }
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#ActivityDoesNotExist"
+  }
+}

@@ -168,6 +168,7 @@ func (s *Store) Complete(arn, status string, when time.Time, ev HistoryEvent, ou
 func (s *Store) Drop(arn string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
+	s.dropTokensLocked(arn)
 	delete(s.execs, arn)
 }
 
@@ -194,6 +195,7 @@ func (s *Store) Sweep() {
 				continue
 			}
 			if rec.Status != ExecRunning {
+				s.dropTokensLocked(exARN)
 				delete(s.execs, exARN)
 			}
 		}

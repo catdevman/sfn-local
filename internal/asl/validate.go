@@ -401,6 +401,9 @@ func captureRuntime(st *State, fields map[string]json.RawMessage, ptr string) er
 		}
 		st.HeartbeatSecondsPath = text
 	}
+	if st.HeartbeatSeconds != nil && st.TimeoutSeconds != nil && *st.HeartbeatSeconds >= *st.TimeoutSeconds {
+		return defErr(codeSchema, "HeartbeatSeconds must be less than TimeoutSeconds", join(ptr, "HeartbeatSeconds"))
+	}
 	if raw, ok := fields["Retry"]; ok {
 		list, err := parseRetry(raw, join(ptr, "Retry"))
 		if err != nil {

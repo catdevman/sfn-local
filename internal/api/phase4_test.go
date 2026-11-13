@@ -528,9 +528,9 @@ func TestPhase4RetryCountAndIntrinsics(t *testing.T) {
 	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "unsupported resource") || !strings.Contains(ex.Cause, "dynamodb:getItem") || countEvents(ex, "ParallelStateFailed") != 1 || countEvents(ex, "ActivityScheduled") != 0 {
 		t.Fatalf("%s %s %v", ex.Error, ex.Cause, typesOf(ex))
 	}
-	activity := `{"StartAt":"P","States":{"P":{"Type":"Parallel","Branches":[{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:us-east-1:123456789012:activity:work","End":true}}}],"End":true}}}`
+	activity := `{"StartAt":"P","States":{"P":{"Type":"Parallel","Branches":[{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:::ecs:runTask","End":true}}}],"End":true}}}`
 	ex = runPhase4(t, s, "activity", activity, "run", `{}`)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "unsupported resource") || countEvents(ex, "ActivityScheduled") != 0 || countEvents(ex, "ActivityStarted") != 0 {
+	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "unsupported resource") || !strings.Contains(ex.Cause, "ecs:runTask") || countEvents(ex, "ActivityScheduled") != 0 || countEvents(ex, "ActivityStarted") != 0 {
 		t.Fatalf("%s %s %v", ex.Error, ex.Cause, typesOf(ex))
 	}
 }

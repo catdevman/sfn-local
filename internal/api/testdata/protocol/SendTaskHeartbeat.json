@@ -1,0 +1,16 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.SendTaskHeartbeat",
+    "body": {
+      "taskToken": "token"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#InvalidToken"
+  }
+}

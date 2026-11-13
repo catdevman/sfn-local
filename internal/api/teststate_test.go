@@ -178,6 +178,13 @@ func TestTestStateRefusesUnimplemented(t *testing.T) {
 	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "Activity tasks are not implemented") {
 		t.Fatalf("%v", err)
 	}
+	callback := `{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage.waitForTaskToken","Parameters":{"token.$":"$$.Task.Token"},"End":true}`
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	_, err = s.TestState(ctx, &gen.TestStateInput{Definition: sp(callback)})
+	if api := mustAPI(t, err); api.ErrorName() != "ValidationException" || !strings.Contains(api.Error(), "TestState does not wait for a task token.") {
+		t.Fatalf("%v", err)
+	}
 	_, err = s.TestState(context.Background(), &gen.TestStateInput{
 		Definition: sp(`{"Type":"Pass","End":true}`),
 		Mock:       &gen.MockInput{Result: sp(`{}`)},

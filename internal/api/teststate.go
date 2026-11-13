@@ -67,6 +67,9 @@ func (s *Service) TestState(ctx context.Context, in *gen.TestStateInput) (*gen.T
 	if err != nil {
 		return nil, err
 	}
+	if strings.HasSuffix(st.Resource, ".waitForTaskToken") && mock == nil {
+		return nil, modeled("ValidationException", "TestState does not wait for a task token.")
+	}
 	if s.Runner == nil || s.Runner.Store == nil {
 		return nil, errors.New("no runner")
 	}

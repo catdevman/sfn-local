@@ -211,7 +211,7 @@ HTTP errors use `{"__type":"...","message":"..."}`. Strings below are from `Http
 | Bean constraint (`maxResults`, `type`, lengths) | `com.amazon.coral.validate#ValidationException` | `1 validation error detected: Value '<value>' at '<field>' failed to satisfy constraint: <constraint>` or the null-value variant without quotes around the value. |
 | Bad task token | `com.amazonaws.swf.service.v2.model#InvalidToken` | `Invalid Token: '<token>'` |
 | Unknown activity | `com.amazonaws.swf.service.v2.model#ActivityDoesNotExist` | `Activity Does Not Exist: '<arn>'` |
-| `SendTaskSuccess` / `SendTaskFailure` / `SendTaskHeartbeat` on a token whose task already timed out | `com.amazonaws.swf.service.v2.model#TaskTimedOut` | `Task Timed Out: '<token or arn>'`. Confirm the exact interpolated argument against the jar when Phase 5 is tested. The factory takes one string. |
+| `SendTaskSuccess` / `SendTaskFailure` / `SendTaskHeartbeat` on a token whose task already timed out | `com.amazonaws.swf.service.v2.model#TaskTimedOut` | `Task Timed Out: '<token>'`. This server interpolates the task token. The jar argument was not captured. The factory takes one string. |
 | Missing `X-Amz-Target` | `com.amazonaws.swf.service.v2.model#MissingRequiredHeader` | `Missing Required Header: '<header>'` |
 | More than 50 tags | `com.amazonaws.swf.service.v2.model#TooManyTags` | `Too many tags provided.` |
 | Bad tag or other parameter | `com.amazonaws.swf.service.v2.model#InvalidParameterValue` | The handler's message, not a fixed prefix. A tag key or value whose length is outside 1..128 or 0..256 uses the jar's hardcoded text `Member must have length less than or equal to 80`, including when the real limit is 128 or 256 and when the key is empty. Do not substitute the real limit into that sentence. Jar parity. |
@@ -1368,7 +1368,7 @@ There is no hosted fleet. Rollout is the phase sequence and a git tag per phase.
 2. **Bind-address default after the first stable release.** Keep `0.0.0.0` forever for jar compatibility, or flip to `127.0.0.1` in 2.0 of this server?
 3. **Omitted `Output` on Succeed**, and omitted Catch `Output`, against a live AWS account. The omitted-output table is the implementation rule until that run lands. Explicit `Output`, including the Succeed example, is already specified.
 4. **`DescribeExecution` while `RUNNING`.** Whether `output: null` is present. Comparison ignores it. A client that requires the key can be satisfied once we see one jar capture.
-5. **`SendTask*` `TaskTimedOut` argument.** The `__type` is confirmed. The message's interpolated id should be copied from a jar capture in Phase 5.
+5. **`SendTask*` `TaskTimedOut` argument.** The `__type` is confirmed. This server interpolates the task token (`Task Timed Out: '<token>'`). The jar's argument was not captured, so the box stays open until that capture.
 6. **Trailing bytes after one JSON HTTP body.** This spec rejects them. If a real client depends on the jar accepting them, relax the check.
 7. **Whether Phase 5 `.sync` is wanted at all.** Default is to stop after `.waitForTaskToken` unless a user asks.
 8. **JSONata memory cap number.** AWS says the limit exists and does not publish the byte count on the page fetched here. Start with a 32 MiB evaluator heap separate from the 10 MiB variable cap, and adjust when an AWS error message shows the real figure.

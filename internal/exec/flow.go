@@ -36,11 +36,20 @@ func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input stri
 		r.failEval(ctx, arn, err)
 		return "", "", false, true
 	}
-	if st.HasParameters && st.Type != "Map" {
-		effVal, effective, err = evalParameters(st.Parameters, effVal, ctxObj)
-		if err != nil {
-			r.failEval(ctx, arn, err)
-			return "", "", false, true
+	// An unmocked activity or callback re-evaluates Parameters on each attempt
+	// after the task token exists. Every other task evaluates them once here.
+	if !(st.Type == "Task" && r.deferTaskParameters(ex, st)) {
+		if st.Type == "Task" {
+			if tok, ok := r.taskContextToken(ex, st); ok {
+				ctxObj["Task"] = map[string]any{"Token": tok}
+			}
+		}
+		if st.HasParameters && st.Type != "Map" {
+			effVal, effective, err = evalParameters(st.Parameters, effVal, ctxObj)
+			if err != nil {
+				r.failEval(ctx, arn, err)
+				return "", "", false, true
+			}
 		}
 	}
 	switch st.Type {

@@ -1,0 +1,17 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.SendTaskSuccess",
+    "body": {
+      "taskToken": "token",
+      "output": "{}"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#TaskTimedOut"
+  }
+}

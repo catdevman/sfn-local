@@ -23,6 +23,15 @@ type Service struct {
 	// AliasRoll, when set, returns an integer in [0, 100) for alias routing.
 	// Nil uses crypto/rand. A single route of weight 100 does not depend on it.
 	AliasRoll func() int
+	// ActivityPoll is how long GetActivityTask waits. Zero means 60 seconds.
+	ActivityPoll time.Duration
+}
+
+func (s *Service) activityPoll() time.Duration {
+	if s == nil || s.ActivityPoll <= 0 {
+		return 60 * time.Second
+	}
+	return s.ActivityPoll
 }
 
 func (s *Service) now() time.Time {

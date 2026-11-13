@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, and Phase V checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, and Phase V checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. Activities and `.waitForTaskToken` callbacks run. `.sync` stays unsupported. Customer-managed KMS and tracing stay deferred. Distributed Map does not. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -83,14 +83,14 @@ Depends on phase G. `QueryLanguage` and JSONata-only fields fail validation with
   - [x] `CreateStateMachine`. Duplicate name with a different definition is `StateMachineAlreadyExists`. The same definition returns the existing ARN and the original `creationDate`. `type` omitted means `STANDARD`.
   - [x] `DescribeStateMachine` returns `name`, `status`, `definition`, `creationDate`, `roleArn`, `stateMachineArn`, `type`, `loggingConfiguration`.
   - [x] `ListStateMachines`. `maxResults` omitted means 100. Range 0..1000. `nextToken` is the decimal index the client sends back.
-  - [x] `UpdateStateMachine` applies every provided field and sets `updateDate`. At least one of definition, role ARN, or logging configuration is required.
+  - [x] `UpdateStateMachine` applies every provided field and sets `updateDate`. At least one of definition, role ARN, or logging configuration is required when `publish` is not true.
   - [x] `DeleteStateMachine`. Unknown ARN returns `{}` in `--compat=sfn-local`. An existing machine becomes `DELETING`. The one-second sweep drops terminal executions immediately and drops the machine when none are `RUNNING`.
   - [x] Public profile requires `roleArn`. `--compat=sfn-local` allows it to be omitted.
 - [x] Activities as rows: `CreateActivity`, `DescribeActivity`, `ListActivities`, `DeleteActivity`. No tokens yet.
 - [x] Tags: `TagResource`, `UntagResource`, `ListTagsForResource` on a state-machine ARN or an activity ARN. At most 50. Key 1..128, value 0..256.
 - [x] ASL validator uses the generated field matrix for the JSONPath generation. Unknown fields are `SCHEMA_VALIDATION_FAILED`.
 - [x] Logging configuration is validated and stored. Nothing is written to disk. A null level is stored as `OFF`.
-- [x] `encryptionConfiguration`, `tracingConfiguration`, and `publish` return a modeled error that names the field. They are not ignored.
+- [x] `encryptionConfiguration` and `tracingConfiguration` return a modeled error that names the field. They are not ignored. `publish` is phase V.
 - [x] Execution operations stayed deferred through the control plane. `StartExecution` idempotency is specified and tested in phase 1.
 - [x] Tests: Create response shape, duplicate name, bad definition, deleting status, role path `role/service-role/MyRole`.
 
@@ -114,7 +114,7 @@ Depends on phase 0. The validator already exists. These operations replace their
 - [x] `PublishStateMachineVersion`, `ListStateMachineVersions`, `DeleteStateMachineVersion`.
 - [x] `CreateStateMachineAlias`, `DescribeStateMachineAlias`, `ListStateMachineAliases`, `UpdateStateMachineAlias`, `DeleteStateMachineAlias`.
 - [x] `publish: true` on create publishes a version and returns `stateMachineVersionArn`.
-- [x] `StartExecution` accepts a version ARN and an alias ARN once phase 1 exists. Until then the acceptance rule is in the store and covered by a unit test.
+- [x] `StartExecution` and `StartSyncExecution` accept a version ARN and an alias ARN.
 - [x] Customer-managed KMS and tracing stay `deferred` and return a modeled error. The server does not call KMS.
 
 ## [x] Phase 1 — Pass, Succeed, Fail
@@ -207,15 +207,15 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
 
 `GetActivityTask` and `SendTask*` depend on phase 3. `.waitForTaskToken` depends on phase 4 and on this phase.
 
-- [ ] Activity resource `arn:aws:states:<region>:<account>:activity:<name>` schedules a token and parks that execution.
-- [ ] `GetActivityTask` waits up to 60 seconds and returns `{}` when none arrives. The wait does not stall other connections.
-- [ ] `SendTaskSuccess`, `SendTaskFailure`, `SendTaskHeartbeat`. Heartbeat and activity timeout use `States.Timeout`.
-- [ ] History detail members for activity events match the table in docs/spec.md. Success ends with `TaskStateExited`.
-- [ ] An activity state named in the mock file fails with `States.Runtime` and does not schedule.
+- [x] Activity resource `arn:aws:states:<region>:<account>:activity:<name>` schedules a token and parks that execution.
+- [x] `GetActivityTask` waits up to 60 seconds and returns `{}` when none arrives. The wait does not stall other connections.
+- [x] `SendTaskSuccess`, `SendTaskFailure`, `SendTaskHeartbeat`. Heartbeat and activity timeout use `States.Timeout`.
+- [x] History detail members for activity events match the table in docs/spec.md. Success ends with `TaskStateExited`.
+- [x] An activity state named in the mock file fails with `States.Runtime` and does not schedule.
 - [ ] Capture the jar's `TaskTimedOut` message once and lock it in a test.
-- [ ] `.waitForTaskToken` on STANDARD suspends without calling a service endpoint. The token exists before `Parameters` runs, as `$$.Task.Token`.
-- [ ] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted` with output `""`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
-- [ ] A mock `Return` for a callback state completes through the mock path.
+- [x] `.waitForTaskToken` on STANDARD suspends without calling a service endpoint. The token exists before `Parameters` runs, as `$$.Task.Token`.
+- [x] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted` with output `""`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
+- [x] A mock `Return` for a callback state completes through the mock path.
 - [ ] `.sync` is unchecked on purpose until a named integration in phase I needs it. Leave this box open.
 
 ## Phase 6 — JSONata and variables

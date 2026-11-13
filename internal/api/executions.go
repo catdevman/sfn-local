@@ -574,6 +574,63 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 		out.TaskFailedEventDetails = taskFailedDetails(ev)
 	case "TaskTimedOut":
 		out.TaskTimedOutEventDetails = taskTimedOutDetails(ev)
+	case "TaskSubmitted":
+		d := &gen.TaskSubmittedEventDetails{}
+		if ev.HasResourceType {
+			d.ResourceType = sp(ev.ResourceType)
+		}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		if include && ev.HasOutput {
+			d.Output = sp(ev.Output)
+		}
+		out.TaskSubmittedEventDetails = d
+	case "ActivityScheduled":
+		d := &gen.ActivityScheduledEventDetails{}
+		if ev.HasResource {
+			d.Resource = sp(ev.Resource)
+		}
+		if include && ev.HasInput {
+			d.Input = sp(ev.Input)
+		}
+		if ev.HasTimeout {
+			d.TimeoutInSeconds = i64p(ev.TimeoutSeconds)
+		}
+		if ev.HasHeartbeat {
+			d.HeartbeatInSeconds = i64p(ev.HeartbeatSeconds)
+		}
+		out.ActivityScheduledEventDetails = d
+	case "ActivityStarted":
+		d := &gen.ActivityStartedEventDetails{}
+		if ev.HasWorker {
+			d.WorkerName = sp(ev.Worker)
+		}
+		out.ActivityStartedEventDetails = d
+	case "ActivitySucceeded":
+		d := &gen.ActivitySucceededEventDetails{}
+		if include && ev.HasOutput {
+			d.Output = sp(ev.Output)
+		}
+		out.ActivitySucceededEventDetails = d
+	case "ActivityFailed":
+		d := &gen.ActivityFailedEventDetails{}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.ActivityFailedEventDetails = d
+	case "ActivityTimedOut":
+		d := &gen.ActivityTimedOutEventDetails{}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.ActivityTimedOutEventDetails = d
 	case "LambdaFunctionScheduled":
 		d := &gen.LambdaFunctionScheduledEventDetails{}
 		if ev.HasResource {

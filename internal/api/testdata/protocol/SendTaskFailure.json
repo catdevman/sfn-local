@@ -1,0 +1,18 @@
+{
+  "request": {
+    "target": "AWSStepFunctions.SendTaskFailure",
+    "body": {
+      "taskToken": "token",
+      "error": "Boom",
+      "cause": "nope"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {}
+  },
+  "error": {
+    "status": 400,
+    "type": "com.amazonaws.sfn#TaskDoesNotExist"
+  }
+}
