@@ -264,6 +264,7 @@ The endpoint flag gates each integration. An empty endpoint is an unsupported re
 - [x] SQS `sendMessage` posts the query form to `SQS_ENDPOINT`.
 - [x] SNS `publish` reads the XML response into a JSON object.
 - [x] DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem` post JSON 1.0 to `DYNAMODB_ENDPOINT`.
+- [x] DynamoDB calls carry a SigV4 `Authorization` header so DynamoDB Local accepts them.
 - [x] Nested Step Functions `startExecution` posts JSON 1.0 to `STEP_FUNCTIONS_ENDPOINT`.
 - [x] EventBridge `putEvents` posts JSON 1.0 to `EVENTBRIDGE_ENDPOINT`.
 - [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution`. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.

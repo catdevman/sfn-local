@@ -50,6 +50,9 @@ type Runner struct {
 	EventBridgeEndpoint   string
 	Region                string
 	Account               string
+	// AccessKeyID and SecretAccessKey sign DynamoDB calls. Empty sends them unsigned.
+	AccessKeyID     string
+	SecretAccessKey string
 	// Invoke replaces the Lambda HTTP call. Nil uses LambdaEndpoint.
 	Invoke func(ctx context.Context, call LambdaCall) LambdaReply
 	// Rand returns a FULL-jitter delay in 0..max inclusive. Nil uses math/rand.

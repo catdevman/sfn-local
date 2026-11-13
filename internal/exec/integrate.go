@@ -185,7 +185,7 @@ func (r *Runner) invokeQuery(callCtx, parent context.Context, endpoint, action, 
 	for key, val := range params {
 		form.Set(key, val)
 	}
-	body, status, err := postBody(callCtx, strings.TrimRight(endpoint, "/"), "application/x-www-form-urlencoded", strings.NewReader(form.Encode()))
+	body, status, err := postBody(callCtx, strings.TrimRight(endpoint, "/"), "application/x-www-form-urlencoded", form.Encode(), nil)
 	if err != nil {
 		return "", transportFailure(err, parent, callCtx, taskWins, service+".ServiceException")
 	}
@@ -278,7 +278,11 @@ func xmlLeaves(body string) map[string]string {
 }
 
 func (r *Runner) invokeJSON10(callCtx, parent context.Context, endpoint, target, raw, service string, taskWins bool) (string, *taskFailure) {
-	body, status, err := postJSON10(callCtx, endpoint, target, raw)
+	var sign *sigv4
+	if service == "DynamoDB" {
+		sign = r.signer("dynamodb")
+	}
+	body, status, err := postJSON10(callCtx, endpoint, target, raw, sign)
 	if err != nil {
 		return "", transportFailure(err, parent, callCtx, taskWins, service+".ServiceException")
 	}
@@ -297,7 +301,7 @@ func (r *Runner) invokeJSON10(callCtx, parent context.Context, endpoint, target,
 }
 
 func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn string, meta taskMeta, endpoint, mode string, taskWins bool) (string, *taskFailure) {
-	body, status, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.StartExecution", meta.input)
+	body, status, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.StartExecution", meta.input, nil)
 	if err != nil {
 		tf := transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		tf.Submit = tf.Name != "" && !tf.Timeout && !tf.Halt && !tf.ExecDeadline
@@ -333,7 +337,7 @@ func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn strin
 		if err != nil {
 			return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 		}
-		descBody, descStatus, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.DescribeExecution", reqBody)
+		descBody, descStatus, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.DescribeExecution", reqBody, nil)
 		if err != nil {
 			return "", transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		}
@@ -402,12 +406,13 @@ func transportFailure(err error, parent, callCtx context.Context, taskWins bool,
 	return &taskFailure{Name: name, Cause: err.Error()}
 }
 
-func postJSON10(ctx context.Context, endpoint, target, body string) (string, int, error) {
-	return postBody(ctx, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", strings.NewReader(body), target)
+func postJSON10(ctx context.Context, endpoint, target, body string, sign *sigv4) (string, int, error) {
+	return postBody(ctx, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, sign, target)
 }
 
-func postBody(ctx context.Context, endpoint, contentType string, body io.Reader, target ...string) (string, int, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, body)
+// postBody signs the request when sign is not nil.
+func postBody(ctx context.Context, endpoint, contentType, body string, sign *sigv4, target ...string) (string, int, error) {
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
 	if err != nil {
 		return "", 0, err
 	}
@@ -415,6 +420,7 @@ func postBody(ctx context.Context, endpoint, contentType string, body io.Reader,
 	if len(target) > 0 && target[0] != "" {
 		req.Header.Set("X-Amz-Target", target[0])
 	}
+	sign.sign(req, body, time.Now())
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return "", 0, err

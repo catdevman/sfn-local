@@ -148,6 +148,9 @@ func TestPhaseIDynamoDBAndEventBridge(t *testing.T) {
 		if err != nil {
 			t.Error(err)
 		}
+		if auth := r.Header.Get("Authorization"); !strings.HasPrefix(auth, "AWS4-HMAC-SHA256 Credential=local/") || !strings.Contains(auth, "/us-east-1/dynamodb/aws4_request, SignedHeaders=content-type;host;x-amz-date;x-amz-target, Signature=") {
+			t.Errorf("authorization %q", auth)
+		}
 		mu.Lock()
 		targets = append(targets, r.Header.Get("X-Amz-Target"))
 		bodies = append(bodies, string(body))
@@ -156,6 +159,8 @@ func TestPhaseIDynamoDBAndEventBridge(t *testing.T) {
 	}))
 	defer ddb.Close()
 	s.Runner.DynamoDBEndpoint = ddb.URL
+	s.Runner.AccessKeyID = "local"
+	s.Runner.SecretAccessKey = "local"
 	def := `{"StartAt":"Get","States":{` +
 		`"Get":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:getItem","Parameters":{"TableName":"T","Op":"get"},"Next":"Put"},` +
 		`"Put":{"Type":"Task","Resource":"arn:aws:states:::dynamodb:putItem","Parameters":{"TableName":"T","Op":"put"},"Next":"Update"},` +

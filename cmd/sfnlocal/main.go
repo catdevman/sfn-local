@@ -112,6 +112,8 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		EventBridgeEndpoint:   cfg.EventBridgeEndpoint,
 		Region:                cfg.Region,
 		Account:               cfg.Account,
+		AccessKeyID:           cfg.AccessKeyID,
+		SecretAccessKey:       cfg.SecretAccessKey,
 	}
 	srv := &http.Server{
 		Handler: &api.Server{
