@@ -290,9 +290,10 @@ These stay deferred for the life of this plan.
 - [x] Map Runs and child executions, `MaxConcurrency`, failure thresholds, a new run per retry, and stop.
 - [x] `COMPACT`, `FLATTEN`, and `NONE` results, with records for tolerated failures.
 - [x] `DescribeMapRun`, `ListMapRuns`, `UpdateMapRun`, `ListExecutions` by `mapRunArn`, and child `DescribeExecution` and `DescribeStateMachineForExecution`.
-- [ ] `ItemReader` from S3: JSON, JSONL, CSV, `ListObjectsV2`, and manifests.
-- [ ] `ResultWriter` export to S3: `manifest.json` and the `SUCCEEDED`, `FAILED`, and `PENDING` files.
-- [ ] Check the parent event sequence and the threshold cause against AWS.
+- [x] `ItemReader` from S3: JSON with `ItemsPointer`, JSONL, CSV, `ListObjectsV2` with `LOAD_AND_FLATTEN`, S3 inventory manifests, gzip, and `MaxItems`.
+- [x] `ResultWriter` export to S3: `manifest.json` and the `SUCCEEDED`, `FAILED`, and `PENDING` files.
+- [ ] Parquet, Athena manifests, and zstd input.
+- [ ] Check the parent event sequence, the threshold cause, and the manifest layout against AWS.
 
 ## Standing CI
 
