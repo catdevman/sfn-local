@@ -40,6 +40,19 @@ checksum:
   name_template: "{{ .ProjectName }}_{{ .Version }}_checksums.txt"
   algorithm: sha256
 
+brews:
+  - name: sfnlocal
+    ids:
+      - sfnlocal
+    directory: Formula
+    repository:
+      owner: catdevman
+      name: homebrew-tools
+      token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+    homepage: "https://github.com/catdevman/sfn-local"
+    description: "Local AWS Step Functions server"
+    license: "Apache-2.0"
+
 changelog:
   sort: asc
   filters:

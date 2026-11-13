@@ -2,7 +2,11 @@
 
 Licensed under the Apache License, Version 2.0. See [LICENSE](LICENSE) and [NOTICE](NOTICE).
 
-A tag `v*` publishes `sfnlocal` for Linux, macOS, and Windows on amd64 and arm64. The archive is `sfnlocal_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows). `sfnlocal_<version>_checksums.txt` lists the SHA-256 sums.
+A tag `v*` publishes `sfnlocal` for Linux, macOS, and Windows on amd64 and arm64. The archive is `sfnlocal_<version>_<os>_<arch>.tar.gz` (`.zip` on Windows). `sfnlocal_<version>_checksums.txt` lists the SHA-256 sums. The same release pushes a Homebrew formula named `sfnlocal` to [catdevman/homebrew-tools](https://github.com/catdevman/homebrew-tools):
+
+```
+brew install catdevman/tools/sfnlocal
+```
 
 The local server is the roadmap in [ROADMAP.md](ROADMAP.md). How a state runs is [docs/spec.md](docs/spec.md). Phase G speaks AWS JSON 1.0. Phase 0 is the control plane. Phase 0b checks create-time validator messages. Phase 1 runs Pass, Succeed, and Fail. Phase 2 runs JSONPath data flow, Choice, and Wait. Phase 3 runs mocked tasks, direct Lambda invoke, Retry, and Catch. Phase 4 runs Parallel, inline Map, and the eighteen intrinsic functions. Phase V validates definitions and serves state machine versions and aliases. `TestState` runs one state. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. Optimized integrations run when their endpoint is set, including nested `.sync`. Customer-managed KMS and tracing stay deferred. Distributed Map does not run.
 
