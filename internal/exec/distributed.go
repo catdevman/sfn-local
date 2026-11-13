@@ -38,8 +38,9 @@ type distPlan struct {
 
 // runDistributed runs a Distributed Map. Each attempt, a retry included, is a
 // new Map Run. Each item, or each batch, is a child execution in the store.
-// The parent records MapRunStarted and then MapRunSucceeded, MapRunFailed,
-// or MapRunAborted.
+// The parent records MapRunStarted, or MapRunRedriven when a parent redrive
+// resumes the failed run, and then MapRunSucceeded, MapRunFailed, or
+// MapRunAborted.
 func (r *Runner) runDistributed(ctx context.Context, arn string, st *asl.State, input string, effVal, ctxObj any) (string, string, bool, bool) {
 	retries := 0
 	for {
@@ -52,8 +53,9 @@ func (r *Runner) runDistributed(ctx context.Context, arn string, st *asl.State, 
 		}
 		setRetryCount(ctxObj, retries)
 		var res branchResult
-		plan, err := r.planDistributed(ctx, arn, st, effVal, ctxObj, retries)
-		if err != nil {
+		if run, ok := r.redrivableRun(arn, st); ok {
+			res = r.redriveMapRun(ctx, arn, st, run)
+		} else if plan, err := r.planDistributed(ctx, arn, st, effVal, ctxObj, retries); err != nil {
 			res = failureFrom(err)
 		} else {
 			res = r.mapRun(ctx, arn, st, plan)
@@ -277,9 +279,7 @@ func (r *Runner) mapRun(ctx context.Context, arn string, st *asl.State, plan dis
 	if label == "" {
 		label = newTaskID()
 	}
-	machine := parent.Machine()
-	prefix, name := machinePrefix(machine)
-	now := r.now()
+	prefix, name := machinePrefix(parent.Machine())
 	n := len(plan.inputs)
 	var totalItems int64
 	for _, s := range plan.sizes {
@@ -291,11 +291,17 @@ func (r *Runner) mapRun(ctx context.Context, arn string, st *asl.State, plan dis
 		StateMachineARN: prefix + "stateMachine:" + name + "/" + label,
 		Label:           label,
 		Status:          store.MapRunRunning,
-		Started:         now,
+		Started:         r.now(),
 		MaxConcurrency:  int32(plan.maxConcurrency),
 		ToleranceCount:  plan.toleranceCount,
 		Items:           store.MapRunCounts{Pending: totalItems, Total: totalItems},
 		Executions:      store.MapRunCounts{Pending: int64(n), Total: int64(n)},
+		State:           st.Name,
+		Inputs:          plan.inputs,
+		Sizes:           plan.sizes,
+		Children:        make([]string, n),
+		WriteBucket:     plan.writeBucket,
+		WritePrefix:     plan.writePrefix,
 	}
 	if plan.tolerancePct != nil {
 		p := float32(*plan.tolerancePct)
@@ -306,8 +312,120 @@ func (r *Runner) mapRun(ctx context.Context, arn string, st *asl.State, plan dis
 		r.closeMapRun(run.ARN, store.MapRunAborted)
 		return branchResult{outcome: outcomeHalt}
 	}
+	todo := make([]int, n)
+	for i := range todo {
+		todo[i] = i
+	}
+	return r.driveMapRun(ctx, parent, st, prog, run.ARN, todo)
+}
 
-	children := make([]store.Execution, n)
+// redrivableRun is the Map Run a parent redrive should resume for st. It is
+// the run started by the state's latest entry before the redrive, when that
+// run FAILED or was ABORTED. Only the first entry after the redrive resumes
+// it. A retry or a later entry starts a new run.
+func (r *Runner) redrivableRun(arn string, st *asl.State) (store.MapRun, bool) {
+	ex, ok := r.Store.Execution(arn)
+	if !ok || ex.RedriveCount == 0 {
+		return store.MapRun{}, false
+	}
+	h := ex.History
+	redriven := -1
+	for i := len(h) - 1; i >= 0; i-- {
+		if h[i].Type == "ExecutionRedriven" {
+			redriven = i
+			break
+		}
+	}
+	if redriven < 0 {
+		return store.MapRun{}, false
+	}
+	ownRun := func(ev store.HistoryEvent) (store.MapRun, bool) {
+		if ev.Type != "MapRunStarted" && ev.Type != "MapRunRedriven" {
+			return store.MapRun{}, false
+		}
+		run, ok := r.Store.MapRun(ev.MapRunARN)
+		return run, ok && run.State == st.Name
+	}
+	entries := 0
+	for _, ev := range h[redriven+1:] {
+		if ev.Type == "MapStateEntered" && ev.Name == st.Name {
+			entries++
+		}
+		if _, mine := ownRun(ev); mine {
+			return store.MapRun{}, false
+		}
+	}
+	if entries != 1 {
+		return store.MapRun{}, false
+	}
+	for i := redriven - 1; i >= 0; i-- {
+		if h[i].Type == "MapStateEntered" && h[i].Name == st.Name {
+			return store.MapRun{}, false
+		}
+		if run, mine := ownRun(h[i]); mine {
+			return run, run.Status == store.MapRunFailed || run.Status == store.MapRunAborted
+		}
+	}
+	return store.MapRun{}, false
+}
+
+// redriveMapRun resumes a FAILED or ABORTED Map Run with the same items.
+// Succeeded children are kept. The others, and items that never started,
+// run again. The run's failure counts start over.
+func (r *Runner) redriveMapRun(ctx context.Context, arn string, st *asl.State, run store.MapRun) branchResult {
+	parent, ok := r.Store.Execution(arn)
+	if !ok {
+		return branchResult{outcome: outcomeHalt}
+	}
+	prog, err := asl.ValidateType(st.Dist.Definition, st.Dist.ExecutionType)
+	if err != nil {
+		return branchResult{outcome: outcomeFail, errName: "States.Runtime", cause: err.Error()}
+	}
+	var todo []int
+	succeeded := map[int]bool{}
+	for i, child := range run.Children {
+		if child != "" {
+			if ex, ok := r.Store.Execution(child); ok && ex.Status == store.ExecSucceeded {
+				succeeded[i] = true
+				continue
+			}
+		}
+		todo = append(todo, i)
+	}
+	when := r.now()
+	run, _ = r.Store.UpdateMapRun(run.ARN, func(m *store.MapRun) {
+		m.Status = store.MapRunRunning
+		m.Stopped = nil
+		m.RedriveCount++
+		m.RedriveDate = &when
+		items := store.MapRunCounts{Total: m.Items.Total}
+		execs := store.MapRunCounts{Total: m.Executions.Total}
+		for i, child := range m.Children {
+			switch {
+			case succeeded[i]:
+				items.Succeeded += m.Sizes[i]
+				execs.Succeeded++
+			case child == "":
+				items.Pending += m.Sizes[i]
+				execs.Pending++
+			default:
+				items.PendingRedrive += m.Sizes[i]
+				execs.PendingRedrive++
+			}
+		}
+		m.Items, m.Executions = items, execs
+	})
+	if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunRedriven", MapRunARN: run.ARN, RedriveCount: run.RedriveCount, HasRedrive: true}) {
+		r.closeMapRun(run.ARN, store.MapRunAborted)
+		return branchResult{outcome: outcomeHalt}
+	}
+	return r.driveMapRun(ctx, parent, st, prog, run.ARN, todo)
+}
+
+// driveMapRun runs the children for the todo indexes and waits for them.
+func (r *Runner) driveMapRun(ctx context.Context, parent store.Execution, st *asl.State, prog *asl.Program, runARN string, todo []int) branchResult {
+	arn := parent.ARN
+	d := st.Dist
 	var mu sync.Mutex
 	running := 0
 	active := map[string]bool{}
@@ -322,12 +440,13 @@ func (r *Runner) mapRun(ctx context.Context, arn string, st *asl.State, plan dis
 	}
 	var wg sync.WaitGroup
 dispatch:
-	for i := 0; i < n; i++ {
+	for _, i := range todo {
+		var run store.MapRun
 		for {
-			cur, _ := r.Store.MapRun(run.ARN)
+			run, _ = r.Store.MapRun(runARN)
 			mu.Lock()
 			stop := failure != nil
-			free := cur.MaxConcurrency <= 0 || running < int(cur.MaxConcurrency)
+			free := run.MaxConcurrency <= 0 || running < int(run.MaxConcurrency)
 			mu.Unlock()
 			if stop || ctx.Err() != nil || stopRequested(ctx) || !r.Store.Running(arn) {
 				break dispatch
@@ -341,7 +460,7 @@ dispatch:
 			case <-time.After(syncPoll):
 			}
 		}
-		child, handle, err := r.startChild(parent, run, d, prog, plan.inputs[i])
+		child, handle, redriven, err := r.launchChild(parent, run, d, prog, i)
 		if err != nil {
 			mu.Lock()
 			if failure == nil {
@@ -350,24 +469,30 @@ dispatch:
 			mu.Unlock()
 			break
 		}
-		size := plan.sizes[i]
+		size := run.Sizes[i]
 		mu.Lock()
 		running++
 		active[child.ARN] = true
 		mu.Unlock()
-		r.Store.UpdateMapRun(run.ARN, func(m *store.MapRun) {
-			m.Items.Pending -= size
+		r.Store.UpdateMapRun(runARN, func(m *store.MapRun) {
+			m.Children[i] = child.ARN
+			if redriven {
+				m.Items.PendingRedrive -= size
+				m.Executions.PendingRedrive--
+			} else {
+				m.Items.Pending -= size
+				m.Executions.Pending--
+			}
 			m.Items.Running += size
-			m.Executions.Pending--
 			m.Executions.Running++
 		})
 		wg.Add(1)
 		r.Start(handle, child.ARN)
-		go func(i int, childARN string, done <-chan struct{}) {
+		go func(childARN string, done <-chan struct{}) {
 			defer wg.Done()
 			<-done
 			final, _ := r.Store.Execution(childARN)
-			updated, _ := r.Store.UpdateMapRun(run.ARN, func(m *store.MapRun) {
+			updated, _ := r.Store.UpdateMapRun(runARN, func(m *store.MapRun) {
 				m.Items.Running -= size
 				m.Executions.Running--
 				switch final.Status {
@@ -388,13 +513,12 @@ dispatch:
 			mu.Lock()
 			running--
 			delete(active, childARN)
-			children[i] = final
 			if failure == nil && !aborting && thresholdExceeded(updated) {
 				failure = &branchResult{outcome: outcomeFail, errName: "States.ExceedToleratedFailureThreshold", cause: thresholdCause}
 			}
 			mu.Unlock()
 			signal()
-		}(i, child.ARN, handle.Done)
+		}(child.ARN, handle.Done)
 	}
 
 	// Wait for the children, stopping them early if the run failed or the
@@ -431,7 +555,7 @@ dispatch:
 	}
 
 	if !r.Store.Running(arn) || ctx.Err() != nil || stopRequested(ctx) {
-		r.closeMapRun(run.ARN, store.MapRunAborted)
+		r.closeMapRun(runARN, store.MapRunAborted)
 		if r.Store.Running(arn) {
 			r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunAborted"})
 		}
@@ -440,24 +564,31 @@ dispatch:
 		}
 		return branchResult{outcome: outcomeHalt}
 	}
+	run, _ := r.Store.MapRun(runARN)
+	children := make([]store.Execution, len(run.Children))
+	for i, child := range run.Children {
+		if child != "" {
+			children[i], _ = r.Store.Execution(child)
+		}
+	}
 	if failure != nil {
-		if plan.writeBucket != "" {
+		if run.WriteBucket != "" {
 			// The failed and pending records are still exported. A write
 			// error does not replace the threshold error.
-			_, _ = r.writeResults(ctx, run, plan, children, d.Writer)
+			_, _ = r.writeResults(ctx, run, children, d.Writer)
 		}
-		r.closeMapRun(run.ARN, store.MapRunFailed)
+		r.closeMapRun(runARN, store.MapRunFailed)
 		if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunFailed", Error: failure.errName, HasError: true, Cause: failure.cause, HasCause: failure.cause != ""}) {
 			return branchResult{outcome: outcomeHalt}
 		}
 		return *failure
 	}
-	r.closeMapRun(run.ARN, store.MapRunSucceeded)
+	r.closeMapRun(runARN, store.MapRunSucceeded)
 	if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapRunSucceeded"}) {
 		return branchResult{outcome: outcomeHalt}
 	}
-	if plan.writeBucket != "" {
-		out, err := r.writeResults(ctx, run, plan, children, d.Writer)
+	if run.WriteBucket != "" {
+		out, err := r.writeResults(ctx, run, children, d.Writer)
 		if err != nil {
 			return failureFrom(err)
 		}
@@ -468,6 +599,36 @@ dispatch:
 		return failureFrom(err)
 	}
 	return branchResult{outcome: outcomeOK, output: out}
+}
+
+// launchChild starts the child for input i. An unsuccessful STANDARD child
+// is redriven in place. An EXPRESS child, or one with no state to redrive,
+// is replaced by a new execution with the same input. redriven reports that
+// the input had a child before.
+func (r *Runner) launchChild(parent store.Execution, run store.MapRun, d *asl.DistMap, prog *asl.Program, i int) (store.Execution, *store.RunHandle, bool, error) {
+	prev := run.Children[i]
+	if prev != "" {
+		now := r.now()
+		ex, handle, err := r.Store.BeginRedrive(prev, now, "", now.Add(childLimit(prog, false)))
+		if err == nil && handle != nil {
+			return ex, handle, true, nil
+		}
+	}
+	ex, handle, err := r.startChild(parent, run, d, prog, run.Inputs[i])
+	return ex, handle, prev != "", err
+}
+
+// childLimit is a child's execution timeout: the type's limit or the
+// definition's TimeoutSeconds, whichever is shorter.
+func childLimit(prog *asl.Program, express bool) time.Duration {
+	limit := 365 * 24 * time.Hour
+	if express {
+		limit = 300 * time.Second
+	}
+	if machine := time.Duration(prog.TimeoutSeconds) * time.Second; machine < limit {
+		limit = machine
+	}
+	return limit
 }
 
 // thresholdExceeded applies the tolerated failure settings. Failed and timed
@@ -524,13 +685,6 @@ func (r *Runner) startChild(parent store.Execution, run store.MapRun, d *asl.Dis
 	}
 	arn := strings.Replace(run.StateMachineARN, ":stateMachine:", kind, 1) + ":" + name
 	now := r.now()
-	limit := 365 * 24 * time.Hour
-	if express {
-		limit = 300 * time.Second
-	}
-	if machine := time.Duration(prog.TimeoutSeconds) * time.Second; machine < limit {
-		limit = machine
-	}
 	ex := store.Execution{
 		ARN:              arn,
 		Name:             name,
@@ -542,7 +696,7 @@ func (r *Runner) startChild(parent store.Execution, run store.MapRun, d *asl.Dis
 		Type:             d.ExecutionType,
 		Express:          express,
 		Started:          now,
-		Deadline:         now.Add(limit),
+		Deadline:         now.Add(childLimit(prog, express)),
 		MockTest:         parent.MockTest,
 		MapRunARN:        run.ARN,
 		Label:            run.Label,
@@ -608,7 +762,7 @@ func childRecord(ex store.Execution) map[string]any {
 		"Input":           ex.Input,
 		"InputDetails":    map[string]any{"Included": true},
 		"Name":            ex.Name,
-		"RedriveCount":    0,
+		"RedriveCount":    ex.RedriveCount,
 		"StartDate":       isoInstant(ex.Started),
 		"StateMachineArn": ex.StateMachineARN,
 		"Status":          ex.Status,
@@ -666,7 +820,7 @@ func (r *Runner) writerTarget(ctx context.Context, st *asl.State, root, ctxObj a
 // (failed, timed out, and aborted children), and PENDING_0 (items that never
 // started), each written only when it has entries, then manifest.json. The
 // state result points at the manifest.
-func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPlan, children []store.Execution, w *asl.ResultWriter) (string, error) {
+func (r *Runner) writeResults(ctx context.Context, run store.MapRun, children []store.Execution, w *asl.ResultWriter) (string, error) {
 	transform := "NONE"
 	if w.Transformation != "" {
 		transform = w.Transformation
@@ -676,7 +830,7 @@ func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPl
 	for i, ex := range children {
 		switch {
 		case ex.ARN == "":
-			pending = append(pending, map[string]any{"Input": plan.inputs[i], "Status": "PENDING"})
+			pending = append(pending, map[string]any{"Input": run.Inputs[i], "Status": "PENDING"})
 			continue
 		case ex.Status != store.ExecSucceeded:
 			failed = append(failed, childRecord(ex))
@@ -694,12 +848,12 @@ func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPl
 			}
 		}
 		written++
-		writtenItems += plan.sizes[i]
+		writtenItems += run.Sizes[i]
 	}
 	runID := run.ARN[strings.LastIndex(run.ARN, ":")+1:]
 	dir := runID
-	if plan.writePrefix != "" {
-		dir = plan.writePrefix + "/" + runID
+	if run.WritePrefix != "" {
+		dir = run.WritePrefix + "/" + runID
 	}
 	ext := ".json"
 	if w.OutputType == "JSONL" {
@@ -719,18 +873,18 @@ func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPl
 			return "", err
 		}
 		key := dir + "/" + group.name + "_0" + ext
-		if err := r.SDK.S3Write(ctx, plan.writeBucket, key, body); err != nil {
+		if err := r.SDK.S3Write(ctx, run.WriteBucket, key, body); err != nil {
 			return "", writerFailed(err)
 		}
 		files[group.name] = []any{map[string]any{"Key": key, "Size": len(body)}}
 	}
-	manifest := map[string]any{"DestinationBucket": plan.writeBucket, "MapRunArn": run.ARN, "ResultFiles": files}
+	manifest := map[string]any{"DestinationBucket": run.WriteBucket, "MapRunArn": run.ARN, "ResultFiles": files}
 	body, err := json.Marshal(manifest)
 	if err != nil {
 		return "", err
 	}
 	manifestKey := dir + "/manifest.json"
-	if err := r.SDK.S3Write(ctx, plan.writeBucket, manifestKey, body); err != nil {
+	if err := r.SDK.S3Write(ctx, run.WriteBucket, manifestKey, body); err != nil {
 		return "", writerFailed(err)
 	}
 	r.Store.UpdateMapRun(run.ARN, func(m *store.MapRun) {
@@ -739,7 +893,7 @@ func (r *Runner) writeResults(ctx context.Context, run store.MapRun, plan distPl
 	})
 	return compactValue(map[string]any{
 		"MapRunArn":           run.ARN,
-		"ResultWriterDetails": map[string]any{"Bucket": plan.writeBucket, "Key": manifestKey},
+		"ResultWriterDetails": map[string]any{"Bucket": run.WriteBucket, "Key": manifestKey},
 	})
 }
 

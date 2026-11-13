@@ -118,7 +118,8 @@ type HistoryEvent struct {
 	// HasRedrive is set even when the count is 0 so the history API emits it.
 	RedriveCount int32
 	HasRedrive   bool
-	// MapRunARN is mapRunStartedEventDetails.mapRunArn.
+	// MapRunARN is the mapRunArn of mapRunStartedEventDetails and
+	// mapRunRedrivenEventDetails. MapRunRedriven also uses RedriveCount.
 	MapRunARN string
 }
 

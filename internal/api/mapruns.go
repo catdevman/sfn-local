@@ -38,7 +38,7 @@ func (s *Service) DescribeMapRun(_ context.Context, in *gen.DescribeMapRunInput)
 	}
 	items := counts(run.Items)
 	execs := counts(run.Executions)
-	zero := int32(0)
+	redrives := run.RedriveCount
 	out := &gen.DescribeMapRunOutput{
 		MapRunArn:                  sp(run.ARN),
 		ExecutionArn:               sp(run.ExecutionARN),
@@ -49,22 +49,26 @@ func (s *Service) DescribeMapRun(_ context.Context, in *gen.DescribeMapRunInput)
 		ToleratedFailureCount:      &count,
 		ItemCounts:                 (*gen.MapRunItemCounts)(&items),
 		ExecutionCounts:            &execs,
-		RedriveCount:               &zero,
+		RedriveCount:               &redrives,
 	}
 	if run.Stopped != nil {
 		out.StopDate = ts(*run.Stopped)
 	}
+	if run.RedriveDate != nil {
+		out.RedriveDate = ts(*run.RedriveDate)
+	}
 	return out, nil
 }
 
-// counts fills every count, including the redrive counts this server keeps at 0.
+// counts fills every count. FailuresNotRedrivable is always 0, because a
+// child that cannot be redriven is restarted instead.
 func counts(c store.MapRunCounts) gen.MapRunExecutionCounts {
 	i := func(n int64) *int64 { return &n }
 	return gen.MapRunExecutionCounts{
 		Pending: i(c.Pending), Running: i(c.Running), Succeeded: i(c.Succeeded),
 		Failed: i(c.Failed), TimedOut: i(c.TimedOut), Aborted: i(c.Aborted),
 		Total: i(c.Total), ResultsWritten: i(c.ResultsWritten),
-		FailuresNotRedrivable: i(0), PendingRedrive: i(0),
+		FailuresNotRedrivable: i(0), PendingRedrive: i(c.PendingRedrive),
 	}
 }
 

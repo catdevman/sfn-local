@@ -13,7 +13,7 @@ const (
 )
 
 // MapRun is one Distributed Map run. Each attempt of the Map state, including
-// a retry, is a new run.
+// a retry, is a new run. A parent redrive reuses the run.
 type MapRun struct {
 	ARN string
 	// ExecutionARN is the parent execution.
@@ -31,6 +31,19 @@ type MapRun struct {
 	ToleranceCount *int64
 	Items          MapRunCounts
 	Executions     MapRunCounts
+	// State is the Map state's name in the parent.
+	State string
+	// Inputs and Sizes are the child inputs and how many items each holds.
+	// They are kept so a redrive runs the same items.
+	Inputs []string
+	Sizes  []int64
+	// Children is the latest child ARN for each input. "" is never started.
+	Children []string
+	// WriteBucket and WritePrefix are the ResultWriter export target.
+	WriteBucket  string
+	WritePrefix  string
+	RedriveCount int32
+	RedriveDate  *time.Time
 }
 
 // MapRunCounts are the item or child execution counts of a Map Run.
@@ -43,6 +56,8 @@ type MapRunCounts struct {
 	Aborted        int64
 	Total          int64
 	ResultsWritten int64
+	// PendingRedrive is unsuccessful children a redrive has not restarted yet.
+	PendingRedrive int64
 }
 
 func (m MapRun) snapshot() MapRun {
@@ -58,6 +73,12 @@ func (m MapRun) snapshot() MapRun {
 		c := *m.ToleranceCount
 		m.ToleranceCount = &c
 	}
+	if m.RedriveDate != nil {
+		d := *m.RedriveDate
+		m.RedriveDate = &d
+	}
+	// Inputs and Sizes never change after PutMapRun. Children does.
+	m.Children = append([]string(nil), m.Children...)
 	return m
 }
 

@@ -291,6 +291,9 @@ func (s *Service) RedriveExecution(ctx context.Context, in *gen.RedriveExecution
 			return nil, err
 		}
 	}
+	if ex.MapRunARN != "" {
+		return nil, notRedrivable(arn, "Execution is part of a Map Run and is redriven by redriving its parent")
+	}
 	if ex.Status != store.ExecRunning {
 		m, ok := s.Store.Machine(ex.StateMachineARN)
 		if !ok || m.Status == store.StatusDeleting {
@@ -657,6 +660,9 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 		out.ExecutionTimedOutEventDetails = d
 	case "MapRunStarted":
 		out.MapRunStartedEventDetails = &gen.MapRunStartedEventDetails{MapRunArn: sp(ev.MapRunARN)}
+	case "MapRunRedriven":
+		n := ev.RedriveCount
+		out.MapRunRedrivenEventDetails = &gen.MapRunRedrivenEventDetails{MapRunArn: sp(ev.MapRunARN), RedriveCount: &n}
 	case "MapRunFailed":
 		d := &gen.MapRunFailedEventDetails{}
 		if ev.HasError {
