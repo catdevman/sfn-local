@@ -9,6 +9,7 @@ import (
 var sfnService = service{
 	errorPrefix: "Sfn",
 	env:         "SFN",
+	own:         "STEP_FUNCTIONS_ENDPOINT (--step-functions-endpoint)",
 	client:      (*sfn.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := sfn.NewFromConfig(cfg, func(o *sfn.Options) {

@@ -58,6 +58,9 @@ type Machine struct {
 	Updated    *time.Time
 	Logging    *Logging
 	Revision   string
+	// FirstRevision is the revision the machine was created with. AWS shows
+	// a revision only once the machine has been updated.
+	FirstRevision string
 }
 
 // Activity is one activity row. Tokens for that ARN live in the token table.
@@ -73,8 +76,13 @@ type HistoryEvent struct {
 	PreviousID int64
 	// Previous sets PreviousID when HasPrevious is true. Otherwise Append
 	// chains it, as described there.
-	Previous         int64
-	HasPrevious      bool
+	Previous    int64
+	HasPrevious bool
+	// Chain names the Parallel branch or Map iteration the event belongs to,
+	// such as "/P#1" or "/P#1/M@0". It is "" at the top level and is not
+	// part of the API. A Side event does not move its chain forward.
+	Chain            string
+	Side             bool
 	Type             string
 	Time             time.Time
 	Name             string
@@ -209,15 +217,11 @@ type execRec struct {
 	Execution
 	cancel context.CancelFunc
 	done   chan struct{}
-	// hint is the PreviousID for the next appended event, set by
-	// HintPrevious. It is cleared by the next append either way.
-	hint prevHint
-}
-
-type prevHint struct {
-	id  int64
-	typ string
-	set bool
+	// last is the newest event id on each chain. See Append.
+	last map[string]int64
+	// results holds the output of each finished Parallel branch and Map
+	// iteration by chain, so a redrive can skip them.
+	results map[string]string
 }
 
 // RunHandle is the worker context and the channel closed when the worker returns.

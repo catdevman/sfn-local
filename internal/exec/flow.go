@@ -13,13 +13,12 @@ import (
 
 func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
 	ctx = r.ensureScope(ctx, arn)
-	if m := takeResume(ctx, st); m != nil && (st.Type == "Task" || st.Dist != nil) {
-		// A redrive resumes this state in place. Its first event follows
-		// the original entered event. A Distributed Map sets its own.
+	if m := takeResume(ctx, st); m != nil && (st.Type == "Task" || st.Type == "Parallel" || st.Type == "Map") {
+		// A redrive resumes this state in place, as AWS does. Its next event
+		// follows the original entered event. A Parallel or Map resumes its
+		// unfinished branches or iterations.
 		m.inPlace = true
-		if st.Type == "Task" {
-			r.Store.HintPrevious(arn, m.entered, "")
-		}
+		r.Store.SetChainLast(arn, chainOf(ctx), m.entered)
 	} else if err := r.entered(ctx, arn, st, input); err != nil {
 		r.onAppendErr(arn, err)
 		return "", "", false, true
@@ -436,6 +435,8 @@ type resumeMark struct {
 	name    string
 	entered int64
 	used    bool
+	// nestedUsed is set once a Parallel or Map has resumed its branches.
+	nestedUsed bool
 	// inPlace is set when the state resumed without a new entered event.
 	inPlace bool
 	// mapUsed is set once a Distributed Map has resumed its Map Run.
@@ -456,4 +457,27 @@ func takeResume(ctx context.Context, st *asl.State) *resumeMark {
 		return nil
 	}
 	return m
+}
+
+// resumedHere returns the redrive mark when st is a Parallel or Map that the
+// redrive resumed in place and has not resumed its branches yet.
+func resumedHere(ctx context.Context, st *asl.State) *resumeMark {
+	m, _ := ctx.Value(resumeKey{}).(*resumeMark)
+	if m == nil || !m.inPlace || m.nestedUsed || m.name != st.Name {
+		return nil
+	}
+	m.nestedUsed = true
+	return m
+}
+
+// startedAfter is the id of the newest event of type typ on chain after
+// the event entered, such as a resumed Parallel's ParallelStateStarted.
+func startedAfter(history []store.HistoryEvent, chain, typ string, entered int64) int64 {
+	var id int64
+	for _, ev := range history {
+		if ev.Chain == chain && ev.Type == typ && ev.ID > entered {
+			id = ev.ID
+		}
+	}
+	return id
 }

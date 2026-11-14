@@ -54,8 +54,10 @@ func assertTypes(t *testing.T, ex store.Execution, want ...string) {
 		if i == 0 && (ev.ID != 1 || ev.PreviousID != 0) {
 			t.Fatalf("first event id %d previous %d", ev.ID, ev.PreviousID)
 		}
-		// The event after ExecutionStarted points at 0, as on AWS.
-		if i == 1 && ev.PreviousID != 0 || i > 1 && ev.PreviousID != ex.History[i-1].ID {
+		// The event after ExecutionStarted points at 0, as on AWS. Every other
+		// event points at an earlier one. TestAWSRecordings checks which.
+		// A stopped execution's ExecutionAborted points at 0 too.
+		if i == 1 && ev.PreviousID != 0 || i > 1 && ev.Type != "ExecutionAborted" && (ev.PreviousID <= 0 || ev.PreviousID >= ev.ID) {
 			t.Fatalf("previous %d at %d", ev.PreviousID, i)
 		}
 	}

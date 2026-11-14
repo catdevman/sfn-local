@@ -13,6 +13,7 @@ import (
 var dynamodbService = service{
 	errorPrefix: "DynamoDb",
 	env:         "DYNAMODB",
+	own:         "DYNAMODB_ENDPOINT (--dynamodb-endpoint)",
 	client:      (*dynamodb.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := dynamodb.NewFromConfig(cfg, func(o *dynamodb.Options) {

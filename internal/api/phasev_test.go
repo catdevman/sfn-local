@@ -77,11 +77,11 @@ func TestVersionsAliasesAndStart(t *testing.T) {
 		t.Fatal(err, again)
 	}
 	live, err := s.DescribeStateMachine(context.Background(), &gen.DescribeStateMachineInput{StateMachineArn: created.StateMachineArn})
-	if err != nil || live.RevisionId == nil {
+	if err != nil || live.RevisionId != nil {
 		t.Fatal(err, live)
 	}
 	ver, err := s.DescribeStateMachine(context.Background(), &gen.DescribeStateMachineInput{StateMachineArn: created.StateMachineVersionArn})
-	if err != nil || *ver.Definition != def1 || ver.Description == nil || *ver.Description != "first" || *ver.StateMachineArn != *created.StateMachineVersionArn || *ver.RevisionId != *live.RevisionId {
+	if err != nil || *ver.Definition != def1 || ver.Description == nil || *ver.Description != "first" || *ver.StateMachineArn != *created.StateMachineVersionArn || ver.RevisionId != nil {
 		t.Fatalf("%+v", ver)
 	}
 	_, err = s.DescribeStateMachine(context.Background(), &gen.DescribeStateMachineInput{StateMachineArn: sp(*created.StateMachineArn + ":prod")})
@@ -89,7 +89,8 @@ func TestVersionsAliasesAndStart(t *testing.T) {
 	if !errors.As(err, &reason) || reason.Reason == nil || *reason.Reason != gen.ValidationExceptionReasonAPI_DOES_NOT_SUPPORT_LABELED_ARNS {
 		t.Fatal(err)
 	}
-	stale := *live.RevisionId
+	stored, _ := s.Store.Machine(*created.StateMachineArn)
+	stale := stored.Revision
 	updated, err := s.UpdateStateMachine(context.Background(), &gen.UpdateStateMachineInput{
 		StateMachineArn: created.StateMachineArn, Definition: sp(def2), Publish: &pub, VersionDescription: sp("second"), RoleArn: sp(rolePath),
 	})
@@ -140,7 +141,9 @@ func TestVersionsAliasesAndStart(t *testing.T) {
 		t.Fatalf("history %+v", via.History[0])
 	}
 	forExec, err := s.DescribeStateMachineForExecution(context.Background(), &gen.DescribeStateMachineForExecutionInput{ExecutionArn: sp(via.ARN)})
-	if err != nil || *forExec.Definition != def1 || *forExec.StateMachineArn != *created.StateMachineVersionArn {
+	// AWS names the machine, not the version the alias routed to, and
+	// shows the definition that ran.
+	if err != nil || *forExec.Definition != def1 || *forExec.StateMachineArn != *created.StateMachineArn {
 		t.Fatalf("%+v %v", forExec, err)
 	}
 	w50 := int32(50)

@@ -67,7 +67,19 @@ func TestPhaseILambdaInvoke(t *testing.T) {
 	if got.Status != store.ExecSucceeded {
 		t.Fatalf("optimized %s %s %v", got.Error, got.Cause, typesOf(got))
 	}
-	jsonEqual(t, got.Output, `{"StatusCode":200,"Payload":{"ok":true}}`)
+	var res struct {
+		StatusCode      int
+		Payload         map[string]any
+		SdkHttpMetadata struct {
+			HttpHeaders    map[string]string
+			HttpStatusCode int
+		}
+		SdkResponseMetadata struct{ RequestId string }
+	}
+	if err := json.Unmarshal([]byte(got.Output), &res); err != nil || res.StatusCode != 200 || res.Payload["ok"] != true ||
+		res.SdkHttpMetadata.HttpStatusCode != 200 || res.SdkHttpMetadata.HttpHeaders["Content-Length"] != "11" || res.SdkResponseMetadata.RequestId == "" {
+		t.Fatalf("optimized output %s", got.Output)
+	}
 	if countEvents(got, "LambdaFunctionScheduled") != 0 || countEvents(got, "TaskScheduled") != 1 || countEvents(got, "TaskSucceeded") != 1 {
 		t.Fatalf("optimized history %v", typesOf(got))
 	}

@@ -87,6 +87,8 @@ func (m *memS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		body, ok := m.objects[r.URL.Path]
 		if !ok {
 			w.Header().Set("Content-Type", "application/xml")
+			w.Header().Set("X-Amz-Request-Id", "fake-request")
+			w.Header().Set("X-Amz-Id-2", "fake-host")
 			w.WriteHeader(http.StatusNotFound)
 			io.WriteString(w, `<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>`)
 			return
@@ -271,7 +273,7 @@ func TestResultWriterExport(t *testing.T) {
 	srun := s.Store.MapRuns(sx.ARN)[0]
 	sdir := "/out/strict/" + srun.ARN[strings.LastIndex(srun.ARN, ":")+1:]
 	pend, ok := m.get(sdir + "/PENDING_0.json")
-	if _, hasFailed := m.get(sdir + "/FAILED_0.json"); !ok || !hasFailed || string(pend) != `[{"Input":"{\"bad\":false}","Status":"PENDING"},{"Input":"{\"bad\":false}","Status":"PENDING"}]` {
+	if _, hasFailed := m.get(sdir + "/FAILED_0.json"); !ok || !hasFailed || string(pend) != `[{"Input":"{\"bad\":false}","InputDetails":{"Included":true},"Status":"PENDING"},{"Input":"{\"bad\":false}","InputDetails":{"Included":true},"Status":"PENDING"}]` {
 		t.Fatalf("pending %s", pend)
 	}
 	if _, ok := m.get(sdir + "/manifest.json"); !ok {

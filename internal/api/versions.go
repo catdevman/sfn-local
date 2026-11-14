@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"crypto/rand"
+	"encoding/json"
 	"errors"
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
@@ -361,6 +362,15 @@ func (s *Service) ValidateStateMachineDefinition(_ context.Context, in *gen.Vali
 			Message:  sp(message),
 			Location: sp(loc),
 		})
+		// AWS also reports a definition with no terminal state, after a
+		// missing transition target.
+		if code == "MISSING_TRANSITION_TARGET" && !hasTerminalState(*in.Definition) {
+			found = append(found, gen.ValidateStateMachineDefinitionDiagnostic{
+				Severity: &sev,
+				Code:     sp("MISSING_END_STATE"),
+				Message:  sp("Workflow has no terminal state"),
+			})
+		}
 	}
 	if in.Severity != nil && *in.Severity == gen.ValidateStateMachineDefinitionSeverityERROR {
 		kept := found[:0]
@@ -469,4 +479,24 @@ func rejectVersionDescription(publish *bool, desc *string) error {
 		return modeled("ValidationException", "versionDescription requires publish to be true")
 	}
 	return nil
+}
+
+// hasTerminalState reports whether a top-level state ends the workflow:
+// End true, or a Succeed or Fail state.
+func hasTerminalState(definition string) bool {
+	var doc struct {
+		States map[string]struct {
+			Type string
+			End  bool
+		}
+	}
+	if json.Unmarshal([]byte(definition), &doc) != nil {
+		return true
+	}
+	for _, st := range doc.States {
+		if st.End || st.Type == "Succeed" || st.Type == "Fail" {
+			return true
+		}
+	}
+	return false
 }

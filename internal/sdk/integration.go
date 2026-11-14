@@ -39,6 +39,15 @@ func (c *Caller) SupportsIntegration(resource string) bool {
 	return ok && c.Supports(in.id, in.action)
 }
 
+// IntegrationHint is Hint for an optimized integration resource.
+func (c *Caller) IntegrationHint(resource string) string {
+	in, ok := integrations[resource]
+	if !ok {
+		return "this server does not run this integration"
+	}
+	return c.Hint(in.id, in.action)
+}
+
 // CallIntegration runs an optimized integration. Errors are named as Call
 // names them, with the integration's prefix.
 func (c *Caller) CallIntegration(ctx context.Context, resource string, params []byte) (string, error) {

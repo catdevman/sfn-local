@@ -617,7 +617,7 @@ dispatch:
 		return branchResult{outcome: outcomeHalt}
 	}
 	// MapStateExited follows the run's start event, as on AWS.
-	r.Store.HintPrevious(arn, run.RunEventID, "MapStateExited")
+	r.Store.SetChainLast(arn, chainOf(ctx), run.RunEventID)
 	if run.WriteBucket != "" {
 		out, err := r.writeResults(ctx, run, children, d.Writer)
 		if err != nil {
@@ -678,19 +678,17 @@ func thresholdExceeded(m store.MapRun) bool {
 	return m.ToleranceCount != nil && failed > *m.ToleranceCount
 }
 
-// closeMapRun sets a final status. A run that succeeds or fails counts every
-// item as written, pending ones included, the way AWS reports resultsWritten
-// with or without a ResultWriter.
+// closeMapRun sets a final status. A run that ends counts every item as
+// written, pending ones included, the way AWS reports resultsWritten with or
+// without a ResultWriter.
 func (r *Runner) closeMapRun(arn, status string) {
 	when := r.now()
 	r.Store.UpdateMapRun(arn, func(m *store.MapRun) {
 		if m.Status == store.MapRunRunning {
 			m.Status = status
 			m.Stopped = &when
-			if status != store.MapRunAborted {
-				m.Items.ResultsWritten = m.Items.Total
-				m.Executions.ResultsWritten = m.Executions.Total
-			}
+			m.Items.ResultsWritten = m.Items.Total
+			m.Executions.ResultsWritten = m.Executions.Total
 		}
 	})
 }
@@ -870,8 +868,17 @@ func (r *Runner) writeResults(ctx context.Context, run store.MapRun, children []
 	var succeeded, failed, pending []any
 	for i, ex := range children {
 		switch {
+		case ex.ARN == "" && transform == "NONE":
+			pending = append(pending, map[string]any{"Input": run.Inputs[i], "InputDetails": map[string]any{"Included": true}, "Status": "PENDING"})
+			continue
 		case ex.ARN == "":
-			pending = append(pending, map[string]any{"Input": run.Inputs[i], "Status": "PENDING"})
+			// AWS writes a pending item's input itself unless the
+			// transformation is NONE.
+			val, err := parseJSON(run.Inputs[i])
+			if err != nil {
+				return "", &jsonpath.EvalError{Name: "States.ResultWriterFailed", Cause: "item input is not JSON"}
+			}
+			pending = append(pending, val)
 			continue
 		case ex.Status != store.ExecSucceeded:
 			failed = append(failed, childRecord(ex))

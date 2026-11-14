@@ -11,6 +11,7 @@ import (
 var lambdaService = service{
 	errorPrefix: "Lambda",
 	env:         "LAMBDA",
+	own:         "LAMBDA_ENDPOINT (--lambda-endpoint)",
 	client:      (*lambda.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := lambda.NewFromConfig(cfg, func(o *lambda.Options) {

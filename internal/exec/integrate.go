@@ -48,6 +48,39 @@ func integrationResource(resource string) (base, mode string, ok bool) {
 
 // integrationReady reports whether an optimized integration can be called.
 // DynamoDB, SQS, SNS, and EventBridge run through internal/sdk.
+// unsupported is the error for a resource this server cannot run, with a
+// hint naming the setting that would make it run.
+func (r *Runner) unsupported(resource string) error {
+	msg := "unsupported resource: " + resource
+	if hint := r.resourceHint(resource); hint != "" {
+		msg += " (" + hint + ")"
+	}
+	return errors.New(msg)
+}
+
+func (r *Runner) resourceHint(resource string) string {
+	const lambdaHint = "set LAMBDA_ENDPOINT (--lambda-endpoint)"
+	if _, ok := parseLambdaARN(resource, r.Region, r.Account); ok {
+		return lambdaHint
+	}
+	if id, action, ok := sdk.ParseResource(resource); ok {
+		return r.SDK.Hint(id, action)
+	}
+	base, mode, ok := integrationResource(resource)
+	switch {
+	case !ok:
+		return ""
+	case mode != "" && base != "arn:aws:states:::states:startExecution":
+		return "only arn:aws:states:::states:startExecution runs ." + mode
+	case base == "arn:aws:states:::lambda:invoke":
+		return lambdaHint
+	case base == "arn:aws:states:::states:startExecution":
+		return "set STEP_FUNCTIONS_ENDPOINT (--step-functions-endpoint)"
+	default:
+		return r.SDK.IntegrationHint(base)
+	}
+}
+
 func (r *Runner) integrationReady(base string) bool {
 	if r == nil {
 		return false
@@ -67,11 +100,8 @@ func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta
 		return r.invokeSDK(callCtx, parent, id, action, meta.input, taskWins)
 	}
 	base, mode, ok := integrationResource(meta.resource)
-	if !ok || (mode != "" && base != "arn:aws:states:::states:startExecution") {
-		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
-	}
-	if !r.integrationReady(base) {
-		return "", &taskFailure{Name: "States.Runtime", Cause: "unsupported resource: " + meta.resource}
+	if !ok || (mode != "" && base != "arn:aws:states:::states:startExecution") || !r.integrationReady(base) {
+		return "", &taskFailure{Name: "States.Runtime", Cause: r.unsupported(meta.resource).Error()}
 	}
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
@@ -112,11 +142,53 @@ func (r *Runner) invokeLambdaOptimized(callCtx, parent context.Context, raw stri
 	if err != nil {
 		return "", &taskFailure{Name: "States.Runtime", Cause: "Lambda payload is not JSON"}
 	}
-	text, err := compactValue(map[string]any{"StatusCode": reply.Status, "Payload": payloadValue})
+	text, err := compactValue(lambdaResult(reply, payloadValue, target.qualifier))
 	if err != nil {
 		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 	}
 	return text, nil
+}
+
+// lambdaResult is the optimized lambda:invoke result as AWS writes it: the
+// AWS SDK for Java v2 response, with the HTTP headers and request ID. Real
+// Lambda always names the version it ran. An emulator such as SAM may not,
+// so the qualifier, or $LATEST, stands in.
+func lambdaResult(reply LambdaReply, payload any, qualifier string) map[string]any {
+	all := map[string]any{}
+	single := map[string]any{}
+	for name, values := range reply.Headers {
+		list := make([]any, len(values))
+		for i, v := range values {
+			list[i] = v
+		}
+		all[name] = list
+		if len(values) > 0 {
+			single[name] = values[0]
+		}
+	}
+	requestID := reply.Headers.Get("X-Amzn-Requestid")
+	if requestID == "" {
+		requestID = newTaskID()
+	}
+	out := map[string]any{
+		"StatusCode": reply.Status,
+		"Payload":    payload,
+		"SdkHttpMetadata": map[string]any{
+			"AllHttpHeaders": all,
+			"HttpHeaders":    single,
+			"HttpStatusCode": reply.Status,
+		},
+		"SdkResponseMetadata": map[string]any{"RequestId": requestID},
+	}
+	version := reply.Headers.Get("X-Amz-Executed-Version")
+	if version == "" {
+		version = qualifier
+	}
+	if version == "" {
+		version = "$LATEST"
+	}
+	out["ExecutedVersion"] = version
+	return out
 }
 
 func lambdaInvokeRequest(raw, region, account string) (lambdaTarget, string, error) {

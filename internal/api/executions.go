@@ -140,6 +140,19 @@ func (s *Service) DescribeStateMachineForExecution(_ context.Context, in *gen.De
 	if updated != nil {
 		out.UpdateDate = ts(*updated)
 	}
+	if s.Profile != ProfileSFNLocal {
+		// AWS names the machine, not the version or alias it ran, shows a
+		// revision only once the machine was updated, and always has an
+		// update date.
+		out.StateMachineArn = sp(m.ARN)
+		out.LoggingConfiguration, out.EncryptionConfiguration, out.TracingConfiguration = awsConfiguration(out.LoggingConfiguration)
+		if revision == m.FirstRevision {
+			out.RevisionId = nil
+		}
+		if updated == nil {
+			out.UpdateDate = ts(m.Created)
+		}
+	}
 	return out, nil
 }
 
@@ -297,7 +310,8 @@ func (s *Service) StopExecution(_ context.Context, in *gen.StopExecutionInput) (
 		return &gen.StopExecutionOutput{StopDate: ts(when)}, nil
 	}
 	when := s.now()
-	ev := store.HistoryEvent{Type: "ExecutionAborted", Time: when}
+	// AWS gives a stopped execution's ExecutionAborted previousEventId 0.
+	ev := store.HistoryEvent{Type: "ExecutionAborted", Time: when, HasPrevious: true}
 	hasError := in.Error != nil
 	hasCause := in.Cause != nil
 	if hasError {

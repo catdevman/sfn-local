@@ -8,6 +8,7 @@ import (
 var snsService = service{
 	errorPrefix: "Sns",
 	env:         "SNS",
+	own:         "SNS_ENDPOINT (--sns-endpoint)",
 	client:      (*sns.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := sns.NewFromConfig(cfg, func(o *sns.Options) {

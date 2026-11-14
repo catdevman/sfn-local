@@ -5,6 +5,7 @@ import (
 	"io"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -129,5 +130,28 @@ func TestAWSSDKSfnCallsThisServer(t *testing.T) {
 	jsonEqual(t, ex.Output, `{"arn":"arn:aws:states:us-east-1:123456789012:execution:child:from-sdk","error":"Sfn.ExecutionDoesNotExistException"}`)
 	if started := waitExec(t, s, "arn:aws:states:us-east-1:123456789012:execution:child:from-sdk"); started.Output != `"hi"` {
 		t.Fatalf("child %s %s", started.Status, started.Output)
+	}
+}
+
+func TestUnsupportedResourceHints(t *testing.T) {
+	s := newService()
+	s.Runner.SDK = sdk.New(sdk.Config{Region: "us-east-1", Endpoints: map[string]string{"s3": "http://127.0.0.1:1"}})
+	n := 0
+	for resource, hint := range map[string]string{
+		"arn:aws:states:::lambda:invoke":                         "(set LAMBDA_ENDPOINT (--lambda-endpoint))",
+		"arn:aws:lambda:us-east-1:123456789012:function:hello":   "(set LAMBDA_ENDPOINT (--lambda-endpoint))",
+		"arn:aws:states:::states:startExecution.sync":            "(set STEP_FUNCTIONS_ENDPOINT (--step-functions-endpoint))",
+		"arn:aws:states:::sqs:sendMessage.sync":                  "(only arn:aws:states:::states:startExecution runs .sync)",
+		"arn:aws:states:::dynamodb:putItem":                      "(set AWS_ENDPOINT_URL_DYNAMODB, DYNAMODB_ENDPOINT (--dynamodb-endpoint), or AWS_ENDPOINT_URL)",
+		"arn:aws:states:::aws-sdk:secretsmanager:getSecretValue": "(set AWS_ENDPOINT_URL_SECRETS_MANAGER, or AWS_ENDPOINT_URL)",
+		"arn:aws:states:::aws-sdk:s3:selectObjectContent":        "(this server does not run s3:selectObjectContent; internal/invoke/operations.toml lists the operations that run)",
+		"arn:aws:states:::aws-sdk:nope:doThing":                  "(this server has no aws-sdk:nope service)",
+	} {
+		def := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"` + resource + `","Parameters":{"FunctionName":"hello","StateMachineArn":"arn:aws:states:us-east-1:123456789012:stateMachine:x"},"End":true}}}`
+		n++
+		ex := runMachine(t, s, "hint-"+strconv.Itoa(n), def, "run", `{}`)
+		if ex.Status != store.ExecFailed || ex.Error != "States.Runtime" || ex.Cause != "unsupported resource: "+resource+" "+hint {
+			t.Errorf("%s: %s %s", resource, ex.Error, ex.Cause)
+		}
 	}
 }

@@ -75,8 +75,9 @@ func (r *Runner) Start(handle *store.RunHandle, arn string) {
 
 // Run drives one execution until it reaches a terminal status.
 // A redrive starts at the outermost state that was entered and not exited.
-// A Task or Distributed Map there resumes without a new entered event, as on
-// AWS. Other states are entered again.
+// A Task, Parallel, or Map there resumes without a new entered event, as on
+// AWS, and a Parallel or Map resumes inside its unfinished branches. Other
+// states are entered again.
 // Mock attempt counters and the variable root stay until the run succeeds,
 // so a later redrive continues both.
 func (r *Runner) Run(ctx context.Context, arn string) {
@@ -101,7 +102,7 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 	name := prog.StartAt
 	var resume *resumeMark
 	if ex.RedriveCount > 0 {
-		state, resumed, entered, open := store.OpenStateEvent(ex.History)
+		state, resumed, entered, open := store.OpenStateEvent(chainEvents(ex.History, ""))
 		if !open {
 			r.fail(arn, "States.Runtime", "the execution has no state to redrive")
 			return

@@ -84,9 +84,25 @@ func (s *Service) DescribeStateMachine(_ context.Context, in *gen.DescribeStateM
 		if err != nil {
 			return nil, err
 		}
-		return machineDescription(m), nil
+		out := machineDescription(m)
+		if s.Profile != ProfileSFNLocal {
+			out.LoggingConfiguration, out.EncryptionConfiguration, out.TracingConfiguration = awsConfiguration(out.LoggingConfiguration)
+			if m.Revision == m.FirstRevision {
+				out.RevisionId = nil
+			}
+		}
+		return out, nil
 	case "version":
-		return s.describeVersion(text)
+		out, err := s.describeVersion(text)
+		if err == nil && s.Profile != ProfileSFNLocal {
+			out.LoggingConfiguration, out.EncryptionConfiguration, out.TracingConfiguration = awsConfiguration(out.LoggingConfiguration)
+			if v, ok := s.Store.Version(text); ok {
+				if m, found := s.Store.Machine(v.MachineARN); found && v.Revision == m.FirstRevision {
+					out.RevisionId = nil
+				}
+			}
+		}
+		return out, err
 	case "alias":
 		return nil, validationReason("DescribeStateMachine does not accept an alias ARN", gen.ValidationExceptionReasonAPI_DOES_NOT_SUPPORT_LABELED_ARNS)
 	default:
@@ -296,4 +312,18 @@ func (s *Service) region() string {
 		return "us-east-1"
 	}
 	return s.Region
+}
+
+// awsConfiguration fills in the settings AWS reports for a machine that set
+// none: logging OFF without execution data, an AWS-owned key, and tracing
+// off. This server does not encrypt or trace.
+func awsConfiguration(logging *gen.LoggingConfiguration) (*gen.LoggingConfiguration, *gen.EncryptionConfiguration, *gen.TracingConfiguration) {
+	if logging == nil {
+		off := gen.LogLevelOFF
+		no := false
+		logging = &gen.LoggingConfiguration{Level: &off, IncludeExecutionData: &no}
+	}
+	owned := gen.EncryptionTypeAWS_OWNED_KEY
+	disabled := false
+	return logging, &gen.EncryptionConfiguration{Type: &owned}, &gen.TracingConfiguration{Enabled: &disabled}
 }

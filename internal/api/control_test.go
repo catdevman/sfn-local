@@ -122,20 +122,25 @@ func TestCreateDescribeListUpdateDelete(t *testing.T) {
 	if err := json.Unmarshal(descRaw, &desc); err != nil {
 		t.Fatal(err)
 	}
-	for _, key := range []string{"name", "status", "definition", "creationDate", "roleArn", "stateMachineArn", "type", "revisionId"} {
+	for _, key := range []string{"name", "status", "definition", "creationDate", "roleArn", "stateMachineArn", "type", "loggingConfiguration", "encryptionConfiguration", "tracingConfiguration"} {
 		if desc[key] == nil {
 			t.Fatalf("missing %s in %s", key, descRaw)
 		}
 	}
+	// AWS shows a revision only once the machine has been updated.
+	if desc["revisionId"] != nil {
+		t.Fatalf("new machine has a revision: %s", descRaw)
+	}
 	if desc["status"] != "ACTIVE" || desc["type"] != "STANDARD" || desc["roleArn"] != rolePath {
 		t.Fatalf("%s", descRaw)
 	}
-	firstRev, _ := desc["revisionId"].(string)
+	stored, _ := s.Store.Machine(*created.StateMachineArn)
+	firstRev := stored.Revision
 	if firstRev == "" {
 		t.Fatal("revisionId")
 	}
-	if _, ok := desc["loggingConfiguration"]; ok {
-		t.Fatal("unset logging")
+	if logging, _ := desc["loggingConfiguration"].(map[string]any); logging["level"] != "OFF" || logging["includeExecutionData"] != false {
+		t.Fatalf("default logging %s", descRaw)
 	}
 
 	createMachine(t, s, "other", passDef, roleARN)

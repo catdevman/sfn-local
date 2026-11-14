@@ -2,8 +2,11 @@ package exec
 
 import (
 	"context"
+	"strconv"
+	"strings"
 	"sync"
 
+	"github.com/catdevman/sfn-local/internal/asl"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -120,9 +123,79 @@ func parentIterOf(ctx context.Context) (int32, bool) {
 	return p.Index, ok
 }
 
+type chainKey struct{}
+
+// chainOf is the Parallel branch or Map iteration the context runs in. It
+// is "" at the top level.
+func chainOf(ctx context.Context) string {
+	if ctx == nil {
+		return ""
+	}
+	c, _ := ctx.Value(chainKey{}).(string)
+	return c
+}
+
+func withChain(ctx context.Context, chain string) context.Context {
+	return context.WithValue(ctx, chainKey{}, chain)
+}
+
+// branchChain names Parallel branch i of st, and iterChain Map iteration i.
+func branchChain(ctx context.Context, st *asl.State, i int) string {
+	return chainOf(ctx) + "/" + st.Name + "#" + strconv.Itoa(i)
+}
+
+func iterChain(ctx context.Context, st *asl.State, i int) string {
+	return chainOf(ctx) + "/" + st.Name + "@" + strconv.Itoa(i)
+}
+
+// chainEvents is the part of a history on one chain.
+func chainEvents(history []store.HistoryEvent, chain string) []store.HistoryEvent {
+	var out []store.HistoryEvent
+	for _, ev := range history {
+		if ev.Chain == chain {
+			out = append(out, ev)
+		}
+	}
+	return out
+}
+
+// abortable are the state types AWS writes a StateAborted event for.
+var abortable = map[string]bool{"Task": true, "Wait": true, "Map": true, "Parallel": true}
+
+// abortChain writes <Type>StateAborted, innermost first, for each state on
+// chain that was entered and has not exited, failed, or aborted. AWS does
+// this for the branches and iterations of a Parallel or Map that fails. A
+// Fail state has no aborted event.
+func (r *Runner) abortChain(ctx context.Context, arn, chain string) {
+	ex, ok := r.Store.Execution(arn)
+	if !ok {
+		return
+	}
+	var open []string
+	for _, ev := range chainEvents(ex.History, chain) {
+		switch {
+		case strings.HasSuffix(ev.Type, "StateEntered"):
+			open = append(open, strings.TrimSuffix(ev.Type, "StateEntered"))
+		case len(open) == 0:
+		case strings.HasSuffix(ev.Type, "StateExited"),
+			ev.Type == open[len(open)-1]+"StateFailed",
+			ev.Type == open[len(open)-1]+"StateAborted":
+			open = open[:len(open)-1]
+		}
+	}
+	for i := len(open) - 1; i >= 0; i-- {
+		if abortable[open[i]] {
+			r.emit(ctx, arn, store.HistoryEvent{Type: open[i] + "StateAborted", Chain: chain, Side: true})
+		}
+	}
+}
+
 func stampParent(ctx context.Context, ev *store.HistoryEvent) {
 	if ev == nil {
 		return
+	}
+	if ev.Chain == "" {
+		ev.Chain = chainOf(ctx)
 	}
 	if idx, ok := parentIterOf(ctx); ok {
 		ev.ParentIndex = idx
@@ -144,4 +217,8 @@ type branchResult struct {
 	outcome outcome
 	errName string
 	cause   string
+	// after is the event a Parallel or Map Succeeded or Failed event points
+	// at: the last event of the last branch or iteration to succeed, or of
+	// the one that failed. 0 is unset.
+	after int64
 }

@@ -8,6 +8,7 @@ import (
 var eventbridgeService = service{
 	errorPrefix: "EventBridge",
 	env:         "EVENTBRIDGE",
+	own:         "EVENTBRIDGE_ENDPOINT (--eventbridge-endpoint)",
 	client:      (*eventbridge.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := eventbridge.NewFromConfig(cfg, func(o *eventbridge.Options) {

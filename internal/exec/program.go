@@ -10,6 +10,16 @@ import (
 // runProgram runs a nested state machine on the same execution. It does not
 // succeed or fail the execution. A terminal state returns its output.
 func (r *Runner) runProgram(ctx context.Context, arn string, prog *asl.Program, input string) branchResult {
+	start := ""
+	if prog != nil {
+		start = prog.StartAt
+	}
+	return r.runProgramFrom(ctx, arn, prog, start, input, nil)
+}
+
+// runProgramFrom runs a nested state machine from the state start. A redrive
+// passes the mark of the state it resumes.
+func (r *Runner) runProgramFrom(ctx context.Context, arn string, prog *asl.Program, start, input string, resume *resumeMark) branchResult {
 	ctx = r.ensureScope(ctx, arn)
 	child := scopeOf(ctx).child()
 	ctx = withScope(ctx, child)
@@ -19,7 +29,7 @@ func (r *Runner) runProgram(ctx context.Context, arn string, prog *asl.Program, 
 		r.failCtx(ctx, arn, "States.Runtime", "nested state machine is missing")
 		return frameResult(frame)
 	}
-	name := prog.StartAt
+	name := start
 	for {
 		if !r.Store.Running(arn) {
 			return branchResult{outcome: outcomeHalt}
@@ -47,7 +57,12 @@ func (r *Runner) runProgram(ctx context.Context, arn string, prog *asl.Program, 
 			r.failCtx(ctx, arn, "States.Runtime", "Missing 'Next' target: "+name)
 			return frameResult(frame)
 		}
-		next, output, terminal, done := r.step(ctx, arn, st, input)
+		stepCtx := ctx
+		if resume != nil {
+			stepCtx = context.WithValue(ctx, resumeKey{}, resume)
+			resume = nil
+		}
+		next, output, terminal, done := r.step(stepCtx, arn, st, input)
 		if done {
 			if !r.Store.Running(arn) {
 				return branchResult{outcome: outcomeHalt}

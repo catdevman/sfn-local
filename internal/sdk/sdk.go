@@ -54,6 +54,9 @@ type service struct {
 	errorPrefix string
 	// env is the suffix of AWS_ENDPOINT_URL_<env>.
 	env string
+	// own is the service's own endpoint setting, if it has one, for the
+	// unsupported resource hint.
+	own string
 	// client is a nil client pointer. cmd/genops lists its methods.
 	client any
 	// actions builds the action table around a client for cfg.
@@ -141,6 +144,23 @@ func New(cfg Config) *Caller {
 func (c *Caller) Supports(id, action string) bool {
 	_, ok := c.lookup(id, action)
 	return ok
+}
+
+// Hint says what would make id:action run, for an unsupported resource
+// error: the endpoint to set, or that the action is not in the table.
+func (c *Caller) Hint(id, action string) string {
+	svc, ok := services[id]
+	if !ok {
+		return "this server has no aws-sdk:" + id + " service"
+	}
+	if c == nil || c.cfg.Endpoints[id] == "" {
+		hint := "set " + EndpointEnv(id)
+		if svc.own != "" {
+			hint += ", " + svc.own
+		}
+		return hint + ", or AWS_ENDPOINT_URL"
+	}
+	return "this server does not run " + id + ":" + action + "; internal/invoke/operations.toml lists the operations that run"
 }
 
 // Call runs one action. A service failure is a *ServiceError. Any other error

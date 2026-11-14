@@ -25,8 +25,16 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 	if st.Dist != nil {
 		return r.runDistributed(ctx, arn, st, input, effVal, ctxObj)
 	}
+	// A redrive that resumes this state skips MapStateStarted and the
+	// iterations that finished, as on AWS.
+	resume := resumedHere(ctx, st)
+	var startedID int64
+	if resume != nil {
+		ex, _ := r.Store.Execution(arn)
+		startedID = startedAfter(ex.History, chainOf(ctx), "MapStateStarted", resume.entered)
+	}
 	retries := 0
-	started := false
+	started := resume != nil
 	for {
 		if r.halt(ctx, arn) {
 			return "", "", false, true
@@ -61,16 +69,27 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 				r.failCtx(ctx, arn, "States.Runtime", "Map items exceed the history length field")
 				return "", "", false, true
 			}
-			if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapStateStarted", Length: int32(len(items)), HasLength: true}) {
+			id, ok := r.emitID(ctx, arn, store.HistoryEvent{Type: "MapStateStarted", Length: int32(len(items)), HasLength: true})
+			if !ok {
 				return "", "", false, true
 			}
+			startedID = id
 			started = true
 		}
-		res := r.mapOnce(ctx, arn, st, effVal, items, retries, maxc)
+		resuming := resume != nil && retries == 0
+		if !resuming {
+			r.Store.ClearResults(arn, chainOf(ctx)+"/"+st.Name+"@")
+		}
+		res := r.mapOnce(ctx, arn, st, effVal, items, retries, maxc, startedID, resuming)
 		switch res.outcome {
 		case outcomeOK:
-			if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapStateSucceeded"}) {
+			// MapStateSucceeded and MapStateExited both follow the last
+			// MapIterationSucceeded, as on AWS.
+			if !r.emit(ctx, arn, store.HistoryEvent{Type: "MapStateSucceeded", Previous: res.after, HasPrevious: res.after > 0, Side: true}) {
 				return "", "", false, true
+			}
+			if res.after > 0 {
+				r.Store.SetChainLast(arn, chainOf(ctx), res.after)
 			}
 			return r.completeTask(ctx, arn, st, input, res.output, ctxObj)
 		case outcomeHalt:
@@ -99,7 +118,7 @@ func (r *Runner) retryOrFinish(ctx context.Context, arn string, st *asl.State, i
 		*retries++
 		return "", "", false, false, true
 	}
-	if failedEvent != "" && !r.emit(ctx, arn, store.HistoryEvent{Type: failedEvent}) {
+	if failedEvent != "" && !r.emit(ctx, arn, store.HistoryEvent{Type: failedEvent, Previous: res.after, HasPrevious: res.after > 0}) {
 		return "", "", false, true, false
 	}
 	next, output, terminal, done := r.afterFailure(ctx, arn, st, input, ctxObj, res)
@@ -125,10 +144,16 @@ func mapItems(st *asl.State, root, ctx any, vars map[string]any) ([]any, error) 
 	return arr, nil
 }
 
-func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root any, items []any, retries int, maxc *int64) branchResult {
+// mapOnce runs the iterations. A slot frees in index order, so MaxConcurrency
+// 1 runs them one after another. An iteration's MapIterationStarted follows
+// the last event of the iteration whose slot it took, or MapStateStarted, as
+// on AWS. A resuming attempt reuses each finished iteration's result and
+// resumes each unfinished one at its open state without a new
+// MapIterationStarted.
+func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root any, items []any, retries int, maxc *int64, started int64, resuming bool) branchResult {
 	n := len(items)
 	if n == 0 {
-		return branchResult{outcome: outcomeOK, output: "[]"}
+		return branchResult{outcome: outcomeOK, output: "[]", after: started}
 	}
 	child, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -136,68 +161,106 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 	if maxc != nil && *maxc > 0 {
 		sem = make(chan struct{}, int(*maxc))
 	}
+	var history []store.HistoryEvent
+	if resuming {
+		ex, _ := r.Store.Execution(arn)
+		history = ex.History
+	}
 	results := make([]string, n)
 	status := make([]int, n)
+	chains := make([]string, n)
 	var mu sync.Mutex
 	var failed bool
-	var name, cause string
-	note := func(errName, errCause string) {
+	var name, cause, failChain string
+	slotPrev := started
+	var lastSucceeded int64
+	note := func(c, errName, errCause string) {
 		mu.Lock()
 		if !failed {
 			failed = true
 			name = errName
 			cause = errCause
+			failChain = c
 			cancel()
 		}
 		mu.Unlock()
 	}
 	var wg sync.WaitGroup
+dispatch:
 	for i, elem := range items {
+		chains[i] = iterChain(ctx, st, i)
+		c := chains[i]
+		if resuming {
+			if out, ok := r.Store.Result(arn, c); ok {
+				results[i], status[i] = out, iterSucceeded
+				continue
+			}
+		}
 		if child.Err() != nil || stopRequested(ctx) {
 			break
+		}
+		if sem != nil {
+			select {
+			case sem <- struct{}{}:
+			case <-child.Done():
+				break dispatch
+			}
 		}
 		wg.Add(1)
 		go func(i int, elem any) {
 			defer wg.Done()
 			if sem != nil {
-				select {
-				case sem <- struct{}{}:
-					defer func() { <-sem }()
-				case <-child.Done():
-					return
-				}
+				defer func() { <-sem }()
 			}
 			if child.Err() != nil {
 				return
 			}
+			mu.Lock()
 			status[i] = iterStarted
+			prev := slotPrev
+			mu.Unlock()
 			idx := int32(i)
 			// Stamp this index on every event in the iteration. A nested Map keeps the outer index.
-			iterCtx := withParentIter(child, idx)
-			if !r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationStarted", Name: st.Name, Index: idx, HasIndex: true}) {
-				return
-			}
-			input, err := r.iterationInput(iterCtx, arn, st, root, i, elem, retries)
-			if err != nil {
-				fr := failureFrom(err)
-				r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationFailed", Name: st.Name, Index: idx, HasIndex: true})
-				status[i] = iterFailed
-				note(fr.errName, fr.cause)
-				return
-			}
-			// Map.Item stays visible inside the iterator. A nested Map replaces it.
-			res := r.runProgram(withItem(iterCtx, i, elem), arn, st.Processor, input)
-			switch res.outcome {
-			case outcomeOK:
-				if !r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationSucceeded", Name: st.Name, Index: idx, HasIndex: true}) {
+			iterCtx := withChain(withParentIter(child, idx), c)
+			itemCtx := withItem(iterCtx, i, elem)
+			var res branchResult
+			if state, in, entered, open := store.OpenStateEvent(chainEvents(history, c)); resuming && open {
+				res = r.runProgramFrom(itemCtx, arn, st.Processor, state, in, &resumeMark{name: state, entered: entered})
+			} else {
+				if !r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationStarted", Name: st.Name, Index: idx, HasIndex: true, Previous: prev, HasPrevious: true}) {
 					return
 				}
+				input, err := r.iterationInput(iterCtx, arn, st, root, i, elem, retries)
+				if err != nil {
+					res = failureFrom(err)
+				} else {
+					// Map.Item stays visible inside the iterator. A nested Map replaces it.
+					res = r.runProgram(itemCtx, arn, st.Processor, input)
+				}
+			}
+			switch res.outcome {
+			case outcomeOK:
+				inner, _ := r.Store.ChainLast(arn, c)
+				id, ok := r.emitID(iterCtx, arn, store.HistoryEvent{Type: "MapIterationSucceeded", Name: st.Name, Index: idx, HasIndex: true})
+				if !ok {
+					return
+				}
+				r.Store.SetResult(arn, c, res.output)
+				mu.Lock()
 				results[i] = res.output
 				status[i] = iterSucceeded
+				slotPrev = inner
+				if id > lastSucceeded {
+					lastSucceeded = id
+				}
+				mu.Unlock()
 			case outcomeFail:
-				r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationFailed", Name: st.Name, Index: idx, HasIndex: true})
+				r.emit(iterCtx, arn, store.HistoryEvent{Type: "MapIterationFailed", Name: st.Name, Index: idx, HasIndex: true, Side: true})
+				r.abortChain(iterCtx, arn, c)
+				mu.Lock()
 				status[i] = iterFailed
-				note(res.errName, res.cause)
+				mu.Unlock()
+				note(c, res.errName, res.cause)
 			}
 		}(i, elem)
 	}
@@ -208,7 +271,8 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 	abortOpen := func() {
 		for i, stt := range status {
 			if stt == iterStarted {
-				r.emit(withParentIter(ctx, int32(i)), arn, store.HistoryEvent{Type: "MapIterationAborted", Name: st.Name, Index: int32(i), HasIndex: true})
+				r.abortChain(ctx, arn, chains[i])
+				r.emit(withParentIter(ctx, int32(i)), arn, store.HistoryEvent{Type: "MapIterationAborted", Name: st.Name, Index: int32(i), HasIndex: true, Chain: chains[i], Side: true})
 			}
 		}
 	}
@@ -224,7 +288,8 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 		if name == "" {
 			name = "States.Runtime"
 		}
-		return branchResult{outcome: outcomeFail, errName: name, cause: cause}
+		after, _ := r.Store.ChainLast(arn, failChain)
+		return branchResult{outcome: outcomeFail, errName: name, cause: cause, after: after}
 	}
 	for _, stt := range status {
 		if stt != iterSucceeded {
@@ -253,7 +318,10 @@ func (r *Runner) mapOnce(ctx context.Context, arn string, st *asl.State, root an
 	if err != nil {
 		return branchResult{outcome: outcomeFail, errName: "States.Runtime", cause: err.Error()}
 	}
-	return branchResult{outcome: outcomeOK, output: out}
+	if lastSucceeded == 0 {
+		lastSucceeded = started
+	}
+	return branchResult{outcome: outcomeOK, output: out, after: lastSucceeded}
 }
 
 func (r *Runner) iterationInput(ctx context.Context, arn string, st *asl.State, root any, index int, elem any, retries int) (string, error) {

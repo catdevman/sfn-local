@@ -8,6 +8,7 @@ import (
 var sqsService = service{
 	errorPrefix: "Sqs",
 	env:         "SQS",
+	own:         "SQS_ENDPOINT (--sqs-endpoint)",
 	client:      (*sqs.Client)(nil),
 	actions: func(cfg aws.Config, endpoint string) map[string]handler {
 		c := sqs.NewFromConfig(cfg, func(o *sqs.Options) {

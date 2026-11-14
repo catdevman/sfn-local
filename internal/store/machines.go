@@ -27,6 +27,7 @@ func (s *Store) PutMachine(m Machine, tags []Tag) (Machine, error) {
 	if stored.Revision == "" {
 		stored.Revision = newRevision()
 	}
+	stored.FirstRevision = stored.Revision
 	s.machines[m.ARN] = &stored
 	s.machineBy[m.Name] = m.ARN
 	if tags != nil {

@@ -36,7 +36,10 @@ type LambdaReply struct {
 	Status        int
 	Payload       string
 	FunctionError string
-	Err           error
+	// Headers are the HTTP response headers, which the optimized lambda:invoke
+	// result passes through as SdkHttpMetadata.
+	Headers http.Header
+	Err     error
 }
 
 type taskKind int
@@ -221,7 +224,7 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 			}
 		}
 		if r.LambdaEndpoint == "" {
-			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+			return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 		}
 		return kindLambda, fn, false, nil
 	}
@@ -236,20 +239,20 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 	}
 	if id, action, ok := sdk.ParseResource(st.Resource); ok {
 		if !r.SDK.Supports(id, action) {
-			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+			return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 		}
 		return kindGeneric, lambdaTarget{}, false, nil
 	}
 	if base, mode, ok := integrationResource(st.Resource); ok {
 		if mode != "" && base != "arn:aws:states:::states:startExecution" {
-			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+			return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 		}
 		if !r.integrationReady(base) {
-			return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+			return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 		}
 		return kindGeneric, lambdaTarget{}, false, nil
 	}
-	return 0, lambdaTarget{}, false, errors.New("unsupported resource: " + st.Resource)
+	return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 }
 
 func (r *Runner) oneAttempt(ctx context.Context, arn string, ex store.Execution, meta taskMeta, target lambdaTarget, mocked bool, seconds int64, hasTimeout bool) (string, *taskFailure) {
@@ -642,7 +645,7 @@ func httpInvoke(ctx context.Context, call LambdaCall) LambdaReply {
 	if err != nil {
 		return LambdaReply{Err: err}
 	}
-	return LambdaReply{Status: resp.StatusCode, Payload: string(body), FunctionError: resp.Header.Get("X-Amz-Function-Error")}
+	return LambdaReply{Status: resp.StatusCode, Payload: string(body), FunctionError: resp.Header.Get("X-Amz-Function-Error"), Headers: resp.Header}
 }
 
 func (r *Runner) readMock(arn, machine, test, state string, kind taskKind) (string, *taskFailure) {

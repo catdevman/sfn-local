@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 )
@@ -109,8 +110,9 @@ func (s *Store) Cancel(arn string) {
 // refused when 24999 events already exist.
 //
 // PreviousEventId follows AWS. ExecutionStarted and the event right after it
-// have 0. An event with HasPrevious uses Previous. An event that matches a
-// HintPrevious uses the hint. Every other event points at the one before it.
+// have 0. An event with HasPrevious uses Previous. Otherwise an event points
+// at the newest event on its chain, which SetChainLast can move. A Side event
+// does not become its chain's newest event.
 func (s *Store) Append(arn string, ev HistoryEvent) error {
 	_, err := s.AppendID(arn, ev)
 	return err
@@ -127,13 +129,67 @@ func (s *Store) AppendID(arn string, ev HistoryEvent) (int64, error) {
 	return h[len(h)-1].ID, nil
 }
 
-// HintPrevious sets the PreviousEventId of the next event appended to arn,
-// when that event's type is typ or typ is "". Any other event clears it.
-func (s *Store) HintPrevious(arn string, id int64, typ string) {
+// SetChainLast makes id the newest event on chain, so the next event on that
+// chain points at it.
+func (s *Store) SetChainLast(arn, chain string, id int64) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if rec, ok := s.execs[arn]; ok {
-		rec.hint = prevHint{id: id, typ: typ, set: true}
+		if rec.last == nil {
+			rec.last = map[string]int64{}
+		}
+		rec.last[chain] = id
+	}
+}
+
+// ChainLast is the newest event id on chain.
+func (s *Store) ChainLast(arn, chain string) (int64, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rec, ok := s.execs[arn]
+	if !ok {
+		return 0, false
+	}
+	id, ok := rec.last[chain]
+	return id, ok
+}
+
+// SetResult records the output of a finished Parallel branch or Map
+// iteration.
+func (s *Store) SetResult(arn, chain, output string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if rec, ok := s.execs[arn]; ok {
+		if rec.results == nil {
+			rec.results = map[string]string{}
+		}
+		rec.results[chain] = output
+	}
+}
+
+// Result is a finished branch or iteration's output.
+func (s *Store) Result(arn, chain string) (string, bool) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	rec, ok := s.execs[arn]
+	if !ok {
+		return "", false
+	}
+	out, ok := rec.results[chain]
+	return out, ok
+}
+
+// ClearResults forgets the results of every chain that starts with prefix,
+// when a Parallel or Map state starts an attempt from scratch.
+func (s *Store) ClearResults(arn, prefix string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if rec, ok := s.execs[arn]; ok {
+		for chain := range rec.results {
+			if strings.HasPrefix(chain, prefix) {
+				delete(rec.results, chain)
+			}
+		}
 	}
 }
 
@@ -150,17 +206,22 @@ func (s *Store) appendLocked(arn string, ev HistoryEvent) error {
 		return ErrHistoryLimit
 	}
 	ev.ID = int64(n + 1)
-	hint := rec.hint
-	rec.hint = prevHint{}
+	last, chained := rec.last[ev.Chain]
 	switch {
 	case ev.HasPrevious:
 		ev.PreviousID = ev.Previous
-	case hint.set && (hint.typ == "" || hint.typ == ev.Type):
-		ev.PreviousID = hint.id
-	case n <= 1:
+	case ev.Chain == "" && n <= 1:
 		ev.PreviousID = 0
-	default:
+	case chained:
+		ev.PreviousID = last
+	case n > 0:
 		ev.PreviousID = rec.History[n-1].ID
+	}
+	if !ev.Side {
+		if rec.last == nil {
+			rec.last = map[string]int64{}
+		}
+		rec.last[ev.Chain] = ev.ID
 	}
 	rec.History = append(rec.History, ev)
 	return nil
