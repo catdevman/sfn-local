@@ -44,6 +44,8 @@ type Env struct {
 	Timeout time.Duration
 	// RoleWait retries CreateStateMachine while a new IAM role propagates.
 	RoleWait time.Duration
+	// Function is a Lambda function that returns {"echo": <event>}.
+	Function string
 
 	machines []string
 }
@@ -62,6 +64,14 @@ var Scenarios = []Scenario{
 	{"dmap-redrive", dmapRedrive},
 	{"dmap-writer", dmapWriter},
 	{"sdk-errors", sdkErrors},
+	{"parallel-map", parallelAndMap},
+	{"retry-catch", retryAndCatch},
+	{"redrive-inside", redriveInside},
+	{"stop", stopExecution},
+	{"dmap-stop", dmapStop},
+	{"versions", versionsAndAliases},
+	{"writer-pending", writerPending},
+	{"lambda-invoke", lambdaInvoke},
 }
 
 func executionStatus(ctx context.Context, e *Env) (map[string]any, error) {
@@ -505,6 +515,7 @@ func (e *Env) Cleanup(ctx context.Context) {
 var (
 	uuidPattern    = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	timePattern    = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})`)
+	httpDate       = regexp.MustCompile(`[A-Z][a-z]{2}, \d{2} [A-Z][a-z]{2} \d{4} \d{2}:\d{2}:\d{2} GMT`)
 	requestPattern = regexp.MustCompile(`Request ID: [^,)]*`)
 	causePattern   = regexp.MustCompile(`^(?s)(.*) \((Service: [^,]+, Status Code: \d+)(, Request ID: <id>)?(, Extended Request ID: <id>)?\)( \(SDK Attempt Count: \d+\))?$`)
 )
@@ -564,16 +575,22 @@ func (e *Env) normString(s string) string {
 	s = strings.ReplaceAll(s, ":"+e.Region+":", ":<region>:")
 	s = uuidPattern.ReplaceAllString(s, "<uuid>")
 	s = timePattern.ReplaceAllString(s, "<time>")
+	s = httpDate.ReplaceAllString(s, "<time>")
 	return requestPattern.ReplaceAllString(s, "Request ID: <id>")
 }
 
 // Loosen drops what a fake service decides rather than this server: the
-// message and request ID of an aws-sdk error cause.
+// message and request ID of an aws-sdk error cause, and the HTTP headers an
+// optimized integration passes through. The header names stay.
 func Loosen(v any) any {
 	switch x := v.(type) {
 	case map[string]any:
 		out := make(map[string]any, len(x))
 		for k, val := range x {
+			if k == "AllHttpHeaders" || k == "HttpHeaders" {
+				out[k] = "<headers>"
+				continue
+			}
 			out[k] = Loosen(val)
 		}
 		return out
@@ -584,6 +601,11 @@ func Loosen(v any) any {
 		}
 		return out
 	case string:
+		var inner any
+		if (strings.HasPrefix(x, "{") || strings.HasPrefix(x, "[")) && json.Unmarshal([]byte(x), &inner) == nil {
+			text, _ := json.Marshal(Loosen(inner))
+			return string(text)
+		}
 		return causePattern.ReplaceAllString(x, "<message> ($2)$5")
 	default:
 		return v

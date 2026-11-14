@@ -1,0 +1,511 @@
+{
+  "map": {
+    "execution": {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:redrive-map:run",
+      "Input": "[{\"bad\":false},{\"bad\":true}]",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "run",
+      "Output": "[{\"bad\":false},{\"bad\":true}]",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 1,
+      "RedriveDate": "\u003ctime\u003e",
+      "RedriveStatus": "NOT_REDRIVABLE",
+      "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:redrive-map",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "M"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateEntered"
+      },
+      {
+        "Id": 3,
+        "MapStateStartedEventDetails": {
+          "Length": 2
+        },
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateStarted"
+      },
+      {
+        "Id": 4,
+        "MapIterationStartedEventDetails": {
+          "Index": 0,
+          "Name": "M"
+        },
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapIterationStarted"
+      },
+      {
+        "Id": 5,
+        "PreviousEventId": 4,
+        "StateEnteredEventDetails": {
+          "Input": "{\"bad\":false}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Read"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "TaskScheduledEventDetails": {
+          "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"present.txt\"}",
+          "Region": "\u003cregion\u003e",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskScheduled"
+      },
+      {
+        "Id": 7,
+        "PreviousEventId": 6,
+        "TaskStartedEventDetails": {
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStarted"
+      },
+      {
+        "Id": 8,
+        "PreviousEventId": 7,
+        "TaskSucceededEventDetails": {
+          "Output": "{\"AcceptRanges\":\"bytes\",\"Body\":\"ok\",\"ContentLength\":\"\\u003csize\\u003e\",\"ContentType\":\"application/octet-stream\",\"ETag\":\"\\u003cetag\\u003e\",\"LastModified\":\"\\u003ctime\\u003e\",\"Metadata\":{},\"ServerSideEncryption\":\"AES256\"}",
+          "OutputDetails": {
+            "Truncated": false
+          },
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskSucceeded"
+      },
+      {
+        "Id": 9,
+        "PreviousEventId": 8,
+        "StateExitedEventDetails": {
+          "Name": "Read",
+          "Output": "{\"bad\":false}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateExited"
+      },
+      {
+        "Id": 10,
+        "MapIterationSucceededEventDetails": {
+          "Index": 0,
+          "Name": "M"
+        },
+        "PreviousEventId": 9,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapIterationSucceeded"
+      },
+      {
+        "Id": 11,
+        "MapIterationStartedEventDetails": {
+          "Index": 1,
+          "Name": "M"
+        },
+        "PreviousEventId": 9,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapIterationStarted"
+      },
+      {
+        "Id": 12,
+        "PreviousEventId": 11,
+        "StateEnteredEventDetails": {
+          "Input": "{\"bad\":true}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Read"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "Id": 13,
+        "PreviousEventId": 12,
+        "TaskScheduledEventDetails": {
+          "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"missing\"}",
+          "Region": "\u003cregion\u003e",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskScheduled"
+      },
+      {
+        "Id": 14,
+        "PreviousEventId": 13,
+        "TaskStartedEventDetails": {
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStarted"
+      },
+      {
+        "Id": 15,
+        "PreviousEventId": 14,
+        "TaskFailedEventDetails": {
+          "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+          "Error": "S3.NoSuchKeyException",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskFailed"
+      },
+      {
+        "Id": 16,
+        "MapIterationFailedEventDetails": {
+          "Index": 1,
+          "Name": "M"
+        },
+        "PreviousEventId": 15,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapIterationFailed"
+      },
+      {
+        "Id": 17,
+        "PreviousEventId": 15,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateAborted"
+      },
+      {
+        "Id": 18,
+        "PreviousEventId": 15,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+          "Error": "S3.NoSuchKeyException"
+        },
+        "Id": 19,
+        "PreviousEventId": 18,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      },
+      {
+        "ExecutionRedrivenEventDetails": {
+          "RedriveCount": 1
+        },
+        "Id": 20,
+        "PreviousEventId": 19,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionRedriven"
+      },
+      {
+        "Id": 21,
+        "PreviousEventId": 12,
+        "TaskScheduledEventDetails": {
+          "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"present.txt\"}",
+          "Region": "\u003cregion\u003e",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskScheduled"
+      },
+      {
+        "Id": 22,
+        "PreviousEventId": 21,
+        "TaskStartedEventDetails": {
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStarted"
+      },
+      {
+        "Id": 23,
+        "PreviousEventId": 22,
+        "TaskSucceededEventDetails": {
+          "Output": "{\"AcceptRanges\":\"bytes\",\"Body\":\"ok\",\"ContentLength\":\"\\u003csize\\u003e\",\"ContentType\":\"application/octet-stream\",\"ETag\":\"\\u003cetag\\u003e\",\"LastModified\":\"\\u003ctime\\u003e\",\"Metadata\":{},\"ServerSideEncryption\":\"AES256\"}",
+          "OutputDetails": {
+            "Truncated": false
+          },
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskSucceeded"
+      },
+      {
+        "Id": 24,
+        "PreviousEventId": 23,
+        "StateExitedEventDetails": {
+          "Name": "Read",
+          "Output": "{\"bad\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateExited"
+      },
+      {
+        "Id": 25,
+        "MapIterationSucceededEventDetails": {
+          "Index": 1,
+          "Name": "M"
+        },
+        "PreviousEventId": 24,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapIterationSucceeded"
+      },
+      {
+        "Id": 26,
+        "PreviousEventId": 25,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateSucceeded"
+      },
+      {
+        "Id": 27,
+        "PreviousEventId": 25,
+        "StateExitedEventDetails": {
+          "Name": "M",
+          "Output": "[{\"bad\":false},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "[{\"bad\":false},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 28,
+        "PreviousEventId": 27,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ]
+  },
+  "parallel": {
+    "events": [
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+          "Error": "S3.NoSuchKeyException"
+        },
+        "Type": "ExecutionFailed"
+      },
+      {
+        "ExecutionRedrivenEventDetails": {
+          "RedriveCount": 1
+        },
+        "Type": "ExecutionRedriven"
+      },
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"bad\":true}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Type": "ExecutionStarted"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "[{\"bad\":true},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Type": "ExecutionSucceeded"
+      },
+      {
+        "StateEnteredEventDetails": {
+          "Input": "{\"bad\":true}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Ok"
+        },
+        "Type": "PassStateEntered"
+      },
+      {
+        "StateEnteredEventDetails": {
+          "Input": "{\"bad\":true}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "P"
+        },
+        "Type": "ParallelStateEntered"
+      },
+      {
+        "StateEnteredEventDetails": {
+          "Input": "{\"bad\":true}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Read"
+        },
+        "Type": "TaskStateEntered"
+      },
+      {
+        "StateExitedEventDetails": {
+          "Name": "Ok",
+          "Output": "{\"bad\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Type": "PassStateExited"
+      },
+      {
+        "StateExitedEventDetails": {
+          "Name": "P",
+          "Output": "[{\"bad\":true},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Type": "ParallelStateExited"
+      },
+      {
+        "StateExitedEventDetails": {
+          "Name": "Read",
+          "Output": "{\"bad\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Type": "TaskStateExited"
+      },
+      {
+        "TaskFailedEventDetails": {
+          "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+          "Error": "S3.NoSuchKeyException",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskFailed"
+      },
+      {
+        "TaskScheduledEventDetails": {
+          "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"missing\"}",
+          "Region": "\u003cregion\u003e",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskScheduled"
+      },
+      {
+        "TaskScheduledEventDetails": {
+          "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"present.txt\"}",
+          "Region": "\u003cregion\u003e",
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskScheduled"
+      },
+      {
+        "TaskStartedEventDetails": {
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskStarted"
+      },
+      {
+        "TaskStartedEventDetails": {
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskStarted"
+      },
+      {
+        "TaskSucceededEventDetails": {
+          "Output": "{\"AcceptRanges\":\"bytes\",\"Body\":\"ok\",\"ContentLength\":\"\\u003csize\\u003e\",\"ContentType\":\"application/octet-stream\",\"ETag\":\"\\u003cetag\\u003e\",\"LastModified\":\"\\u003ctime\\u003e\",\"Metadata\":{},\"ServerSideEncryption\":\"AES256\"}",
+          "OutputDetails": {
+            "Truncated": false
+          },
+          "Resource": "getObject",
+          "ResourceType": "aws-sdk:s3"
+        },
+        "Type": "TaskSucceeded"
+      },
+      {
+        "Type": "ParallelStateFailed"
+      },
+      {
+        "Type": "ParallelStateStarted"
+      },
+      {
+        "Type": "ParallelStateSucceeded"
+      },
+      {
+        "Type": "TaskStateAborted"
+      }
+    ],
+    "execution": {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:redrive-parallel:run",
+      "Input": "{\"bad\":true}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "run",
+      "Output": "[{\"bad\":true},{\"bad\":true}]",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 1,
+      "RedriveDate": "\u003ctime\u003e",
+      "RedriveStatus": "NOT_REDRIVABLE",
+      "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:redrive-parallel",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e"
+    }
+  }
+}

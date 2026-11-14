@@ -1,0 +1,59 @@
+{
+  "execution": {
+    "Cause": "stopped on purpose",
+    "Error": "Check.Stopped",
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:stop:run",
+    "Input": "{}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "RedriveCount": 0,
+    "RedriveStatus": "REDRIVABLE",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:stop",
+    "Status": "ABORTED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Hold"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "WaitStateEntered"
+    },
+    {
+      "ExecutionAbortedEventDetails": {
+        "Cause": "stopped on purpose",
+        "Error": "Check.Stopped"
+      },
+      "Id": 3,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionAborted"
+    }
+  ],
+  "stop": {
+    "StopDate": "\u003ctime\u003e"
+  }
+}

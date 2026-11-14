@@ -1,0 +1,108 @@
+{
+  "compact": {
+    "cause": "The specified tolerated failure threshold was exceeded",
+    "error": "States.ExceedToleratedFailureThreshold",
+    "files": [
+      "FAILED_0.jsonl",
+      "PENDING_0.jsonl",
+      "manifest.json"
+    ],
+    "first:FAILED_0.jsonl": {
+      "Cause": "bad item",
+      "Error": "Item.Bad",
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:writer-pending-compact/\u003cuuid\u003e:\u003cuuid\u003e",
+      "Input": "{\"n\":7}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "\u003cuuid\u003e",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 0,
+      "RedriveStatus": "REDRIVABLE_BY_MAP_RUN",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:writer-pending-compact/\u003cuuid\u003e",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "first:PENDING_0.jsonl": {
+      "n": 7
+    },
+    "manifest": {
+      "DestinationBucket": "\u003cbucket\u003e",
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:writer-pending-compact/\u003cuuid\u003e:\u003cuuid\u003e",
+      "ResultFiles": {
+        "FAILED": [
+          {
+            "Key": "writer-pending-compact/\u003cuuid\u003e/FAILED_0.jsonl",
+            "Size": "\u003csize\u003e"
+          }
+        ],
+        "PENDING": [
+          {
+            "Key": "writer-pending-compact/\u003cuuid\u003e/PENDING_0.jsonl",
+            "Size": "\u003csize\u003e"
+          }
+        ],
+        "SUCCEEDED": []
+      }
+    },
+    "status": "FAILED"
+  },
+  "none": {
+    "cause": "The specified tolerated failure threshold was exceeded",
+    "error": "States.ExceedToleratedFailureThreshold",
+    "files": [
+      "FAILED_0.jsonl",
+      "PENDING_0.jsonl",
+      "manifest.json"
+    ],
+    "first:FAILED_0.jsonl": {
+      "Cause": "bad item",
+      "Error": "Item.Bad",
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:writer-pending-none/\u003cuuid\u003e:\u003cuuid\u003e",
+      "Input": "{\"n\":7}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "\u003cuuid\u003e",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 0,
+      "RedriveStatus": "REDRIVABLE_BY_MAP_RUN",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:writer-pending-none/\u003cuuid\u003e",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "first:PENDING_0.jsonl": {
+      "Input": "{\"n\":7}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Status": "PENDING"
+    },
+    "manifest": {
+      "DestinationBucket": "\u003cbucket\u003e",
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:writer-pending-none/\u003cuuid\u003e:\u003cuuid\u003e",
+      "ResultFiles": {
+        "FAILED": [
+          {
+            "Key": "writer-pending-none/\u003cuuid\u003e/FAILED_0.jsonl",
+            "Size": "\u003csize\u003e"
+          }
+        ],
+        "PENDING": [
+          {
+            "Key": "writer-pending-none/\u003cuuid\u003e/PENDING_0.jsonl",
+            "Size": "\u003csize\u003e"
+          }
+        ],
+        "SUCCEEDED": []
+      }
+    },
+    "status": "FAILED"
+  }
+}

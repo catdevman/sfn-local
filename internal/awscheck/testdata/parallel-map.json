@@ -1,0 +1,310 @@
+{
+  "concurrentEvents": [
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"],\"two\":[\"b\",\"c\"]}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "ExecutionSucceeded"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "B"
+      },
+      "Type": "PassStateEntered"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "C"
+      },
+      "Type": "PassStateEntered"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Two"
+      },
+      "Type": "ParallelStateEntered"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "B",
+        "Output": "\"b\"",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "PassStateExited"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "C",
+        "Output": "\"c\"",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "PassStateExited"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "Two",
+        "Output": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"],\"two\":[\"b\",\"c\"]}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "ParallelStateExited"
+    },
+    {
+      "Type": "ParallelStateStarted"
+    },
+    {
+      "Type": "ParallelStateSucceeded"
+    }
+  ],
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:flow:run",
+    "Input": "{\"items\":[\"x\",\"y\"]}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"],\"two\":[\"b\",\"c\"]}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:flow",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{\"items\":[\"x\",\"y\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{\"items\":[\"x\",\"y\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "One"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateEntered"
+    },
+    {
+      "Id": 3,
+      "PreviousEventId": 2,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateStarted"
+    },
+    {
+      "Id": 4,
+      "PreviousEventId": 3,
+      "StateEnteredEventDetails": {
+        "Input": "{\"items\":[\"x\",\"y\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "A"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateEntered"
+    },
+    {
+      "Id": 5,
+      "PreviousEventId": 4,
+      "StateExitedEventDetails": {
+        "Name": "A",
+        "Output": "\"a\"",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateExited"
+    },
+    {
+      "Id": 6,
+      "PreviousEventId": 5,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateSucceeded"
+    },
+    {
+      "Id": 7,
+      "PreviousEventId": 5,
+      "StateExitedEventDetails": {
+        "Name": "One",
+        "Output": "{\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateExited"
+    },
+    {
+      "Id": 8,
+      "PreviousEventId": 7,
+      "StateEnteredEventDetails": {
+        "Input": "{\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Each"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateEntered"
+    },
+    {
+      "Id": 9,
+      "MapStateStartedEventDetails": {
+        "Length": 2
+      },
+      "PreviousEventId": 8,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateStarted"
+    },
+    {
+      "Id": 10,
+      "MapIterationStartedEventDetails": {
+        "Index": 0,
+        "Name": "Each"
+      },
+      "PreviousEventId": 9,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapIterationStarted"
+    },
+    {
+      "Id": 11,
+      "PreviousEventId": 10,
+      "StateEnteredEventDetails": {
+        "Input": "{\"i\":0,\"v\":\"x\"}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateEntered"
+    },
+    {
+      "Id": 12,
+      "PreviousEventId": 11,
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "{\"i\":0,\"v\":\"x\"}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateExited"
+    },
+    {
+      "Id": 13,
+      "MapIterationSucceededEventDetails": {
+        "Index": 0,
+        "Name": "Each"
+      },
+      "PreviousEventId": 12,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapIterationSucceeded"
+    },
+    {
+      "Id": 14,
+      "MapIterationStartedEventDetails": {
+        "Index": 1,
+        "Name": "Each"
+      },
+      "PreviousEventId": 12,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapIterationStarted"
+    },
+    {
+      "Id": 15,
+      "PreviousEventId": 14,
+      "StateEnteredEventDetails": {
+        "Input": "{\"i\":1,\"v\":\"y\"}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateEntered"
+    },
+    {
+      "Id": 16,
+      "PreviousEventId": 15,
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "{\"i\":1,\"v\":\"y\"}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateExited"
+    },
+    {
+      "Id": 17,
+      "MapIterationSucceededEventDetails": {
+        "Index": 1,
+        "Name": "Each"
+      },
+      "PreviousEventId": 16,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapIterationSucceeded"
+    },
+    {
+      "Id": 18,
+      "PreviousEventId": 17,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateSucceeded"
+    },
+    {
+      "Id": 19,
+      "PreviousEventId": 17,
+      "StateExitedEventDetails": {
+        "Name": "Each",
+        "Output": "{\"each\":[{\"i\":0,\"v\":\"x\"},{\"i\":1,\"v\":\"y\"}],\"items\":[\"x\",\"y\"],\"one\":[\"a\"]}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateExited"
+    }
+  ]
+}

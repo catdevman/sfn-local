@@ -1,0 +1,219 @@
+{
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:retry-catch:run",
+    "Input": "{}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "{\"branchError\":{\"Cause\":\"branch failed\",\"Error\":\"Branch.Failed\"},\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:retry-catch",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Read"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskStateEntered"
+    },
+    {
+      "Id": 3,
+      "PreviousEventId": 2,
+      "TaskScheduledEventDetails": {
+        "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"missing\"}",
+        "Region": "\u003cregion\u003e",
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskScheduled"
+    },
+    {
+      "Id": 4,
+      "PreviousEventId": 3,
+      "TaskStartedEventDetails": {
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskStarted"
+    },
+    {
+      "Id": 5,
+      "PreviousEventId": 4,
+      "TaskFailedEventDetails": {
+        "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+        "Error": "S3.NoSuchKeyException",
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskFailed"
+    },
+    {
+      "Id": 6,
+      "PreviousEventId": 5,
+      "TaskScheduledEventDetails": {
+        "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"missing\"}",
+        "Region": "\u003cregion\u003e",
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskScheduled"
+    },
+    {
+      "Id": 7,
+      "PreviousEventId": 6,
+      "TaskStartedEventDetails": {
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskStarted"
+    },
+    {
+      "Id": 8,
+      "PreviousEventId": 7,
+      "TaskFailedEventDetails": {
+        "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+        "Error": "S3.NoSuchKeyException",
+        "Resource": "getObject",
+        "ResourceType": "aws-sdk:s3"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskFailed"
+    },
+    {
+      "Id": 9,
+      "PreviousEventId": 8,
+      "StateExitedEventDetails": {
+        "Name": "Read",
+        "Output": "{\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "TaskStateExited"
+    },
+    {
+      "Id": 10,
+      "PreviousEventId": 9,
+      "StateEnteredEventDetails": {
+        "Input": "{\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Branches"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateEntered"
+    },
+    {
+      "Id": 11,
+      "PreviousEventId": 10,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateStarted"
+    },
+    {
+      "Id": 12,
+      "PreviousEventId": 11,
+      "StateEnteredEventDetails": {
+        "Input": "{\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Boom"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "FailStateEntered"
+    },
+    {
+      "Id": 13,
+      "PreviousEventId": 12,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateFailed"
+    },
+    {
+      "Id": 14,
+      "PreviousEventId": 13,
+      "StateExitedEventDetails": {
+        "Name": "Branches",
+        "Output": "{\"branchError\":{\"Cause\":\"branch failed\",\"Error\":\"Branch.Failed\"},\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ParallelStateExited"
+    },
+    {
+      "Id": 15,
+      "PreviousEventId": 14,
+      "StateEnteredEventDetails": {
+        "Input": "{\"branchError\":{\"Cause\":\"branch failed\",\"Error\":\"Branch.Failed\"},\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Done"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateEntered"
+    },
+    {
+      "Id": 16,
+      "PreviousEventId": 15,
+      "StateExitedEventDetails": {
+        "Name": "Done",
+        "Output": "{\"branchError\":{\"Cause\":\"branch failed\",\"Error\":\"Branch.Failed\"},\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateExited"
+    },
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "{\"branchError\":{\"Cause\":\"branch failed\",\"Error\":\"Branch.Failed\"},\"readError\":{\"Cause\":\"The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \\u003cid\\u003e, Extended Request ID: \\u003cid\\u003e) (SDK Attempt Count: 1)\",\"Error\":\"S3.NoSuchKeyException\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Id": 17,
+      "PreviousEventId": 16,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionSucceeded"
+    }
+  ]
+}

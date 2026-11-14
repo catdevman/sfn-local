@@ -82,11 +82,12 @@ func localEnv(t *testing.T) *awscheck.Env {
 	t.Cleanup(api.Close)
 	store := httptest.NewServer(&memS3{objects: map[string][]byte{}, pageMax: 1000})
 	t.Cleanup(store.Close)
-	missing := httptest.NewServer(http.HandlerFunc(notFound))
+	missing := httptest.NewServer(http.HandlerFunc(fakeServices))
 	t.Cleanup(missing.Close)
 	s.Runner.SDK = sdk.New(sdk.Config{Region: "us-east-1", AccessKeyID: "local", SecretAccessKey: "local", Endpoints: map[string]string{
 		"s3": store.URL, "sfn": api.URL, "lambda": missing.URL, "ssm": missing.URL, "secretsmanager": missing.URL,
 	}})
+	s.Runner.LambdaEndpoint = missing.URL
 	creds := credentials.NewStaticCredentialsProvider("local", "local", "")
 	return &awscheck.Env{
 		SFN: sfn.New(sfn.Options{Region: "us-east-1", Credentials: creds, BaseEndpoint: aws.String(api.URL)}),
@@ -94,14 +95,18 @@ func localEnv(t *testing.T) *awscheck.Env {
 			RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired}),
 		Account: "123456789012", Region: "us-east-1", RoleARN: roleARN,
 		Bucket: "sfnlocal-check-local-123456789012", Prefix: "sfnlocal-check-local-",
-		Poll: 5 * time.Millisecond, Timeout: 10 * time.Second,
+		Poll: 5 * time.Millisecond, Timeout: 10 * time.Second, Function: echoFunction,
 	}
 }
 
-// notFound answers the sdk-errors calls the way each service reports a
-// missing resource. Only the error code and status matter: Loosen drops
-// the message.
-func notFound(w http.ResponseWriter, r *http.Request) {
+// echoFunction is the one Lambda function fakeServices runs.
+const echoFunction = "sfnlocal-check-local-fn"
+
+// fakeServices runs echoFunction, which returns {"echo": <event>} as the
+// recorder's function does, and answers every other Lambda, SSM, and Secrets
+// Manager call the way each service reports a missing resource. Only the
+// error code and status matter there: Loosen drops the message.
+func fakeServices(w http.ResponseWriter, r *http.Request) {
 	switch target := r.Header.Get("X-Amz-Target"); {
 	case strings.HasPrefix(target, "AmazonSSM."):
 		w.WriteHeader(http.StatusBadRequest)
@@ -109,6 +114,12 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 	case strings.HasPrefix(target, "secretsmanager."):
 		w.WriteHeader(http.StatusBadRequest)
 		io.WriteString(w, `{"__type":"ResourceNotFoundException","message":"Secrets Manager can't find the specified secret."}`)
+	case strings.Contains(r.URL.Path, "/functions/"+echoFunction+"/invocations"):
+		body, _ := io.ReadAll(r.Body)
+		w.Header().Set("Content-Type", "application/json")
+		w.Header().Set("X-Amz-Executed-Version", "$LATEST")
+		w.Header().Set("X-Amzn-Requestid", "6f1e2d3c-4b5a-4987-8a6b-5c4d3e2f1a0b")
+		io.WriteString(w, `{"echo":`+string(body)+`}`)
 	default:
 		w.Header().Set("X-Amzn-ErrorType", "ResourceNotFoundException")
 		w.WriteHeader(http.StatusNotFound)

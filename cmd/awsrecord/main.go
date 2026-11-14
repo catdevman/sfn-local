@@ -3,12 +3,15 @@
 // package's TestAWSRecordings then compares this server with them.
 //
 // It uses the AWS CLI's credentials and region (AWS_PROFILE, AWS_REGION, and
-// the shared config files). It creates one IAM role, one S3 bucket, and a
-// few state machines, all named sfnlocal-check-<id>-..., and deletes them
-// when it finishes unless -keep is set. A run costs a few cents at most.
+// the shared config files). It creates two IAM roles, one S3 bucket, one
+// Lambda function, and a few state machines, all named sfnlocal-check-<id>-...,
+// and deletes them when it finishes unless -keep is set. A run costs a few
+// cents at most.
 package main
 
 import (
+	"archive/zip"
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/hex"
@@ -24,6 +27,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/config"
 	"github.com/aws/aws-sdk-go-v2/service/iam"
+	"github.com/aws/aws-sdk-go-v2/service/lambda"
+	lambdatypes "github.com/aws/aws-sdk-go-v2/service/lambda/types"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	s3types "github.com/aws/aws-sdk-go-v2/service/s3/types"
 	"github.com/aws/aws-sdk-go-v2/service/sfn"
@@ -111,6 +116,17 @@ func run(outDir, only string, keep bool, timeout time.Duration) error {
 			want[name] = true
 		}
 	}
+	if len(want) == 0 || want["lambda-invoke"] {
+		fmt.Println("creating the echo function ...")
+		fn, drop, err := echoFunction(ctx, cfg, iamc, prefix)
+		if drop != nil && !keep {
+			defer drop()
+		}
+		if err != nil {
+			return err
+		}
+		env.Function = fn
+	}
 	failed := 0
 	for _, sc := range awscheck.Scenarios {
 		if len(want) > 0 && !want[sc.Name] {
@@ -171,6 +187,65 @@ func cleanup(ctx context.Context, env *awscheck.Env, iamc *iam.Client, s3c *s3.C
 	if _, err := iamc.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: &roleName}); err != nil {
 		fmt.Fprintln(os.Stderr, "cleanup: delete role:", err)
 	}
+}
+
+// echoCode is the function lambda-invoke calls.
+const echoCode = `export const handler = async (event) => ({ echo: event });
+`
+
+// echoFunction creates a Node.js function that returns {"echo": <event>},
+// with a role it can assume. drop deletes both, and is set as soon as there
+// is something to delete.
+func echoFunction(ctx context.Context, cfg aws.Config, iamc *iam.Client, prefix string) (string, func(), error) {
+	lc := lambda.NewFromConfig(cfg)
+	roleName := prefix + "lambda"
+	name := prefix + "fn"
+	role, err := iamc.CreateRole(ctx, &iam.CreateRoleInput{RoleName: &roleName,
+		AssumeRolePolicyDocument: aws.String(`{"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"lambda.amazonaws.com"},"Action":"sts:AssumeRole"}]}`)})
+	if err != nil {
+		return "", nil, fmt.Errorf("create lambda role: %w", err)
+	}
+	drop := func() {
+		if _, err := lc.DeleteFunction(ctx, &lambda.DeleteFunctionInput{FunctionName: &name}); err != nil {
+			var missing *lambdatypes.ResourceNotFoundException
+			if !errors.As(err, &missing) {
+				fmt.Fprintln(os.Stderr, "cleanup: delete function:", err)
+			}
+		}
+		if _, err := iamc.DeleteRole(ctx, &iam.DeleteRoleInput{RoleName: &roleName}); err != nil {
+			fmt.Fprintln(os.Stderr, "cleanup: delete lambda role:", err)
+		}
+	}
+	var zipped bytes.Buffer
+	zw := zip.NewWriter(&zipped)
+	w, err := zw.Create("index.mjs")
+	if err == nil {
+		_, err = w.Write([]byte(echoCode))
+	}
+	if err == nil {
+		err = zw.Close()
+	}
+	if err != nil {
+		return "", drop, err
+	}
+	// A new role takes a few seconds before Lambda can assume it.
+	deadline := time.Now().Add(90 * time.Second)
+	for {
+		_, err = lc.CreateFunction(ctx, &lambda.CreateFunctionInput{FunctionName: &name, Role: role.Role.Arn,
+			Runtime: lambdatypes.RuntimeNodejs20x, Handler: aws.String("index.handler"), Code: &lambdatypes.FunctionCode{ZipFile: zipped.Bytes()}})
+		var invalid *lambdatypes.InvalidParameterValueException
+		if err == nil || !errors.As(err, &invalid) || time.Now().After(deadline) {
+			break
+		}
+		time.Sleep(5 * time.Second)
+	}
+	if err != nil {
+		return "", drop, fmt.Errorf("create function: %w", err)
+	}
+	if err := lambda.NewFunctionActiveV2Waiter(lc).Wait(ctx, &lambda.GetFunctionInput{FunctionName: &name}, 2*time.Minute); err != nil {
+		return "", drop, fmt.Errorf("wait for function: %w", err)
+	}
+	return name, drop, nil
 }
 
 func randomID() string {

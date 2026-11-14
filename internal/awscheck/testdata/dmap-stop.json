@@ -1,0 +1,196 @@
+{
+  "childCounts": {
+    "ABORTED": 2
+  },
+  "children": {
+    "ABORTED": {
+      "execution": {
+        "Cause": "The map run execution [arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e] which was managing this resource was aborted",
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "1",
+        "InputDetails": {
+          "Included": true
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "RedriveStatus": "REDRIVABLE_BY_MAP_RUN",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-stop/\u003cuuid\u003e",
+        "Status": "ABORTED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "history": [
+        {
+          "ExecutionStartedEventDetails": {
+            "Input": "1",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "RoleArn": "\u003crole\u003e"
+          },
+          "Id": 1,
+          "PreviousEventId": 0,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionStarted"
+        },
+        {
+          "Id": 2,
+          "PreviousEventId": 0,
+          "StateEnteredEventDetails": {
+            "Input": "1",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "Hold"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "WaitStateEntered"
+        },
+        {
+          "ExecutionAbortedEventDetails": {
+            "Cause": "The map run execution [arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e] which was managing this resource was aborted"
+          },
+          "Id": 3,
+          "PreviousEventId": 0,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionAborted"
+        }
+      ],
+      "listItem": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+        "ItemCount": 1,
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-stop/\u003cuuid\u003e",
+        "Status": "ABORTED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "stateMachine": {
+        "Definition": "{\"StartAt\":\"Hold\",\"States\":{\"Hold\":{\"End\":true,\"Seconds\":300,\"Type\":\"Wait\"}}}",
+        "EncryptionConfiguration": {
+          "Type": "AWS_OWNED_KEY"
+        },
+        "Label": "\u003cuuid\u003e",
+        "LoggingConfiguration": {
+          "IncludeExecutionData": false,
+          "Level": "OFF"
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "dmap-stop",
+        "RoleArn": "\u003crole\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-stop/\u003cuuid\u003e",
+        "TracingConfiguration": {
+          "Enabled": false
+        },
+        "UpdateDate": "\u003ctime\u003e"
+      }
+    }
+  },
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-stop:run",
+    "Input": "[1,2]",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "RedriveCount": 0,
+    "RedriveStatus": "REDRIVABLE",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-stop",
+    "Status": "ABORTED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "[1,2]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "[1,2]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "M"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateEntered"
+    },
+    {
+      "Id": 3,
+      "MapStateStartedEventDetails": {
+        "Length": 2
+      },
+      "PreviousEventId": 2,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateStarted"
+    },
+    {
+      "Id": 4,
+      "MapRunStartedEventDetails": {
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e"
+      },
+      "PreviousEventId": 3,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunStarted"
+    },
+    {
+      "ExecutionAbortedEventDetails": {},
+      "Id": 5,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionAborted"
+    }
+  ],
+  "mapRuns": [
+    {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-stop:run",
+      "ExecutionCounts": {
+        "Aborted": 2,
+        "Failed": 0,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 2,
+        "Running": 0,
+        "Succeeded": 0,
+        "TimedOut": 0,
+        "Total": 2
+      },
+      "ItemCounts": {
+        "Aborted": 2,
+        "Failed": 0,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 2,
+        "Running": 0,
+        "Succeeded": 0,
+        "TimedOut": 0,
+        "Total": 2
+      },
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-stop/\u003cuuid\u003e:\u003cuuid\u003e",
+      "MaxConcurrency": 2147483647,
+      "RedriveCount": 0,
+      "StartDate": "\u003ctime\u003e",
+      "Status": "ABORTED",
+      "StopDate": "\u003ctime\u003e",
+      "ToleratedFailureCount": 0,
+      "ToleratedFailurePercentage": 0
+    }
+  ]
+}

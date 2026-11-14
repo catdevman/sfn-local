@@ -1,0 +1,191 @@
+{
+  "createAlias": {
+    "CreationDate": "\u003ctime\u003e",
+    "StateMachineAliasArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:live"
+  },
+  "describe": {
+    "CreationDate": "\u003ctime\u003e",
+    "Definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"End\":true,\"Type\":\"Pass\"}}}",
+    "EncryptionConfiguration": {
+      "Type": "AWS_OWNED_KEY"
+    },
+    "LoggingConfiguration": {
+      "IncludeExecutionData": false,
+      "Level": "OFF"
+    },
+    "Name": "versions",
+    "RoleArn": "\u003crole\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions",
+    "Status": "ACTIVE",
+    "TracingConfiguration": {
+      "Enabled": false
+    },
+    "Type": "STANDARD"
+  },
+  "describeAlias": {
+    "CreationDate": "\u003ctime\u003e",
+    "Name": "live",
+    "RoutingConfiguration": [
+      {
+        "StateMachineVersionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1",
+        "Weight": 100
+      }
+    ],
+    "StateMachineAliasArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:live"
+  },
+  "describeVersion": {
+    "CreationDate": "\u003ctime\u003e",
+    "Definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"End\":true,\"Type\":\"Pass\"}}}",
+    "Description": "first",
+    "EncryptionConfiguration": {
+      "Type": "AWS_OWNED_KEY"
+    },
+    "LoggingConfiguration": {
+      "IncludeExecutionData": false,
+      "Level": "OFF"
+    },
+    "Name": "versions",
+    "RoleArn": "\u003crole\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1",
+    "Status": "ACTIVE",
+    "TracingConfiguration": {
+      "Enabled": false
+    },
+    "Type": "STANDARD"
+  },
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:versions:run",
+    "Input": "{}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "{}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineAliasArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:live",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions",
+    "StateMachineVersionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e",
+        "StateMachineAliasArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:live",
+        "StateMachineVersionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateEntered"
+    },
+    {
+      "Id": 3,
+      "PreviousEventId": 2,
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "{}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "PassStateExited"
+    },
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "{}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Id": 4,
+      "PreviousEventId": 3,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionSucceeded"
+    }
+  ],
+  "listAliases": {
+    "StateMachineAliases": [
+      {
+        "CreationDate": "\u003ctime\u003e",
+        "StateMachineAliasArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:live"
+      }
+    ]
+  },
+  "listVersions": {
+    "StateMachineVersions": [
+      {
+        "CreationDate": "\u003ctime\u003e",
+        "StateMachineVersionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1"
+      }
+    ]
+  },
+  "machineForExecution": {
+    "Definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"End\":true,\"Type\":\"Pass\"}}}",
+    "EncryptionConfiguration": {
+      "Type": "AWS_OWNED_KEY"
+    },
+    "LoggingConfiguration": {
+      "IncludeExecutionData": false,
+      "Level": "OFF"
+    },
+    "Name": "versions",
+    "RoleArn": "\u003crole\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions",
+    "TracingConfiguration": {
+      "Enabled": false
+    },
+    "UpdateDate": "\u003ctime\u003e"
+  },
+  "publish": {
+    "CreationDate": "\u003ctime\u003e",
+    "StateMachineVersionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:versions:1"
+  },
+  "validateBad": {
+    "Diagnostics": [
+      {
+        "Code": "MISSING_TRANSITION_TARGET",
+        "Location": "/States/P/Next",
+        "Message": "Missing 'Next' target: Nowhere",
+        "Severity": "ERROR"
+      },
+      {
+        "Code": "MISSING_END_STATE",
+        "Message": "Workflow has no terminal state",
+        "Severity": "ERROR"
+      }
+    ],
+    "Result": "FAIL",
+    "Truncated": false
+  },
+  "validateOk": {
+    "Diagnostics": [],
+    "Result": "OK",
+    "Truncated": false
+  }
+}
