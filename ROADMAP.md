@@ -4,7 +4,7 @@ Check a box when that item is true in the tree. Check a phase when every box und
 
 | | |
 |---|---|
-| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 5, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map runs, including Map Run redrive. |
+| Status | Phase 0, Phase 0b, Phase 1, Phase 2, Phase 3, Phase 4, Phase T, Phase V, Phase 5, Phase 6, Phase R, and Phase I checked. Create, describe, list, update, and delete work. Pass, Succeed, Fail, Choice, and Wait run. JSONPath paths and payload templates run. Mocked tasks and direct Lambda invokes run. Retry and Catch run. Create-time validator messages match the jar fixtures. Parallel, inline Map, and the eighteen intrinsic functions run. ValidateStateMachineDefinition, versions, and aliases work. `TestState` runs one state, including a JSONata Pass. Activities and `.waitForTaskToken` callbacks run. A timed-out `SendTask*` reports `Task Timed Out: '<resource>'`. JSONata, `$states`, and JSONPath `Assign` run. `RedriveExecution` resumes a failed Standard execution. The JSONPath context still omits `RedriveCount`. Optimized integrations run when their endpoint is set, including ECS `runTask.sync` and API Gateway. Nested `.sync` and `.sync:2` run when `STEP_FUNCTIONS_ENDPOINT` is set. Customer-managed KMS and tracing stay deferred. Distributed Map runs, including Map Run redrive. |
 | Language | Go. This closes the open language question in [docs/spec.md](docs/spec.md). |
 | Wire contract | The vendored Smithy model, AWS JSON 1.0. A script pointed at this process keeps the same requests and parses the same responses. |
 | Execution contract | [docs/spec.md](docs/spec.md). JSONPath is checked against `amazon/aws-stepfunctions-local:2.0.0`. JSONata and variables follow the AWS pages named there. |
@@ -266,10 +266,12 @@ The endpoint flag gates each integration. An empty endpoint is an unsupported re
 - [x] SQS `sendMessage`, SNS `publish`, DynamoDB `getItem`, `putItem`, `updateItem`, and `deleteItem`, and EventBridge `putEvents` run through the Phase S clients. Errors are `<Service>.<Code>Exception`.
 - [x] Nested Step Functions `startExecution` posts JSON 1.0 to `STEP_FUNCTIONS_ENDPOINT`.
 - [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution`. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
+- [x] ECS `runTask`, `.sync`, and `.waitForTaskToken` through an `aws-sdk:ecs` client. `.sync` polls `DescribeTasks` until the task stops, fails on a non-zero exit, and stops the task on abort. `Failures` is `AmazonECS.Unknown` outside request-response.
+- [x] API Gateway `invoke` and `.waitForTaskToken` against `API_GATEWAY_ENDPOINT`, with AWS's result shape, `ApiGateway.<status>` errors, and forbidden headers.
 
 These stay deferred for the life of this plan.
 
-- Batch, ECS, Glue, SageMaker, Athena, EKS, DataBrew, API Gateway, and EMR on EKS
+- Batch, Glue, SageMaker, Athena, EKS, DataBrew, and EMR on EKS
 
 ## Phase S — aws-sdk integrations
 
@@ -281,10 +283,12 @@ These stay deferred for the life of this plan.
 - [x] DynamoDB: 23 operations, with a codec for `AttributeValue`. Parameter names match exactly at every depth.
 - [x] SQS, SNS, and EventBridge as `aws-sdk:` services. The Phase I DynamoDB, SQS, SNS, and EventBridge resources run through the same clients.
 - [x] Lambda (30 operations, `invoke` payloads as strings), Secrets Manager (all 23), SSM (Parameter Store, Run Command, and tags), and Step Functions (all 37, which can call this server).
+- [x] ECS: 17 operations for clusters, tasks, task definitions, and tags.
 - [x] `internal/awscheck` scenarios, `cmd/awsrecord`, and `TestAWSRecordings`. docs/spec.md has the workflow.
 - [x] Record against AWS, then fix or document each difference. Every recorded scenario matches.
 - [x] Parallel, inline Map, Retry and Catch, redrive inside Parallel and Map, `StopExecution`, versions and aliases, pending and `JSONL` exports, a stopped Map Run, and a real Lambda invoke, recorded and matched.
 - [x] Runtime error causes for JSONPath and JSONata, with `EvaluationFailed`; task tokens, activities, and `StartSyncExecution`; a concurrent inline Map; and a redrive of a Pass, Choice, and Wait, recorded and matched.
+- [ ] Record ECS `.sync` and API Gateway against AWS: the `.sync` result and failure cause, and the `ResponseBody` rule.
 
 ## Phase D — Distributed Map
 
