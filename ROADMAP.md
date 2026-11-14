@@ -315,6 +315,7 @@ These boxes are part of phase G's test harness, then stay green. Check them when
 - [x] Page acks: every behavior-page hash in `page-watch.json` matches `page-acks.toml`.
 - [x] Protocol golden: each implemented operation has one HTTP request and response covering the target header, member names, a numeric timestamp, and error `__type` plus status.
 - [x] Spec fixtures: the acceptance fixtures in docs/spec.md for the phases that have landed. Recorded JSON. No AWS account.
+- [x] AWS Emulator: when `aws-emulator` is installed, `TestAWSEmulator` runs ECS, API Gateway, and `aws-sdk:sfn` against it, configured through the emulator's Getting Started environment. It skips with a loud message otherwise.
 - [x] Jar oracle: when Docker is present, compare status, output JSON, and history event types with `amazon/aws-stepfunctions-local:2.0.0`. Developer CI may skip with a loud message. The release pipeline may not skip quietly.
 - [x] JSONata pin: `upstream.json` stays commit `6f1fc886aa1e3e6bdbfffcdd80e63ede1d7d6b6b`, the runtime is gnata, the Assign example passes, the negative `$nextX` example passes, and `$eval` is absent.
 - [x] Compat profile: the jar `__type` strings in docs/spec.md are asserted only with `--compat=sfn-local`.
