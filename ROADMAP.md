@@ -215,8 +215,8 @@ Depends on phase 3. This is the jar-shaped JSONPath release. JSONPath `Assign` s
 - [x] History detail members for activity events match the table in docs/spec.md. Success ends with `TaskStateExited`.
 - [x] An activity state named in the mock file fails with `States.Runtime` and does not schedule.
 - [x] Capture the jar's `TaskTimedOut` message once and lock it in a test.
-- [x] `.waitForTaskToken` on STANDARD suspends without calling a service endpoint. The token exists before `Parameters` runs, as `$$.Task.Token`.
-- [x] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted` with output `""`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
+- [x] `.waitForTaskToken` on STANDARD makes the service call when its endpoint is set, records the reply in `TaskSubmitted`, and suspends. With no endpoint it suspends without a call. The token exists before `Parameters` runs, as `$$.Task.Token`.
+- [x] Callback history order: `TaskStateEntered`, `TaskScheduled`, `TaskStarted`, `TaskSubmitted`, then the wait. Success, failure, timeout, and `StopExecution` append the events docs/spec.md names.
 - [x] A mock `Return` for a callback state completes through the mock path.
 - [x] `.sync` and `.sync:2` on `arn:aws:states:::states:startExecution` poll `DescribeExecution` when `STEP_FUNCTIONS_ENDPOINT` is set. `.sync` returns the describe document. `.sync:2` returns the nested output. A failed start appends `TaskSubmitFailed`.
 
@@ -284,6 +284,7 @@ These stay deferred for the life of this plan.
 - [x] `internal/awscheck` scenarios, `cmd/awsrecord`, and `TestAWSRecordings`. docs/spec.md has the workflow.
 - [x] Record against AWS, then fix or document each difference. Every recorded scenario matches.
 - [x] Parallel, inline Map, Retry and Catch, redrive inside Parallel and Map, `StopExecution`, versions and aliases, pending and `JSONL` exports, a stopped Map Run, and a real Lambda invoke, recorded and matched.
+- [x] Runtime error causes for JSONPath and JSONata, with `EvaluationFailed`; task tokens, activities, and `StartSyncExecution`; a concurrent inline Map; and a redrive of a Pass, Choice, and Wait, recorded and matched.
 
 ## Phase D — Distributed Map
 
