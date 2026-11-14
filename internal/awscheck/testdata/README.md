@@ -1,0 +1,1 @@
+Recordings of the awscheck scenarios against AWS, written by `go run ./cmd/awsrecord`. `TestAWSRecordings` in internal/api compares this server with each file here. docs/spec.md, "AWS recordings", has the workflow.

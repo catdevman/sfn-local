@@ -272,6 +272,12 @@ func Opaque(t reflect.Type) []string {
 	return out
 }
 
+// Plain converts an SDK value to maps, slices, and scalars the way an
+// aws-sdk task result is written. cmd/awsrecord uses it for API responses.
+func Plain(v any) (any, error) {
+	return plain(reflect.ValueOf(v))
+}
+
 // encode writes an SDK output struct as compact JSON. ResultMetadata, nil
 // members, and unset enums are left out. A *string that is set to "" stays.
 // extra sets top-level members, such as a body the struct holds as a stream.
