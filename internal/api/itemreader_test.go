@@ -18,6 +18,7 @@ import (
 	"github.com/catdevman/sfn-local/internal/api/gen"
 	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
+	"github.com/klauspost/compress/zstd"
 )
 
 // memS3 is a path-style S3 that keeps objects in memory. It lists with
@@ -136,6 +137,18 @@ func TestItemReaderCSVAndJSON(t *testing.T) {
 		t.Fatalf("%s %s %s", jx.Status, jx.Error, jx.Cause)
 	}
 	jsonEqual(t, jx.Output, `[{"sku":"pen","i":0},{"sku":"desk","i":1}]`)
+
+	enc, _ := zstd.NewWriter(nil)
+	m.put("/data/lines.jsonl.zst", enc.EncodeAll([]byte("{\"n\":1}\n\n{\"n\":2}\n"), nil))
+	enc.Close()
+	zstdDef := `{"StartAt":"M","States":{"M":{"Type":"Map",` + echoChild + `,
+		"ItemReader":{"Resource":"arn:aws:states:::s3:getObject","ReaderConfig":{"InputType":"JSONL"},
+			"Parameters":{"Bucket":"data","Key":"lines.jsonl.zst"}},"End":true}}}`
+	zx := runMachine(t, s, "zstd", zstdDef, "run", `{}`)
+	if zx.Status != store.ExecSucceeded {
+		t.Fatalf("%s %s %s", zx.Status, zx.Error, zx.Cause)
+	}
+	jsonEqual(t, zx.Output, `[{"n":1},{"n":2}]`)
 
 	missing := runMachine(t, s, "csv", csvDef, "missing", `{"key":"nope.csv"}`)
 	if missing.Status != store.ExecFailed || missing.Error != "States.ItemReaderFailed" || !strings.HasPrefix(missing.Cause, "S3.NoSuchKeyException: The specified key does not exist.") {

@@ -35,6 +35,41 @@ func OpenState(history []HistoryEvent) (name, input string, ok bool) {
 	return stack[0].name, stack[0].input, true
 }
 
+// redriveBlock is why an execution cannot be redriven, or "" when it can.
+func redriveBlock(e Execution) string {
+	switch {
+	case e.Express:
+		return "Execution is EXPRESS and cannot be redriven"
+	case e.Status == ExecFailed || e.Status == ExecTimedOut || e.Status == ExecAborted:
+	default:
+		return "Execution is " + e.Status + " and cannot be redriven"
+	}
+	if len(e.History) >= MaxHistory-1 {
+		return "Execution event history cannot fit a redrive"
+	}
+	if _, _, open := OpenState(e.History); !open {
+		return "Execution has no state to redrive"
+	}
+	return ""
+}
+
+// RedriveStatus is DescribeExecution's redriveStatus and reason. An
+// unsuccessful Map Run child is REDRIVABLE_BY_MAP_RUN, because only a redrive
+// of its parent restarts it. The caller checks the state machine.
+func RedriveStatus(e Execution) (status, reason string) {
+	unsuccessful := e.Status == ExecFailed || e.Status == ExecTimedOut || e.Status == ExecAborted
+	if e.MapRunARN != "" && unsuccessful {
+		return "REDRIVABLE_BY_MAP_RUN", ""
+	}
+	if e.Status == ExecRunning || e.Status == ExecSucceeded {
+		return "NOT_REDRIVABLE", "Execution is " + e.Status + " and cannot be redriven"
+	}
+	if reason := redriveBlock(e); reason != "" {
+		return "NOT_REDRIVABLE", reason
+	}
+	return "REDRIVABLE", ""
+}
+
 // BeginRedrive reopens a FAILED, TIMED_OUT, or ABORTED STANDARD execution.
 // It sets RUNNING before appending ExecutionRedriven, because Append refuses
 // a row that is not RUNNING. A RUNNING retry whose client token matches the
@@ -46,26 +81,13 @@ func (s *Store) BeginRedrive(arn string, when time.Time, token string, deadline 
 	if !ok {
 		return Execution{}, nil, ErrNotRunning
 	}
-	if rec.Express {
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution is EXPRESS and cannot be redriven"}
-	}
-	if rec.Status == ExecRunning {
+	if rec.Status == ExecRunning && !rec.Express {
 		if rec.RedriveDate != nil && token == rec.RedriveToken {
 			return rec.snapshot(), nil, nil
 		}
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution is RUNNING and cannot be redriven"}
 	}
-	if rec.Status == ExecSucceeded {
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution is SUCCEEDED and cannot be redriven"}
-	}
-	if rec.Status != ExecFailed && rec.Status != ExecTimedOut && rec.Status != ExecAborted {
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution is " + rec.Status + " and cannot be redriven"}
-	}
-	if len(rec.History) >= MaxHistory-1 {
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution event history cannot fit a redrive"}
-	}
-	if _, _, open := OpenState(rec.History); !open {
-		return Execution{}, nil, RedriveRefusal{Reason: "Execution has no state to redrive"}
+	if reason := redriveBlock(rec.Execution); reason != "" {
+		return Execution{}, nil, RedriveRefusal{Reason: reason}
 	}
 	prevStatus := rec.Status
 	prevStopped := rec.Stopped

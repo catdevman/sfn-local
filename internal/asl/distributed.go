@@ -2,6 +2,8 @@ package asl
 
 import (
 	"encoding/json"
+	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -358,6 +360,37 @@ func (r *ItemReader) readConfig(raw json.RawMessage, ptr string, jsonata bool) e
 				return defErr(codeSchema, "Field 'MaxItems' must be an integer in 0..100000000", join(ptr, "MaxItems"))
 			}
 			r.MaxItems = &n
+		}
+	}
+	return nil
+}
+
+// uniqueLabels rejects a Label used by two Distributed Map states anywhere
+// in the definition, nested ones included. States are visited in name order.
+func uniqueLabels(prog *Program, ptr string, seen map[string]bool) error {
+	names := make([]string, 0, len(prog.States))
+	for name := range prog.States {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+	for _, name := range names {
+		st := prog.States[name]
+		at := ptr + "/States/" + escape(name)
+		if st.Dist != nil && st.Dist.Label != "" {
+			if seen[st.Dist.Label] {
+				return defErr(codeSchema, "Label '"+st.Dist.Label+"' is already used by another Distributed Map state", at+"/Label")
+			}
+			seen[st.Dist.Label] = true
+		}
+		for i, b := range st.Branches {
+			if err := uniqueLabels(b, at+"/Branches/"+strconv.Itoa(i), seen); err != nil {
+				return err
+			}
+		}
+		if st.Processor != nil {
+			if err := uniqueLabels(st.Processor, at+"/ItemProcessor", seen); err != nil {
+				return err
+			}
 		}
 	}
 	return nil

@@ -32,6 +32,8 @@ github.com/aws/aws-sdk-go-v2/service/sqs v1.53.0 h1:Drz602e9tjlm73zV4ZSFn7HLX/xS
 github.com/aws/aws-sdk-go-v2/service/sqs v1.53.0/go.mod h1:Gpdfb/HnOpeKmNYfCRNLOmtDImdbTeS/0F1vPhZYKMg=
 github.com/aws/smithy-go v1.28.9 h1:zkZ058OpNX0iGTK24b+ZUEQSMc11CBA6oO7xtKZfzkY=
 github.com/aws/smithy-go v1.28.9/go.mod h1:YE2RhdIuDbA5E5bTdciG9KrW3+TiEONeUWCqxX9i1Fc=
+github.com/klauspost/compress v1.20.2 h1:v5tiZvm1KGLyg5d5oXdXe3lsSPrbEUiKoXGia//I7Qo=
+github.com/klauspost/compress v1.20.2/go.mod h1:LUdAzn7YLVvxLpc7y3V1m40wESHTgc1422pwwBSKYuI=
 github.com/recolabs/gnata v0.6.2 h1:kURF0jWLPiNdA9t/1aRKhDXiyL0/e5hQZerqkuapoyw=
 github.com/recolabs/gnata v0.6.2/go.mod h1:+u5DmoYMyHl+9Uuo9KQXLhbKHip+M5N8S/QYAPSG0XU=
 github.com/tidwall/gjson v1.18.0 h1:FIDeeyB800efLX89e5a8Y0BNH+LOngJyGrIWxG2FKQY=

@@ -260,7 +260,9 @@ func TestDistributedMapValidation(t *testing.T) {
 		"inline":    {`{"StartAt":"M","States":{"M":{"Type":"Map","ToleratedFailureCount":1,"ItemProcessor":{` + child + `},"End":true}}}`, "", "requires ProcessorConfig Mode DISTRIBUTED"},
 		"both":      {`{"StartAt":"M","States":{"M":{"Type":"Map","MaxConcurrency":1,"MaxConcurrencyPath":"$.n","ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"End":true}}}`, "", "mutually exclusive"},
 		"pct range": {`{"StartAt":"M","States":{"M":{"Type":"Map","ToleratedFailurePercentage":101,"ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"End":true}}}`, "", "0..100"},
-		"writer":    {`{"StartAt":"M","States":{"M":{"Type":"Map","ResultWriter":{},"ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"End":true}}}`, "", "WriterConfig"},
+		"duplicate label": {`{"StartAt":"A","States":{"A":{"Type":"Map","Label":"same","ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"Next":"B"},
+			"B":{"Type":"Parallel","Branches":[{"StartAt":"C","States":{"C":{"Type":"Map","Label":"same","ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"End":true}}}],"End":true}}}`, "", "Label 'same' is already used"},
+		"writer": {`{"StartAt":"M","States":{"M":{"Type":"Map","ResultWriter":{},"ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},` + child + `},"End":true}}}`, "", "WriterConfig"},
 	} {
 		in := &gen.CreateStateMachineInput{Name: sp(strings.ReplaceAll(name, " ", "-")), Definition: sp(tc.def), RoleArn: sp(roleARN)}
 		if tc.typ != "" {

@@ -55,11 +55,32 @@ func TestMapRunRedrive(t *testing.T) {
 		t.Fatalf("child redrive %v", err)
 	}
 
+	redriveStatus := func(arn string) string {
+		t.Helper()
+		d, err := s.DescribeExecution(ctx, &gen.DescribeExecutionInput{ExecutionArn: &arn})
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(*d.RedriveStatus) + " " + valueOf(d.RedriveStatusReason)
+	}
+	if got := redriveStatus(failedChild); got != "REDRIVABLE_BY_MAP_RUN " {
+		t.Fatalf("child %q", got)
+	}
+	if got := redriveStatus(run.Children[0]); got != "NOT_REDRIVABLE Execution is SUCCEEDED and cannot be redriven" {
+		t.Fatalf("succeeded child %q", got)
+	}
+	if got := redriveStatus(ex.ARN); got != "REDRIVABLE " {
+		t.Fatalf("parent %q", got)
+	}
+
 	broken.Store(false)
 	if _, err := s.RedriveExecution(ctx, &gen.RedriveExecutionInput{ExecutionArn: &ex.ARN}); err != nil {
 		t.Fatal(err)
 	}
 	ex = waitExec(t, s, ex.ARN)
+	if got := redriveStatus(ex.ARN); got != "NOT_REDRIVABLE Execution is SUCCEEDED and cannot be redriven" {
+		t.Fatalf("redriven parent %q", got)
+	}
 	if ex.Status != store.ExecSucceeded {
 		t.Fatalf("%s %s %s %v", ex.Status, ex.Error, ex.Cause, typesOf(ex))
 	}
@@ -78,6 +99,12 @@ func TestMapRunRedrive(t *testing.T) {
 	}
 	if child, _ := s.Store.Execution(failedChild); child.Status != store.ExecSucceeded || child.RedriveCount != 1 {
 		t.Fatalf("child %s %d", child.Status, child.RedriveCount)
+	}
+	for filter, want := range map[gen.ExecutionRedriveFilter]int{gen.ExecutionRedriveFilterREDRIVEN: 1, gen.ExecutionRedriveFilterNOT_REDRIVEN: 3} {
+		list, err := s.ListExecutions(ctx, &gen.ListExecutionsInput{MapRunArn: &run.ARN, RedriveFilter: &filter})
+		if err != nil || len(*list.Executions) != want {
+			t.Fatalf("%s: %v %v", filter, list, err)
+		}
 	}
 	hist, err := s.GetExecutionHistory(ctx, &gen.GetExecutionHistoryInput{ExecutionArn: &ex.ARN})
 	if err != nil {

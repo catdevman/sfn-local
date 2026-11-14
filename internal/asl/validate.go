@@ -166,7 +166,14 @@ func validateDefinition(definition string, express bool) (*Program, error) {
 	if err != nil {
 		return nil, defErr(codeSchema, err.Error(), "/")
 	}
-	return validateMachine(fields, "/", true, express, langJSONPath)
+	prog, err := validateMachine(fields, "/", true, express, langJSONPath)
+	if err != nil {
+		return nil, err
+	}
+	if err := uniqueLabels(prog, "", map[string]bool{}); err != nil {
+		return nil, err
+	}
+	return prog, nil
 }
 
 func validateMachine(fields map[string]json.RawMessage, ptr string, top, express bool, machineLang string) (*Program, error) {

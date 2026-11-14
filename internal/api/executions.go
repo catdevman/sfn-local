@@ -61,7 +61,19 @@ func (s *Service) DescribeExecution(_ context.Context, in *gen.DescribeExecution
 	if err != nil {
 		return nil, err
 	}
-	return describeExecution(ex), nil
+	out := describeExecution(ex)
+	status, reason := store.RedriveStatus(ex)
+	if status == "REDRIVABLE" {
+		if m, ok := s.Store.Machine(ex.StateMachineARN); !ok || m.Status == store.StatusDeleting {
+			status, reason = "NOT_REDRIVABLE", "State machine is in DELETING status"
+		}
+	}
+	rs := gen.ExecutionRedriveStatus(status)
+	out.RedriveStatus = &rs
+	if reason != "" {
+		out.RedriveStatusReason = sp(reason)
+	}
+	return out, nil
 }
 
 func (s *Service) DescribeStateMachineForExecution(_ context.Context, in *gen.DescribeStateMachineForExecutionInput) (*gen.DescribeStateMachineForExecutionOutput, error) {
@@ -193,6 +205,16 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 		filtered := rows[:0]
 		for _, row := range rows {
 			if row.Status == string(*in.StatusFilter) {
+				filtered = append(filtered, row)
+			}
+		}
+		rows = filtered
+	}
+	if in.RedriveFilter != nil {
+		want := *in.RedriveFilter == gen.ExecutionRedriveFilterREDRIVEN
+		filtered := rows[:0]
+		for _, row := range rows {
+			if (row.RedriveCount > 0) == want {
 				filtered = append(filtered, row)
 			}
 		}

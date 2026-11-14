@@ -10,6 +10,7 @@ import (
 
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
+	"github.com/klauspost/compress/zstd"
 )
 
 // maxDataset is the largest object a Distributed Map reads or writes in
@@ -76,8 +77,9 @@ func (c *Caller) S3ReadKey(ctx context.Context, bucket, key string) ([]byte, err
 	return c.read(ctx, &s3.GetObjectInput{Bucket: aws.String(bucket), Key: aws.String(key)})
 }
 
-// decompress handles gzip by its magic bytes. zstd is refused.
+// decompress handles gzip and zstd by their magic bytes.
 func decompress(body []byte, key string) ([]byte, error) {
+	var r io.Reader
 	switch {
 	case len(body) >= 2 && body[0] == 0x1f && body[1] == 0x8b:
 		zr, err := gzip.NewReader(bytes.NewReader(body))
@@ -85,18 +87,25 @@ func decompress(body []byte, key string) ([]byte, error) {
 			return nil, err
 		}
 		defer zr.Close()
-		out, err := io.ReadAll(io.LimitReader(zr, maxDataset+1))
+		r = zr
+	case len(body) >= 4 && body[0] == 0x28 && body[1] == 0xb5 && body[2] == 0x2f && body[3] == 0xfd:
+		zr, err := zstd.NewReader(bytes.NewReader(body), zstd.WithDecoderConcurrency(1), zstd.WithDecoderMaxMemory(maxDataset+1))
 		if err != nil {
 			return nil, err
 		}
-		if len(out) > maxDataset {
-			return nil, fmt.Errorf("%s is larger than %d bytes after decompression", key, maxDataset)
-		}
-		return out, nil
-	case len(body) >= 4 && body[0] == 0x28 && body[1] == 0xb5 && body[2] == 0x2f && body[3] == 0xfd:
-		return nil, fmt.Errorf("%s is zstd compressed, which this server does not read", key)
+		defer zr.Close()
+		r = zr
+	default:
+		return body, nil
 	}
-	return body, nil
+	out, err := io.ReadAll(io.LimitReader(r, maxDataset+1))
+	if err != nil {
+		return nil, fmt.Errorf("%s could not be decompressed: %v", key, err)
+	}
+	if len(out) > maxDataset {
+		return nil, fmt.Errorf("%s is larger than %d bytes after decompression", key, maxDataset)
+	}
+	return out, nil
 }
 
 // S3List lists every object for a Distributed Map reader, following

@@ -767,11 +767,10 @@ func childRecord(ex store.Execution) map[string]any {
 		"StateMachineArn": ex.StateMachineARN,
 		"Status":          ex.Status,
 	}
-	if ex.Status == store.ExecSucceeded || ex.Express {
-		rec["RedriveStatus"] = "NOT_REDRIVABLE"
-		rec["RedriveStatusReason"] = "Execution is " + ex.Status + " and cannot be redriven"
-	} else {
-		rec["RedriveStatus"] = "REDRIVABLE"
+	status, reason := store.RedriveStatus(ex)
+	rec["RedriveStatus"] = status
+	if reason != "" {
+		rec["RedriveStatusReason"] = reason
 	}
 	if ex.Stopped != nil {
 		rec["StopDate"] = isoInstant(*ex.Stopped)
