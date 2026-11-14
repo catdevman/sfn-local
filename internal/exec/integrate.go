@@ -39,15 +39,54 @@ func integrationResource(resource string) (base, mode string, ok bool) {
 		"arn:aws:states:::dynamodb:updateItem",
 		"arn:aws:states:::dynamodb:deleteItem",
 		"arn:aws:states:::states:startExecution",
-		"arn:aws:states:::events:putEvents":
+		"arn:aws:states:::events:putEvents",
+		ecsRunTask,
+		apiGatewayInvoke:
 		return base, mode, true
 	default:
 		return "", "", false
 	}
 }
 
-// integrationReady reports whether an optimized integration can be called.
-// DynamoDB, SQS, SNS, and EventBridge run through internal/sdk.
+const (
+	startExecution   = "arn:aws:states:::states:startExecution"
+	ecsRunTask       = "arn:aws:states:::ecs:runTask"
+	apiGatewayInvoke = "arn:aws:states:::apigateway:invoke"
+)
+
+// syncBases lists the integrations that run each .sync mode.
+var syncBases = map[string][]string{
+	"sync":  {startExecution, ecsRunTask},
+	"sync2": {startExecution},
+}
+
+// modeRuns reports whether base runs in mode. The request-response mode ""
+// runs for every integration.
+func modeRuns(base, mode string) bool {
+	if mode == "" {
+		return true
+	}
+	for _, b := range syncBases[mode] {
+		if b == base {
+			return true
+		}
+	}
+	return false
+}
+
+// syncHint names the integrations that run a .sync mode.
+func syncHint(mode string) string {
+	bases := syncBases[mode]
+	suffix := ".sync"
+	if mode == "sync2" {
+		suffix = ".sync:2"
+	}
+	if len(bases) == 1 {
+		return "only " + bases[0] + " runs " + suffix
+	}
+	return "only " + strings.Join(bases[:len(bases)-1], ", ") + " and " + bases[len(bases)-1] + " run " + suffix
+}
+
 // unsupported is the error for a resource this server cannot run, with a
 // hint naming the setting that would make it run.
 func (r *Runner) unsupported(resource string) error {
@@ -70,12 +109,14 @@ func (r *Runner) resourceHint(resource string) string {
 	switch {
 	case !ok:
 		return ""
-	case mode != "" && base != "arn:aws:states:::states:startExecution":
-		return "only arn:aws:states:::states:startExecution runs ." + mode
+	case !modeRuns(base, mode):
+		return syncHint(mode)
 	case base == "arn:aws:states:::lambda:invoke":
 		return lambdaHint
-	case base == "arn:aws:states:::states:startExecution":
+	case base == startExecution:
 		return "set STEP_FUNCTIONS_ENDPOINT (--step-functions-endpoint)"
+	case base == apiGatewayInvoke:
+		return "set API_GATEWAY_ENDPOINT (--api-gateway-endpoint)"
 	default:
 		return r.SDK.IntegrationHint(base)
 	}
@@ -88,8 +129,10 @@ func (r *Runner) integrationReady(base string) bool {
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
 		return r.LambdaEndpoint != ""
-	case "arn:aws:states:::states:startExecution":
+	case startExecution:
 		return r.StepFunctionsEndpoint != ""
+	case apiGatewayInvoke:
+		return r.APIGatewayEndpoint != ""
 	default:
 		return r.SDK.SupportsIntegration(base)
 	}
@@ -100,14 +143,21 @@ func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta
 		return r.invokeSDK(callCtx, parent, id, action, meta.input, taskWins)
 	}
 	base, mode, ok := integrationResource(meta.resource)
-	if !ok || (mode != "" && base != "arn:aws:states:::states:startExecution") || !r.integrationReady(base) {
+	if !ok || !modeRuns(base, mode) || !r.integrationReady(base) {
 		return "", &taskFailure{Name: "States.Runtime", Cause: r.unsupported(meta.resource).Error()}
 	}
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
 		return r.invokeLambdaOptimized(callCtx, parent, meta.input, taskWins)
-	case "arn:aws:states:::states:startExecution":
+	case startExecution:
 		return r.invokeStartExecution(callCtx, parent, arn, meta, r.StepFunctionsEndpoint, mode, taskWins)
+	case apiGatewayInvoke:
+		return r.invokeAPIGateway(callCtx, parent, meta.input, taskWins)
+	case ecsRunTask:
+		if mode == "sync" {
+			return r.invokeECSSync(callCtx, parent, arn, meta, taskWins)
+		}
+		fallthrough
 	default:
 		out, err := r.SDK.CallIntegration(callCtx, base, []byte(meta.input))
 		return out, sdkFailure(err, parent, callCtx, taskWins, sdk.IntegrationFallback(base))

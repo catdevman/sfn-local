@@ -245,7 +245,7 @@ func (r *Runner) classify(ex store.Execution, st *asl.State, machine string) (ta
 		return kindGeneric, lambdaTarget{}, false, nil
 	}
 	if base, mode, ok := integrationResource(st.Resource); ok {
-		if mode != "" && base != "arn:aws:states:::states:startExecution" {
+		if !modeRuns(base, mode) {
 			return 0, lambdaTarget{}, false, r.unsupported(st.Resource)
 		}
 		if !r.integrationReady(base) {

@@ -413,7 +413,11 @@ func (r *Runner) submitCallback(ctx context.Context, arn string, meta taskMeta, 
 	defer cancel()
 	call := meta
 	call.resource = base
-	return r.invokeService(callCtx, ctx, arn, call, taskWins)
+	out, tf := r.invokeService(callCtx, ctx, arn, call, taskWins)
+	if tf == nil && base == ecsRunTask {
+		tf = ecsRunFailures(out)
+	}
+	return out, tf
 }
 
 func (r *Runner) emitParkEnd(ctx context.Context, arn string, meta taskMeta, result string, tf *taskFailure) bool {

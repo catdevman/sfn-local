@@ -11,6 +11,9 @@ import (
 // DynamoDB.ConditionalCheckFailedException, not the aws-sdk prefix.
 type integration struct {
 	id, action, prefix string
+	// fallback names an error the service did not classify. Empty means
+	// <prefix>.ServiceException.
+	fallback string
 	// asText rewrites members that may be any JSON value into JSON text,
 	// such as an SQS MessageBody given as an object.
 	asText func(params map[string]any) error
@@ -24,6 +27,7 @@ var integrations = map[string]integration{
 	"arn:aws:states:::sqs:sendMessage":     {id: "sqs", action: "sendMessage", prefix: "SQS", asText: memberText("MessageBody")},
 	"arn:aws:states:::sns:publish":         {id: "sns", action: "publish", prefix: "SNS", asText: memberText("Message")},
 	"arn:aws:states:::events:putEvents":    {id: "eventbridge", action: "putEvents", prefix: "EventBridge", asText: entriesDetail},
+	"arn:aws:states:::ecs:runTask":         {id: "ecs", action: "runTask", prefix: "ECS", fallback: "ECS.AmazonECSException"},
 }
 
 // IsIntegration reports whether resource is an optimized integration this
@@ -73,10 +77,25 @@ func (c *Caller) CallIntegration(ctx context.Context, resource string, params []
 	return c.call(ctx, in.id, in.action, in.prefix, IntegrationFallback(resource), params)
 }
 
+// CallIntegrationAction runs another action of an integration's service and
+// names its errors as the integration does, such as describeTasks for a
+// .sync ecs:runTask.
+func (c *Caller) CallIntegrationAction(ctx context.Context, resource, action string, params []byte) (string, error) {
+	in, ok := integrations[resource]
+	if !ok {
+		return "", fmt.Errorf("unsupported resource: %s", resource)
+	}
+	return c.call(ctx, in.id, action, in.prefix, IntegrationFallback(resource), params)
+}
+
 // IntegrationFallback names a failure the service did not classify, such as
 // SQS.ServiceException.
 func IntegrationFallback(resource string) string {
-	return integrations[resource].prefix + ".ServiceException"
+	in := integrations[resource]
+	if in.fallback != "" {
+		return in.fallback
+	}
+	return in.prefix + ".ServiceException"
 }
 
 func memberText(name string) func(map[string]any) error {

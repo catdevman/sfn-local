@@ -44,8 +44,14 @@ type Runner struct {
 	// StepFunctionsEndpoint gates nested states:startExecution. Empty means
 	// the resource is unsupported. .sync is states:startExecution only.
 	StepFunctionsEndpoint string
-	Region                string
-	Account               string
+	// APIGatewayEndpoint is API_GATEWAY_ENDPOINT. It gates apigateway:invoke,
+	// which sends each request there instead of to ApiEndpoint.
+	APIGatewayEndpoint string
+	// ECSPoll is how often a .sync ecs:runTask describes its task. Zero is
+	// one second.
+	ECSPoll time.Duration
+	Region  string
+	Account string
 	// SDK runs arn:aws:states:::aws-sdk: resources and the DynamoDB, SQS,
 	// SNS, and EventBridge integrations. Nil means they are unsupported.
 	SDK *sdk.Caller

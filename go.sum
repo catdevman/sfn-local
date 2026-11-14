@@ -16,6 +16,8 @@ github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.12 h1:uvX2yaL+aMjkmnrLPPlR/zwjoKF
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.12/go.mod h1:dicT+2eNhHHqGkxHO7LoXw3QghIUGuzgdmFqaSTopgI=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.74.0 h1:DSfi8o1qAb2AQwFwfk4gjOE3R9V+33/V5k/ICYkkSac=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.74.0/go.mod h1:tzOEVcpLdi8aqyYUKQkuOVVAOfOgfLA0xEomIUTHIFY=
+github.com/aws/aws-sdk-go-v2/service/ecs v1.105.1 h1:J6NiLTcfKbreRoPZOzP1nkQmGknL59I6jM32oV/r2pk=
+github.com/aws/aws-sdk-go-v2/service/ecs v1.105.1/go.mod h1:NE+iSRHkh9PV3OzFElTZV8WneVYfnFP0AefD99xqejY=
 github.com/aws/aws-sdk-go-v2/service/eventbridge v1.55.11 h1:ojgfcj4mTmmv4oS6tCdLOSE7JREY9ac79Agwqbo6Qhw=
 github.com/aws/aws-sdk-go-v2/service/eventbridge v1.55.11/go.mod h1:dH07c6fNA09NdicyUUIH85aHE3tzUrZnjRwhmERs+S4=
 github.com/aws/aws-sdk-go-v2/service/iam v1.64.6 h1:6tqE3gHbHFEvARPvlLHgRK1dXoD96ecolfPEurpYXyc=

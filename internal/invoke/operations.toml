@@ -3,6 +3,7 @@
 # implemented runs through op. codec runs through a hand-written handler.
 # unsupported has no handler. opaque lists members the codec cannot carry.
 # dynamodb: 23 of 62 operations run.
+# ecs: 17 of 88 operations run.
 # eventbridge: 14 of 57 operations run.
 # lambda: 30 of 88 operations run.
 # s3: 25 of 112 operations run.
@@ -321,6 +322,457 @@ status = "unsupported"
 service = "dynamodb"
 action = "updateTimeToLive"
 status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "associateGatewayWithCluster"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "continueServiceDeployment"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "createCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "createCluster"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "createDaemon"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "createExpressGatewayService"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "createGateway"
+status = "unsupported"
+opaque = "input.Configuration"
+
+[[operation]]
+service = "ecs"
+action = "createService"
+status = "unsupported"
+opaque = "input.DeploymentConfiguration.LifecycleHooks.HookDetails, input.ServiceConnectConfiguration.ContainerConfigurations, output.Service.DeploymentConfiguration.LifecycleHooks.HookDetails, output.Service.Deployments.ServiceConnectConfiguration.ContainerConfigurations"
+
+[[operation]]
+service = "ecs"
+action = "createTaskSet"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteAccountSetting"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteCluster"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "deleteDaemon"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteDaemonTaskDefinition"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteExpressGatewayService"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteGateway"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteService"
+status = "unsupported"
+opaque = "output.Service.DeploymentConfiguration.LifecycleHooks.HookDetails, output.Service.Deployments.ServiceConnectConfiguration.ContainerConfigurations"
+
+[[operation]]
+service = "ecs"
+action = "deleteTaskDefinitions"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deleteTaskSet"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deregisterContainerInstance"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "deregisterTaskDefinition"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "describeCapacityProviders"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeClusters"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "describeContainerInstances"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeDaemon"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeDaemonDeployments"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeDaemonRevisions"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeDaemonTaskDefinition"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeExpressGatewayService"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeGateway"
+status = "unsupported"
+opaque = "output.Gateway.Configuration"
+
+[[operation]]
+service = "ecs"
+action = "describeGatewayResources"
+status = "unsupported"
+opaque = "output.GatewayResources.Resources"
+
+[[operation]]
+service = "ecs"
+action = "describeGatewayRoute"
+status = "unsupported"
+opaque = "output.GatewayRoute.Resources"
+
+[[operation]]
+service = "ecs"
+action = "describeServiceDeployments"
+status = "unsupported"
+opaque = "output.ServiceDeployments.DeploymentConfiguration.LifecycleHooks.HookDetails"
+
+[[operation]]
+service = "ecs"
+action = "describeServiceRevisions"
+status = "unsupported"
+opaque = "output.ServiceRevisions.EcsManagedResources.GatewayConnections.Resources, output.ServiceRevisions.ServiceConnectConfiguration.ContainerConfigurations"
+
+[[operation]]
+service = "ecs"
+action = "describeServices"
+status = "unsupported"
+opaque = "output.Services.DeploymentConfiguration.LifecycleHooks.HookDetails, output.Services.Deployments.ServiceConnectConfiguration.ContainerConfigurations"
+
+[[operation]]
+service = "ecs"
+action = "describeTaskDefinition"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "describeTaskSets"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "describeTasks"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "disassociateGatewayFromCluster"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "discoverPollEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "executeCommand"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "getTaskProtection"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listAccountSettings"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listClusters"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "listContainerInstances"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listDaemonDeployments"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listDaemonTaskDefinitions"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listDaemons"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listGatewayClusterAssociations"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listGatewayRoutes"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listGateways"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listServiceDeployments"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listServices"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "listServicesByNamespace"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listTagsForResource"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "listTaskDefinitionFamilies"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "listTaskDefinitions"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "listTasks"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "putAccountSetting"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "putAccountSettingDefault"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "putAttributes"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "putClusterCapacityProviders"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "registerContainerInstance"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "registerDaemonTaskDefinition"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "registerTaskDefinition"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "runTask"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "startTask"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "stopServiceDeployment"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "stopTask"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "submitAttachmentStateChanges"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "submitContainerStateChange"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "submitTaskStateChange"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "ecs"
+action = "updateCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateCluster"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateClusterSettings"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateContainerAgent"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateContainerInstancesState"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateDaemon"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateExpressGatewayService"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateGateway"
+status = "unsupported"
+opaque = "input.Configuration"
+
+[[operation]]
+service = "ecs"
+action = "updateService"
+status = "unsupported"
+opaque = "input.DeploymentConfiguration.LifecycleHooks.HookDetails, input.ServiceConnectConfiguration.ContainerConfigurations, output.Service.DeploymentConfiguration.LifecycleHooks.HookDetails, output.Service.Deployments.ServiceConnectConfiguration.ContainerConfigurations"
+
+[[operation]]
+service = "ecs"
+action = "updateServicePrimaryTaskSet"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateTaskProtection"
+status = "unsupported"
+
+[[operation]]
+service = "ecs"
+action = "updateTaskSet"
+status = "unsupported"
 
 [[operation]]
 service = "eventbridge"

@@ -107,6 +107,7 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		Mocks:                 &mock.Repo{Path: cfg.MockConfig},
 		LambdaEndpoint:        cfg.LambdaEndpoint,
 		StepFunctionsEndpoint: cfg.StepFunctionsEndpoint,
+		APIGatewayEndpoint:    cfg.APIGatewayEndpoint,
 		Region:                cfg.Region,
 		Account:               cfg.Account,
 		SDK: sdk.New(sdk.Config{

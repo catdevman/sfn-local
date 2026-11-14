@@ -151,6 +151,7 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 	cfg.WaitRaw = waitRaw
 	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, map[string]string{
 		"dynamodb":    cfg.DynamoDBEndpoint,
+		"ecs":         cfg.ECSEndpoint,
 		"eventbridge": cfg.EventBridgeEndpoint,
 		"lambda":      cfg.LambdaEndpoint,
 		"sfn":         cfg.StepFunctionsEndpoint,
