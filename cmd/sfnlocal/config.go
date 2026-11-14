@@ -152,6 +152,8 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 	cfg.SDKEndpoints = sdkEndpoints(cfg.AWSEndpointURL, map[string]string{
 		"dynamodb":    cfg.DynamoDBEndpoint,
 		"eventbridge": cfg.EventBridgeEndpoint,
+		"lambda":      cfg.LambdaEndpoint,
+		"sfn":         cfg.StepFunctionsEndpoint,
 		"sns":         cfg.SNSEndpoint,
 		"sqs":         cfg.SQSEndpoint,
 	}, getenv)

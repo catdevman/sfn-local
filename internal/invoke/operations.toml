@@ -4,9 +4,13 @@
 # unsupported has no handler. opaque lists members the codec cannot carry.
 # dynamodb: 23 of 62 operations run.
 # eventbridge: 14 of 57 operations run.
+# lambda: 30 of 88 operations run.
 # s3: 25 of 112 operations run.
+# secretsmanager: 23 of 23 operations run.
+# sfn: 37 of 37 operations run.
 # sns: 14 of 42 operations run.
 # sqs: 16 of 23 operations run.
+# ssm: 18 of 152 operations run.
 
 [[operation]]
 service = "dynamodb"
@@ -604,6 +608,447 @@ action = "updateEventBus"
 status = "unsupported"
 
 [[operation]]
+service = "lambda"
+action = "addLayerVersionPermission"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "addPermission"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "checkpointDurableExecution"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "createAlias"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "createCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "createCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "createEventSourceMapping"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "createFunction"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "createFunctionUrlConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteAlias"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "deleteCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteEventSourceMapping"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "deleteFunction"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "deleteFunctionCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteFunctionConcurrency"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "deleteFunctionEventInvokeConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteFunctionUrlConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteLayerVersion"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteProvisionedConcurrencyConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "deleteResourcePolicy"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getAccountSettings"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getAlias"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getDurableExecution"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getDurableExecutionHistory"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getDurableExecutionState"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getEventSourceMapping"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getFunction"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionConcurrency"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionConfiguration"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionEventInvokeConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionRecursionConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionScalingConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getFunctionUrlConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getLayerVersion"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getLayerVersionByArn"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getLayerVersionPolicy"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getPolicy"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "getProvisionedConcurrencyConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getResourcePolicy"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "getRuntimeManagementConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "invoke"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "invokeAsync"
+status = "unsupported"
+opaque = "input.InvokeArgs"
+
+[[operation]]
+service = "lambda"
+action = "invokeWithResponseStream"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listAliases"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "listCapacityProviders"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listCodeSigningConfigs"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listDurableExecutionsByFunction"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listEventSourceMappings"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "listFunctionEventInvokeConfigs"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listFunctionUrlConfigs"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listFunctionVersionsByCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listFunctions"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "listFunctionsByCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listLayerVersions"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listLayers"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listProvisionedConcurrencyConfigs"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "listTags"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "listVersionsByFunction"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "publishLayerVersion"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "publishVersion"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "putFunctionCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putFunctionConcurrency"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "putFunctionEventInvokeConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putFunctionRecursionConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putFunctionScalingConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putProvisionedConcurrencyConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putResourcePolicy"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "putRuntimeManagementConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "removeLayerVersionPermission"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "removePermission"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "sendDurableExecutionCallbackFailure"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "sendDurableExecutionCallbackHeartbeat"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "sendDurableExecutionCallbackSuccess"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "stopDurableExecution"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "updateAlias"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "updateCapacityProvider"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "updateCodeSigningConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "updateEventSourceMapping"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "updateFunctionCode"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "updateFunctionConfiguration"
+status = "implemented"
+
+[[operation]]
+service = "lambda"
+action = "updateFunctionEventInvokeConfig"
+status = "unsupported"
+
+[[operation]]
+service = "lambda"
+action = "updateFunctionUrlConfig"
+status = "unsupported"
+
+[[operation]]
 service = "s3"
 action = "abortMultipartUpload"
 status = "implemented"
@@ -1178,6 +1623,306 @@ status = "unsupported"
 opaque = "input.Body"
 
 [[operation]]
+service = "secretsmanager"
+action = "batchGetSecretValue"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "cancelRotateSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "createSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "deleteResourcePolicy"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "deleteSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "describeSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "getRandomPassword"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "getResourcePolicy"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "getSecretValue"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "listSecretVersionIds"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "listSecrets"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "putResourcePolicy"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "putSecretValue"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "removeRegionsFromReplication"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "replicateSecretToRegions"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "restoreSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "rotateSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "stopReplicationToReplica"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "updateSecret"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "updateSecretVersionStage"
+status = "implemented"
+
+[[operation]]
+service = "secretsmanager"
+action = "validateResourcePolicy"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "createActivity"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "createStateMachine"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "createStateMachineAlias"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "deleteActivity"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "deleteStateMachine"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "deleteStateMachineAlias"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "deleteStateMachineVersion"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeActivity"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeMapRun"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeStateMachine"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeStateMachineAlias"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "describeStateMachineForExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "getActivityTask"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "getExecutionHistory"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listActivities"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listExecutions"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listMapRuns"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listStateMachineAliases"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listStateMachineVersions"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listStateMachines"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "listTagsForResource"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "publishStateMachineVersion"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "redriveExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "sendTaskFailure"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "sendTaskHeartbeat"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "sendTaskSuccess"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "startExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "startSyncExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "stopExecution"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "testState"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "updateMapRun"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "updateStateMachine"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "updateStateMachineAlias"
+status = "implemented"
+
+[[operation]]
+service = "sfn"
+action = "validateStateMachineDefinition"
+status = "implemented"
+
+[[operation]]
 service = "sns"
 action = "addPermission"
 status = "unsupported"
@@ -1501,3 +2246,769 @@ status = "implemented"
 service = "sqs"
 action = "untagQueue"
 status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "addTagsToResource"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "associateOpsItemRelatedItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "cancelCommand"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "cancelMaintenanceWindowExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createActivation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createAssociation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createAssociationBatch"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createCloudConnector"
+status = "unsupported"
+opaque = "input.Configuration"
+
+[[operation]]
+service = "ssm"
+action = "createDocument"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createOpsItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createOpsMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createPatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "createResourceDataSync"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteActivation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteAssociation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteCloudConnector"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteDocument"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteInventory"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteOpsItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteOpsMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteParameter"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "deleteParameters"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "deletePatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteResourceDataSync"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deleteResourcePolicy"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deregisterManagedInstance"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deregisterPatchBaselineForPatchGroup"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deregisterTargetFromMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "deregisterTaskFromMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeActivations"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAssociation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAssociationExecutionTargets"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAssociationExecutions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAutomationExecutions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAutomationStepExecutions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeAvailablePatches"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeDocument"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeDocumentPermission"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeEffectiveInstanceAssociations"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeEffectivePatchesForPatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstanceAssociationsStatus"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstanceInformation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstancePatchStates"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstancePatchStatesForPatchGroup"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstancePatches"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInstanceProperties"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeInventoryDeletions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowExecutionTaskInvocations"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowExecutionTasks"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowExecutions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowSchedule"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowTargets"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowTasks"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindows"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeMaintenanceWindowsForTarget"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeOpsItems"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeParameters"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "describePatchBaselines"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describePatchGroupState"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describePatchGroups"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describePatchProperties"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "describeSessions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "disassociateOpsItemRelatedItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getAccessToken"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getAutomationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getCalendarState"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getCloudConnector"
+status = "unsupported"
+opaque = "output.Configuration"
+
+[[operation]]
+service = "ssm"
+action = "getCommandInvocation"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "getConnectionStatus"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getDefaultPatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getDeployablePatchSnapshotForInstance"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getDocument"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getExecutionPreview"
+status = "unsupported"
+opaque = "output.ExecutionPreview"
+
+[[operation]]
+service = "ssm"
+action = "getInventory"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getInventorySchema"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getMaintenanceWindowExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getMaintenanceWindowExecutionTask"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getMaintenanceWindowExecutionTaskInvocation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getMaintenanceWindowTask"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getOpsItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getOpsMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getOpsSummary"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getParameter"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "getParameterHistory"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "getParameters"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "getParametersByPath"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "getPatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getPatchBaselineForPatchGroup"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getResourcePolicies"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "getServiceSetting"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "labelParameterVersion"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "listAssociationVersions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listAssociations"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listCloudConnectors"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listCommandInvocations"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "listCommands"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "listComplianceItems"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listComplianceSummaries"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listDocumentMetadataHistory"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listDocumentVersions"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listDocuments"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listInventoryEntries"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listNodes"
+status = "unsupported"
+opaque = "output.Nodes.NodeType"
+
+[[operation]]
+service = "ssm"
+action = "listNodesSummary"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listOpsItemEvents"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listOpsItemRelatedItems"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listOpsMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listResourceComplianceSummaries"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listResourceDataSync"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "listTagsForResource"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "modifyDocumentPermission"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "putComplianceItems"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "putInventory"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "putParameter"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "putResourcePolicy"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "registerDefaultPatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "registerPatchBaselineForPatchGroup"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "registerTargetWithMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "registerTaskWithMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "removeTagsFromResource"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "resetServiceSetting"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "resumeSession"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "sendAutomationSignal"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "sendCommand"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "startAccessRequest"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "startAssociationsOnce"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "startAutomationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "startChangeRequestExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "startExecutionPreview"
+status = "unsupported"
+opaque = "input.ExecutionInputs"
+
+[[operation]]
+service = "ssm"
+action = "startSession"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "stopAutomationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "terminateSession"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "unlabelParameterVersion"
+status = "implemented"
+
+[[operation]]
+service = "ssm"
+action = "updateAssociation"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateAssociationStatus"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateCloudConnector"
+status = "unsupported"
+opaque = "input.Configuration"
+
+[[operation]]
+service = "ssm"
+action = "updateDocument"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateDocumentDefaultVersion"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateDocumentMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateMaintenanceWindow"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateMaintenanceWindowTarget"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateMaintenanceWindowTask"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateManagedInstanceRole"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateOpsItem"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateOpsMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updatePatchBaseline"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateResourceDataSync"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "updateServiceSetting"
+status = "unsupported"
+
+[[operation]]
+service = "ssm"
+action = "validateCloudConnector"
+status = "unsupported"

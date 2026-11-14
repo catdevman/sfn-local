@@ -2,7 +2,6 @@ package sdk
 
 import (
 	"context"
-	"encoding/json"
 	"io"
 	"strings"
 
@@ -89,13 +88,7 @@ func s3GetObject(c *s3.Client) handler {
 // JSON text.
 func s3PutObject(c *s3.Client) handler {
 	return func(ctx context.Context, params []byte) (string, error) {
-		var top map[string]json.RawMessage
-		if err := json.Unmarshal(params, &top); err != nil {
-			return "", &ServiceError{Name: "States.Runtime", Cause: "aws-sdk parameters must be a JSON object"}
-		}
-		rawBody, hasBody := top["Body"]
-		delete(top, "Body")
-		rest, err := json.Marshal(top)
+		rest, rawBody, hasBody, err := splitMember(params, "Body")
 		if err != nil {
 			return "", err
 		}
@@ -104,11 +97,7 @@ func s3PutObject(c *s3.Client) handler {
 			return "", err
 		}
 		if hasBody {
-			var text string
-			if err := json.Unmarshal(rawBody, &text); err != nil {
-				text = string(rawBody)
-			}
-			in.Body = strings.NewReader(text)
+			in.Body = strings.NewReader(textOf(rawBody))
 		}
 		out, err := c.PutObject(ctx, in)
 		if err != nil {
