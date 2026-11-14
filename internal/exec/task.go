@@ -591,7 +591,7 @@ func (r *Runner) invokeLambda(callCtx, parent context.Context, target lambdaTarg
 	if r.Invoke != nil {
 		reply = r.Invoke(callCtx, call)
 	} else {
-		reply = httpInvoke(callCtx, call)
+		reply = httpInvoke(callCtx, r.httpClient(), call)
 	}
 	if reply.Err != nil {
 		if parent.Err() != nil {
@@ -656,7 +656,7 @@ func lambdaStatusFailure(reply LambdaReply) *taskFailure {
 	return &taskFailure{Name: name, Cause: fmt.Sprintf("%s (Service: AWSLambda; Status Code: %d; Error Code: %s; Request ID: %s)", body.Message, reply.Status, code, id)}
 }
 
-func httpInvoke(ctx context.Context, call LambdaCall) LambdaReply {
+func httpInvoke(ctx context.Context, client *http.Client, call LambdaCall) LambdaReply {
 	endpoint := strings.TrimRight(call.Endpoint, "/")
 	u := endpoint + "/2015-03-31/functions/" + url.PathEscape(call.Function) + "/invocations"
 	if call.Qualifier != "" {
@@ -668,7 +668,7 @@ func httpInvoke(ctx context.Context, call LambdaCall) LambdaReply {
 	}
 	req.Header.Set("X-Amz-Invocation-Type", "RequestResponse")
 	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return LambdaReply{Err: err}
 	}

@@ -51,8 +51,9 @@ type Config struct {
 	AWSEndpointURL string
 	SDKEndpoints   map[string]string
 
-	AccessKeyID     string
-	SecretAccessKey string
+	// Outbound is the HTTP client and credentials for this server's own
+	// calls, from the standard AWS SDK variables. run fills it.
+	Outbound sdk.Outbound
 }
 
 type envFunc func(string) (string, bool)
@@ -116,10 +117,6 @@ func parseArgs(args []string, getenv envFunc) (Config, error) {
 	cfg.MockConfig = "./MockConfigFile.json"
 	if v, ok := getenv("SFN_MOCK_CONFIG"); ok {
 		cfg.MockConfig = v
-	}
-	if v, ok := getenv("AWS_ACCESS_KEY_ID"); ok && v != "" {
-		cfg.AccessKeyID = v
-		cfg.SecretAccessKey, _ = getenv("AWS_SECRET_ACCESS_KEY")
 	}
 
 	if err := fs.Parse(args); err != nil {

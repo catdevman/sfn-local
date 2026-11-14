@@ -226,7 +226,7 @@ func (r *Runner) invokeAPIGateway(callCtx, parent context.Context, raw string, t
 	if !strings.Contains(r.APIGatewayEndpoint, "{apiId}") {
 		httpReq.Host = req.host
 	}
-	resp, err := http.DefaultClient.Do(httpReq)
+	resp, err := r.httpClient().Do(httpReq)
 	if err != nil {
 		return "", transportFailure(err, parent, callCtx, taskWins, "ApiGateway.ServiceException")
 	}

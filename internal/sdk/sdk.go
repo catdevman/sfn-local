@@ -13,6 +13,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sort"
 	"strings"
 	"sync"
@@ -22,6 +23,8 @@ import (
 	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/aws/smithy-go"
+	"github.com/aws/smithy-go/middleware"
+	smithyhttp "github.com/aws/smithy-go/transport/http"
 )
 
 const resourcePrefix = "arn:aws:states:::aws-sdk:"
@@ -33,6 +36,14 @@ type Config struct {
 	AccessKeyID     string
 	SecretAccessKey string
 	Endpoints       map[string]string
+	// Credentials, when set, wins over AccessKeyID. See LoadOutbound.
+	Credentials aws.CredentialsProvider
+	// HTTPClient, when set, carries every call, such as one trusting
+	// AWS_CA_BUNDLE.
+	HTTPClient *http.Client
+	// DisableHostPrefix keeps the endpoint's host for calls the SDK would
+	// send to a prefixed host, such as sync-<host> for StartSyncExecution.
+	DisableHostPrefix bool
 }
 
 // ServiceError is a failure the task reports as Error and Cause. Name is
@@ -228,6 +239,15 @@ func (c *Caller) awsConfig() aws.Config {
 	if c.cfg.AccessKeyID != "" {
 		cfg.Credentials = credentials.NewStaticCredentialsProvider(c.cfg.AccessKeyID, c.cfg.SecretAccessKey, "")
 	}
+	if c.cfg.Credentials != nil {
+		cfg.Credentials = c.cfg.Credentials
+	}
+	if c.cfg.HTTPClient != nil {
+		cfg.HTTPClient = c.cfg.HTTPClient
+	}
+	if c.cfg.DisableHostPrefix {
+		cfg.APIOptions = append(cfg.APIOptions, disableHostPrefix)
+	}
 	return cfg
 }
 
@@ -280,4 +300,13 @@ func mapError(prefix, fallback string, err error) error {
 	}
 	// SDK retries are off, so every call is one attempt.
 	return &ServiceError{Name: name, Cause: msg + " (" + detail + ") (SDK Attempt Count: 1)"}
+}
+
+// disableHostPrefix marks each call so the SDK keeps the endpoint's host. The
+// SDK clears values set on the caller's context, so this runs inside the stack.
+func disableHostPrefix(stack *middleware.Stack) error {
+	return stack.Initialize.Add(middleware.InitializeMiddlewareFunc("DisableHostPrefix",
+		func(ctx context.Context, in middleware.InitializeInput, next middleware.InitializeHandler) (middleware.InitializeOutput, middleware.Metadata, error) {
+			return next.HandleInitialize(smithyhttp.DisableEndpointHostPrefix(ctx, true), in)
+		}), middleware.Before)
 }

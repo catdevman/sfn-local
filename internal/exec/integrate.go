@@ -174,7 +174,7 @@ func (r *Runner) invokeLambdaOptimized(callCtx, parent context.Context, raw stri
 	if r.Invoke != nil {
 		reply = r.Invoke(callCtx, call)
 	} else {
-		reply = httpInvoke(callCtx, call)
+		reply = httpInvoke(callCtx, r.httpClient(), call)
 	}
 	if reply.Err != nil {
 		return "", transportFailure(reply.Err, parent, callCtx, taskWins, "Lambda.ServiceException")
@@ -298,7 +298,7 @@ func sdkFailure(err error, parent, callCtx context.Context, taskWins bool, fallb
 }
 
 func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn string, meta taskMeta, endpoint, mode string, taskWins bool) (string, *taskFailure) {
-	body, status, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.StartExecution", meta.input)
+	body, status, err := postJSON10(callCtx, r.httpClient(), endpoint, "AWSStepFunctions.StartExecution", meta.input)
 	if err != nil {
 		tf := transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		tf.Submit = tf.Name != "" && !tf.Timeout && !tf.Halt && !tf.ExecDeadline
@@ -334,7 +334,7 @@ func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn strin
 		if err != nil {
 			return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 		}
-		descBody, descStatus, err := postJSON10(callCtx, endpoint, "AWSStepFunctions.DescribeExecution", reqBody)
+		descBody, descStatus, err := postJSON10(callCtx, r.httpClient(), endpoint, "AWSStepFunctions.DescribeExecution", reqBody)
 		if err != nil {
 			return "", transportFailure(err, parent, callCtx, taskWins, "StepFunctions.ServiceException")
 		}
@@ -403,11 +403,19 @@ func transportFailure(err error, parent, callCtx context.Context, taskWins bool,
 	return &taskFailure{Name: name, Cause: err.Error()}
 }
 
-func postJSON10(ctx context.Context, endpoint, target, body string) (string, int, error) {
-	return postBody(ctx, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, target)
+func postJSON10(ctx context.Context, client *http.Client, endpoint, target, body string) (string, int, error) {
+	return postBody(ctx, client, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, target)
 }
 
-func postBody(ctx context.Context, endpoint, contentType, body string, target ...string) (string, int, error) {
+// httpClient is the client for this runner's own HTTP calls.
+func (r *Runner) httpClient() *http.Client {
+	if r != nil && r.HTTPClient != nil {
+		return r.HTTPClient
+	}
+	return http.DefaultClient
+}
+
+func postBody(ctx context.Context, client *http.Client, endpoint, contentType, body string, target ...string) (string, int, error) {
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, endpoint, strings.NewReader(body))
 	if err != nil {
 		return "", 0, err
@@ -416,7 +424,7 @@ func postBody(ctx context.Context, endpoint, contentType, body string, target ..
 	if len(target) > 0 && target[0] != "" {
 		req.Header.Set("X-Amz-Target", target[0])
 	}
-	resp, err := http.DefaultClient.Do(req)
+	resp, err := client.Do(req)
 	if err != nil {
 		return "", 0, err
 	}

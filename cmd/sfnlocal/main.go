@@ -14,6 +14,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/catdevman/sfn-local/internal/api"
 	"github.com/catdevman/sfn-local/internal/exec"
 	"github.com/catdevman/sfn-local/internal/mock"
@@ -46,10 +47,17 @@ func run(args []string, getenv func(string) (string, bool), stdout, stderr io.Wr
 	if cfg.WaitInvalid {
 		fmt.Fprintf(stderr, "invalid wait time scale %q\n", cfg.WaitRaw)
 	}
-	if cfg.AccessKeyID == "" {
+	cfg.Outbound, err = sdk.LoadOutbound(ctx, getenv)
+	if err != nil {
+		fmt.Fprintln(stderr, err.Error())
+		return 1
+	}
+	if cfg.Outbound.Credentials == nil {
 		fmt.Fprintln(stdout, "Failed to load credentials, default to dummy credentials...")
-		cfg.AccessKeyID = "abcd"
-		cfg.SecretAccessKey = "1234"
+		cfg.Outbound.Credentials = credentials.NewStaticCredentialsProvider("abcd", "1234", "")
+	}
+	if len(cfg.Outbound.Sources) > 0 {
+		fmt.Fprintln(stdout, "Outbound calls use "+strings.Join(cfg.Outbound.Sources, ", "))
 	}
 	return serve(ctx, cfg, stdout, stderr)
 }
@@ -108,13 +116,15 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		LambdaEndpoint:        cfg.LambdaEndpoint,
 		StepFunctionsEndpoint: cfg.StepFunctionsEndpoint,
 		APIGatewayEndpoint:    cfg.APIGatewayEndpoint,
+		HTTPClient:            cfg.Outbound.HTTPClient,
 		Region:                cfg.Region,
 		Account:               cfg.Account,
 		SDK: sdk.New(sdk.Config{
-			Region:          cfg.Region,
-			AccessKeyID:     cfg.AccessKeyID,
-			SecretAccessKey: cfg.SecretAccessKey,
-			Endpoints:       cfg.SDKEndpoints,
+			Region:            cfg.Region,
+			HTTPClient:        cfg.Outbound.HTTPClient,
+			Credentials:       cfg.Outbound.Credentials,
+			DisableHostPrefix: cfg.Outbound.DisableHostPrefix,
+			Endpoints:         cfg.SDKEndpoints,
 		}),
 	}
 	srv := &http.Server{

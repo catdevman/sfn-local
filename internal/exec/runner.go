@@ -10,6 +10,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"net/http"
 	"strings"
 	"sync"
 	"time"
@@ -47,6 +48,9 @@ type Runner struct {
 	// APIGatewayEndpoint is API_GATEWAY_ENDPOINT. It gates apigateway:invoke,
 	// which sends each request there instead of to ApiEndpoint.
 	APIGatewayEndpoint string
+	// HTTPClient carries Lambda, nested Step Functions, and API Gateway
+	// calls. Nil is http.DefaultClient.
+	HTTPClient *http.Client
 	// ECSPoll is how often a .sync ecs:runTask describes its task. Zero is
 	// one second.
 	ECSPoll time.Duration
