@@ -13,16 +13,23 @@ import (
 
 func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
 	ctx = r.ensureScope(ctx, arn)
-	if m := takeResume(ctx, st); m != nil && (st.Type == "Task" || st.Type == "Parallel" || st.Type == "Map") {
+	var entered int64
+	if m := takeResume(ctx, st); m != nil {
 		// A redrive resumes this state in place, as AWS does. Its next event
 		// follows the original entered event. A Parallel or Map resumes its
 		// unfinished branches or iterations.
 		m.inPlace = true
+		entered = m.entered
 		r.Store.SetChainLast(arn, chainOf(ctx), m.entered)
-	} else if err := r.entered(ctx, arn, st, input); err != nil {
-		r.onAppendErr(arn, err)
-		return "", "", false, true
+	} else {
+		id, err := r.entered(ctx, arn, st, input)
+		if err != nil {
+			r.onAppendErr(arn, err)
+			return "", "", false, true
+		}
+		entered = id
 	}
+	ctx = withRunning(ctx, &runningState{arn: arn, name: st.Name, entered: entered})
 	ctx = withEntryVars(ctx, scopeOf(ctx).snapshot())
 	if st.JSONata {
 		return r.stepJSONata(ctx, arn, st, input)
@@ -179,7 +186,7 @@ func transition(st *asl.State, output string) (string, string, bool, bool) {
 
 func (r *Runner) exit(ctx context.Context, arn string, st *asl.State, output string) bool {
 	if len(output) > maxPayload {
-		r.failCtx(ctx, arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
+		r.failCtx(ctx, arn, "States.DataLimitExceeded", dataLimitCause(st.Name))
 		return false
 	}
 	if err := r.exited(ctx, arn, st, output); err != nil {
@@ -241,7 +248,12 @@ func resolveText(hasPath bool, path string, hasLit bool, lit string, root, ctx a
 			return "", false, err
 		}
 		if !found {
-			return "", false, missingPath(path)
+			err := missingPath(path)
+			var ev *jsonpath.EvalError
+			if errors.As(err, &ev) && ev.Missing != "" {
+				ev.Field, ev.Input = label, root
+			}
+			return "", false, err
 		}
 		text, ok := val.(string)
 		if !ok {
@@ -390,12 +402,12 @@ func missingPath(path string) error {
 			return jsonpath.Runtime("variable $" + body + " was not found")
 		}
 	}
-	return jsonpath.Runtime("path " + path + " was not found")
+	return jsonpath.Missing(path)
 }
 
 func namedFailure(err error) (string, string, bool) {
 	if cause, ok := queryCause(err); ok {
-		return "States.QueryEvaluationError", cause, true
+		return queryName(err), cause, true
 	}
 	var ev *jsonpath.EvalError
 	if errors.As(err, &ev) && ev != nil {
@@ -413,6 +425,10 @@ func (r *Runner) failEval(ctx context.Context, arn string, err error) {
 	if n, c, ok := namedFailure(err); ok {
 		name, cause = n, c
 	}
+	var ev *jsonpath.EvalError
+	if errors.As(err, &ev) && ev != nil {
+		cause = pathCause(ctx, ev)
+	}
 	r.failCtx(ctx, arn, name, cause)
 }
 
@@ -420,7 +436,7 @@ func (r *Runner) failEval(ctx context.Context, arn string, err error) {
 // root is the pre-assignment snapshot for this state. Output was already projected.
 func (r *Runner) commitJSONPath(ctx context.Context, arn string, st *asl.State, output string, assign []byte, root, ctxObj any, vars map[string]any) bool {
 	if len(output) > maxPayload {
-		r.failCtx(ctx, arn, "States.DataLimitExceeded", "The state output exceeded the maximum size of 262144 bytes.")
+		r.failCtx(ctx, arn, "States.DataLimitExceeded", dataLimitCause(st.Name))
 		return false
 	}
 	if err := r.applyJSONPathAssign(ctx, assign, root, ctxObj, vars); err != nil {

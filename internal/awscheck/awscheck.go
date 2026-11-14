@@ -4,7 +4,7 @@
 //
 // A scenario covers behavior that AWS does not document and this server
 // chose: Distributed Map events, Map Run counts, redrive, the ResultWriter
-// files, and aws-sdk error names.
+// files, aws-sdk error names, runtime error causes, and callback events.
 package awscheck
 
 import (
@@ -47,7 +47,8 @@ type Env struct {
 	// Function is a Lambda function that returns {"echo": <event>}.
 	Function string
 
-	machines []string
+	machines   []string
+	activities []string
 }
 
 // Scenario returns a document of API answers. The caller normalizes it.
@@ -72,6 +73,13 @@ var Scenarios = []Scenario{
 	{"versions", versionsAndAliases},
 	{"writer-pending", writerPending},
 	{"lambda-invoke", lambdaInvoke},
+	{"errors-jsonpath", jsonPathErrors},
+	{"errors-jsonata", jsonataErrors},
+	{"task-tokens", taskTokens},
+	{"activities", activities},
+	{"express-sync", expressSync},
+	{"map-concurrent", mapConcurrent},
+	{"redrive-states", redriveStates},
 }
 
 func executionStatus(ctx context.Context, e *Env) (map[string]any, error) {
@@ -426,10 +434,14 @@ func (e *Env) children(ctx context.Context, doc map[string]any, statuses ...stri
 
 // machine creates a STANDARD state machine named Prefix+name.
 func (e *Env) machine(ctx context.Context, name, definition string) (string, error) {
+	return e.createMachine(ctx, name, definition, types.StateMachineTypeStandard)
+}
+
+func (e *Env) createMachine(ctx context.Context, name, definition string, typ types.StateMachineType) (string, error) {
 	full := e.Prefix + name
 	deadline := time.Now().Add(e.RoleWait)
 	for {
-		out, err := e.SFN.CreateStateMachine(ctx, &sfn.CreateStateMachineInput{Name: &full, Definition: &definition, RoleArn: &e.RoleARN})
+		out, err := e.SFN.CreateStateMachine(ctx, &sfn.CreateStateMachineInput{Name: &full, Definition: &definition, RoleArn: &e.RoleARN, Type: typ})
 		if err == nil {
 			e.machines = append(e.machines, *out.StateMachineArn)
 			return *out.StateMachineArn, nil
@@ -504,12 +516,15 @@ func (e *Env) history(ctx context.Context, arn string) ([]any, error) {
 	}
 }
 
-// Cleanup deletes the state machines this Env created.
+// Cleanup deletes the state machines and activities this Env created.
 func (e *Env) Cleanup(ctx context.Context) {
 	for _, arn := range e.machines {
 		_, _ = e.SFN.DeleteStateMachine(ctx, &sfn.DeleteStateMachineInput{StateMachineArn: aws.String(arn)})
 	}
-	e.machines = nil
+	for _, arn := range e.activities {
+		_, _ = e.SFN.DeleteActivity(ctx, &sfn.DeleteActivityInput{ActivityArn: aws.String(arn)})
+	}
+	e.machines, e.activities = nil, nil
 }
 
 var (
@@ -524,6 +539,7 @@ var (
 var opaqueKeys = map[string]string{
 	"Size": "<size>", "ContentLength": "<size>", "ETag": "<etag>", "Etag": "<etag>",
 	"RoleArn": "<role>", "roleArn": "<role>", "VersionId": "<version>",
+	"BilledDurationInMilliseconds": "<billed>", "BilledMemoryUsedInMB": "<billed>",
 }
 
 // Normalize replaces the parts of a document that differ between runs and

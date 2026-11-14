@@ -190,7 +190,7 @@ func (r *Runner) distNumber(ctx context.Context, st *asl.State, fixed *float64, 
 	var raw any
 	switch {
 	case expr != "":
-		val, err := r.evalExpr(ctx, expr, root, r.bindings(root, ctxObj, vars))
+		val, err := r.evalExpr(ctx, label, expr, root, r.bindings(root, ctxObj, vars))
 		if err != nil {
 			return nil, err
 		}
@@ -221,7 +221,7 @@ func (r *Runner) distNumber(ctx context.Context, st *asl.State, fixed *float64, 
 func (r *Runner) batchInput(ctx context.Context, st *asl.State, root, ctxObj any, vars map[string]any) (string, error) {
 	raw := st.Dist.Batcher.BatchInput
 	if st.JSONata {
-		val, err := r.evalRaw(ctx, raw, root, r.bindings(root, ctxObj, vars))
+		val, err := r.evalRaw(ctx, "ItemBatcher/BatchInput", raw, root, r.bindings(root, ctxObj, vars))
 		if err != nil {
 			return "", err
 		}
@@ -835,7 +835,7 @@ func (r *Runner) writerTarget(ctx context.Context, st *asl.State, root, ctxObj a
 	var val any
 	var err error
 	if st.JSONata {
-		val, err = r.evalRaw(ctx, st.Dist.Writer.Parameters, root, r.bindings(root, ctxObj, vars))
+		val, err = r.evalRaw(ctx, "ResultWriter/Arguments", st.Dist.Writer.Parameters, root, r.bindings(root, ctxObj, vars))
 	} else {
 		val, _, err = evalParameters(st.Dist.Writer.Parameters, root, ctxObj, vars)
 	}

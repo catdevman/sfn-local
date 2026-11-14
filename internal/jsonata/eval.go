@@ -55,6 +55,8 @@ type Limits struct {
 // States.QueryEvaluationError.
 type EvalError struct {
 	Cause string
+	// Undefined marks an expression that returned nothing.
+	Undefined bool
 }
 
 func (e *EvalError) Error() string {
@@ -138,10 +140,10 @@ func (builtin) Eval(ctx context.Context, expression string, input any, bindings 
 		if errors.Is(err, context.DeadlineExceeded) || errors.Is(err, context.Canceled) {
 			return nil, &EvalError{Cause: "JSONata evaluation exceeded 1s"}
 		}
-		return nil, &EvalError{Cause: err.Error()}
+		return nil, &EvalError{Cause: wording(err.Error())}
 	}
 	if result == nil {
-		return nil, &EvalError{Cause: "the JSONata expression returned undefined"}
+		return nil, &EvalError{Cause: "the JSONata expression returned undefined", Undefined: true}
 	}
 	if gnata.IsNull(result) {
 		return nil, nil
@@ -199,6 +201,7 @@ func watchMemory(done <-chan struct{}, cancel context.CancelFunc, tripped *atomi
 }
 
 func normalize(v any) (any, error) {
+	v = finite(v)
 	switch v.(type) {
 	case string, bool, float64:
 		return v, nil
@@ -214,6 +217,55 @@ func normalize(v any) (any, error) {
 		return nil, &EvalError{Cause: err.Error()}
 	}
 	return plainNumbers(out), nil
+}
+
+// finite writes Infinity, -Infinity, and NaN as strings, as AWS does, since
+// JSON has no such numbers.
+func finite(v any) any {
+	switch n := v.(type) {
+	case float64:
+		switch {
+		case math.IsInf(n, 1):
+			return "Infinity"
+		case math.IsInf(n, -1):
+			return "-Infinity"
+		case math.IsNaN(n):
+			return "NaN"
+		}
+	case map[string]any:
+		for k, child := range n {
+			n[k] = finite(child)
+		}
+	case []any:
+		for i, child := range n {
+			n[i] = finite(child)
+		}
+	}
+	return v
+}
+
+// wording rewrites an evaluator error in the words jsonata-js, which AWS
+// runs, uses for the same code. An unlisted code keeps the evaluator's words.
+func wording(msg string) string {
+	code, text, ok := strings.Cut(msg, ": ")
+	if !ok || len(code) != 5 {
+		return msg
+	}
+	switch code {
+	case "T1006":
+		return code + ": Attempted to invoke a non-function"
+	case "T2001", "T2002":
+		side := "left"
+		if code == "T2002" {
+			side = "right"
+		}
+		if i := strings.IndexByte(text, '"'); i >= 0 {
+			if j := strings.Index(text[i+1:], `" operator`); j >= 0 {
+				return code + ": The " + side + " side of the " + text[i:i+j+2] + " operator must evaluate to a number"
+			}
+		}
+	}
+	return msg
 }
 
 func plainNumbers(v any) any {

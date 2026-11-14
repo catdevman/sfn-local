@@ -1,0 +1,354 @@
+{
+  "create": {
+    "ActivityArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+    "CreationDate": "\u003ctime\u003e"
+  },
+  "describe": {
+    "ActivityArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+    "CreationDate": "\u003ctime\u003e",
+    "EncryptionConfiguration": {
+      "Type": "AWS_OWNED_KEY"
+    },
+    "Name": "worker"
+  },
+  "failure": {
+    "execution": {
+      "Cause": "worker failed",
+      "Error": "Worker.Failed",
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:activity:failure",
+      "Input": "{\"n\":1}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "failure",
+      "RedriveCount": 0,
+      "RedriveStatus": "REDRIVABLE",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:activity",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Work"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "ActivityScheduledEventDetails": {
+          "HeartbeatInSeconds": 30,
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Resource": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+          "TimeoutInSeconds": 60
+        },
+        "Id": 3,
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityScheduled"
+      },
+      {
+        "ActivityStartedEventDetails": {
+          "WorkerName": "checker"
+        },
+        "Id": 4,
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityStarted"
+      },
+      {
+        "ActivityFailedEventDetails": {
+          "Cause": "worker failed",
+          "Error": "Worker.Failed"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "worker failed",
+          "Error": "Worker.Failed"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "send": "ok",
+    "task": {
+      "Input": "{\"n\":1}",
+      "TaskToken": "\u003ctoken\u003e"
+    }
+  },
+  "success": {
+    "execution": {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:activity:success",
+      "Input": "{\"n\":1}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "success",
+      "Output": "{\"worked\":true}",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 0,
+      "RedriveStatus": "NOT_REDRIVABLE",
+      "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:activity",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Work"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "ActivityScheduledEventDetails": {
+          "HeartbeatInSeconds": 30,
+          "Input": "{\"n\":1}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Resource": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+          "TimeoutInSeconds": 60
+        },
+        "Id": 3,
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityScheduled"
+      },
+      {
+        "ActivityStartedEventDetails": {
+          "WorkerName": "checker"
+        },
+        "Id": 4,
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityStarted"
+      },
+      {
+        "ActivitySucceededEventDetails": {
+          "Output": "{\"worked\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivitySucceeded"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "StateExitedEventDetails": {
+          "Name": "Work",
+          "Output": "{\"worked\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "{\"worked\":true}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 7,
+        "PreviousEventId": 6,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ],
+    "send": "ok",
+    "task": {
+      "Input": "{\"n\":1}",
+      "TaskToken": "\u003ctoken\u003e"
+    }
+  },
+  "timeout": {
+    "execution": {
+      "Error": "States.Timeout",
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:activity-timeout:timeout",
+      "Input": "{}",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "timeout",
+      "RedriveCount": 0,
+      "RedriveStatus": "REDRIVABLE",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:activity-timeout",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Work"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "ActivityScheduledEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Resource": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+          "TimeoutInSeconds": 1
+        },
+        "Id": 3,
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityScheduled"
+      },
+      {
+        "ActivityStartedEventDetails": {
+          "WorkerName": "checker"
+        },
+        "Id": 4,
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityStarted"
+      },
+      {
+        "ActivityTimedOutEventDetails": {
+          "Error": "States.Timeout"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityTimedOut"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Error": "States.Timeout"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "historyBeforePoll": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Work"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "ActivityScheduledEventDetails": {
+          "Input": "{}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Resource": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:activity:worker",
+          "TimeoutInSeconds": 1
+        },
+        "Id": 3,
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ActivityScheduled"
+      }
+    ],
+    "startedToTimedOutSeconds": 1,
+    "statusBeforePoll": "RUNNING"
+  }
+}

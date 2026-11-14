@@ -50,7 +50,7 @@ func TestPhase2Fixtures(t *testing.T) {
 	}
 	reads := `{"StartAt":"C","States":{"C":{"Type":"Choice","Choices":[{"And":[{"Variable":"$.n","NumericEquals":1},{"Variable":"$.missing","StringEquals":"x"}],"Next":"Yes"}],"Default":"No"},"Yes":{"Type":"Succeed"},"No":{"Type":"Succeed"}}}`
 	ex = runMachine(t, s, "and-read", reads, "run", `{"n":1}`)
-	if ex.Status != store.ExecFailed || ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not found") {
+	if ex.Status != store.ExecFailed || ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("and read %s %s", ex.Error, ex.Cause)
 	}
 	assertTypes(t, ex, "ExecutionStarted", "ChoiceStateEntered", "ExecutionFailed")
@@ -131,7 +131,7 @@ func TestPhase2ContextAndWait(t *testing.T) {
 	}
 	retry := `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.State.RetryCount"},"End":true}}}`
 	ex = runMachine(t, s, "retry-count", retry, "run", `{}`)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not found") {
+	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("retry count %s %s", ex.Error, ex.Cause)
 	}
 
@@ -241,4 +241,10 @@ func runMachine(t *testing.T, s *Service, name, def, execName, input string) sto
 	sm := createMachine(t, s, name, def, roleARN)
 	out := startExec(t, s, *sm.StateMachineArn, execName, input)
 	return waitExec(t, s, *out.ExecutionArn)
+}
+
+// missingCause reports whether cause is AWS's wording for a path that was
+// not found, in a template or anywhere else.
+func missingCause(cause string) bool {
+	return strings.Contains(cause, "could not be found") || strings.Contains(cause, "No results for path")
 }

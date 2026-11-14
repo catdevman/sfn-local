@@ -48,7 +48,7 @@ func TestPhase6JSONataAssign(t *testing.T) {
 	if bad.Status != store.ExecFailed || bad.Error != "States.QueryEvaluationError" || !strings.Contains(bad.Cause, "undefined") {
 		t.Fatalf("%s %s %s", bad.Status, bad.Error, bad.Cause)
 	}
-	assertTypes(t, bad, "ExecutionStarted", "PassStateEntered", "PassStateExited", "PassStateEntered", "ExecutionFailed")
+	assertTypes(t, bad, "ExecutionStarted", "PassStateEntered", "PassStateExited", "PassStateEntered", "EvaluationFailed", "ExecutionFailed")
 	if countEvents(bad, "PassStateExited") != 1 {
 		t.Fatal(typesOf(bad))
 	}
@@ -239,7 +239,7 @@ func TestPhase6MapItemsAndCatch(t *testing.T) {
 
 	obj := `{"QueryLanguage":"JSONata","StartAt":"M","States":{"M":{"Type":"Map","Items":"{% {'a': 1} %}","Iterator":{"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`
 	ex = runMachine(t, s, "obj", obj, "run", `{}`)
-	if ex.Status != store.ExecFailed || ex.Error != "States.QueryEvaluationError" || !strings.Contains(ex.Cause, "Items must be an array") {
+	if ex.Status != store.ExecFailed || ex.Error != "States.QueryEvaluationError" || !strings.Contains(ex.Cause, "returned an unexpected result type. Expected 'array', but was 'object'") {
 		t.Fatalf("object %s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
 
@@ -291,7 +291,7 @@ func TestPhase6ArgumentsAndLimits(t *testing.T) {
 	if ex.Status != store.ExecFailed || ex.Error != "States.QueryEvaluationError" || !strings.Contains(ex.Cause, "undefined") {
 		t.Fatalf("args %s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
-	assertTypes(t, ex, "ExecutionStarted", "TaskStateEntered", "ExecutionFailed")
+	assertTypes(t, ex, "ExecutionStarted", "TaskStateEntered", "EvaluationFailed", "ExecutionFailed")
 	if countEvents(ex, "TaskStateExited") != 0 || countEvents(ex, "LambdaFunctionScheduled") != 0 {
 		t.Fatal(typesOf(ex))
 	}

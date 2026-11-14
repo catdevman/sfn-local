@@ -351,7 +351,7 @@ func TestSyncExpressAndList(t *testing.T) {
 	s := newService()
 	standard := createMachine(t, s, "std", passDef, roleARN)
 	_, err := s.StartSyncExecution(context.Background(), &gen.StartSyncExecutionInput{StateMachineArn: standard.StateMachineArn, Input: sp(`{}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "StateMachineTypeNotSupported" || !strings.Contains(api.Error(), "StartSyncExecution is not supported for STANDARD State Machines") {
+	if api := mustAPI(t, err); api.ErrorName() != "StateMachineTypeNotSupported" || !strings.Contains(api.Error(), "This operation is not supported by this type of state machine") {
 		t.Fatal(api)
 	}
 	_, err = s.StartSyncExecution(context.Background(), &gen.StartSyncExecutionInput{StateMachineArn: sp(*standard.StateMachineArn + "#Case")})
@@ -386,7 +386,7 @@ func TestSyncExpressAndList(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if *sync.Status != gen.SyncExecutionStatusSUCCEEDED || *sync.Output != `{"ok":true}` || sync.BillingDetails != nil {
+	if *sync.Status != gen.SyncExecutionStatusSUCCEEDED || *sync.Output != `{"ok":true}` || sync.BillingDetails == nil {
 		t.Fatalf("%s", jsonText(t, sync))
 	}
 	if _, ok := s.Store.Execution(*sync.ExecutionArn); ok {
@@ -394,7 +394,8 @@ func TestSyncExpressAndList(t *testing.T) {
 	}
 	real := *sync.ExecutionArn
 	_, err = s.DescribeExecution(context.Background(), &gen.DescribeExecutionInput{ExecutionArn: sp(real)})
-	if api := mustAPI(t, err); api.ErrorName() != "InvalidArn" || !strings.Contains(api.Error(), real) || strings.Contains(api.Error(), expressPlaceholderMessage) {
+	// AWS does not echo an Express execution ARN.
+	if api := mustAPI(t, err); api.ErrorName() != "InvalidArn" || !strings.Contains(api.Error(), expressPlaceholderMessage) {
 		t.Fatal(api)
 	}
 	placeholder := "arn:aws:states:us-east-1:123456789012:express:stateMachineName:run1"
@@ -405,7 +406,7 @@ func TestSyncExpressAndList(t *testing.T) {
 		}
 	}
 	_, err = s.StopExecution(context.Background(), &gen.StopExecutionInput{ExecutionArn: sp(real)})
-	if api := mustAPI(t, err); !strings.Contains(api.Error(), "Invalid Arn: '"+real+"'") {
+	if api := mustAPI(t, err); !strings.Contains(api.Error(), expressPlaceholderMessage) {
 		t.Fatal(api)
 	}
 	_, err = s.DescribeStateMachineForExecution(context.Background(), &gen.DescribeStateMachineForExecutionInput{ExecutionArn: sp(placeholder)})
@@ -578,7 +579,7 @@ func TestSnapshotDeletingTimeoutAndHistoryCap(t *testing.T) {
 	wide := createMachine(t, s, "wide", `{"StartAt":"P","States":{"P":{"Type":"Pass","Result":"`+huge+`","End":true}}}`, roleARN)
 	wideRun := startExec(t, s, *wide.StateMachineArn, "run", `{}`)
 	wideEx := waitExec(t, s, *wideRun.ExecutionArn)
-	if wideEx.Error != "States.DataLimitExceeded" || !strings.Contains(wideEx.Cause, "262144") {
+	if wideEx.Error != "States.DataLimitExceeded" || wideEx.Cause != "The state/task 'P' returned a result with a size exceeding the maximum number of bytes service limit." {
 		t.Fatalf("%s %s", wideEx.Error, wideEx.Cause)
 	}
 	assertTypes(t, wideEx, "ExecutionStarted", "PassStateEntered", "ExecutionFailed")

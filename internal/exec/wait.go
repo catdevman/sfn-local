@@ -49,7 +49,7 @@ func waitMillis(st *asl.State, root, ctx any, vars map[string]any, now time.Time
 			return 0, err
 		}
 		if !found {
-			return 0, missingPath(st.SecondsPath)
+			return 0, stated("The SecondsPath parameter does not reference an input value: " + st.SecondsPath)
 		}
 		n, ok := asFloat(val)
 		if !ok {
@@ -66,7 +66,7 @@ func waitMillis(st *asl.State, root, ctx any, vars map[string]any, now time.Time
 			return 0, err
 		}
 		if !found {
-			return 0, missingPath(st.TimestampPath)
+			return 0, stated("The TimestampPath parameter does not reference an input value: " + st.TimestampPath)
 		}
 		text, ok := val.(string)
 		if !ok {

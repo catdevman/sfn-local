@@ -1,0 +1,954 @@
+{
+  "BadAssign": {
+    "cause": "An error occurred while executing the state 'BadAssign' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Assign/v' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"BadAssign\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"BadAssign\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"BadAssign\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"BadAssign\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "BadAssign"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'BadAssign' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Assign/v' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Assign/v",
+          "State": "BadAssign"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'BadAssign' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Assign/v' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "BadSeconds": {
+    "cause": "An error occurred while executing the state 'BadSeconds' (entered at the event id #4). The JSONata expression ''x'' specified for the field 'Seconds' returned an unexpected result type. Expected 'number', but was 'string' for value: \"x\"",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"BadSeconds\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"BadSeconds\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"BadSeconds\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"BadSeconds\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "BadSeconds"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "WaitStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'BadSeconds' (entered at the event id #4). The JSONata expression ''x'' specified for the field 'Seconds' returned an unexpected result type. Expected 'number', but was 'string' for value: \"x\"",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Seconds",
+          "State": "BadSeconds"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'BadSeconds' (entered at the event id #4). The JSONata expression ''x'' specified for the field 'Seconds' returned an unexpected result type. Expected 'number', but was 'string' for value: \"x\"",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "DataLimit": {
+    "cause": "The state/task 'DataLimit' returned a result with a size exceeding the maximum number of bytes service limit.",
+    "error": "States.DataLimitExceeded",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"DataLimit\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"DataLimit\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"DataLimit\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"DataLimit\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "DataLimit"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "The state/task 'DataLimit' returned a result with a size exceeding the maximum number of bytes service limit.",
+          "Error": "States.DataLimitExceeded",
+          "Location": "Output",
+          "State": "DataLimit"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "The state/task 'DataLimit' returned a result with a size exceeding the maximum number of bytes service limit.",
+          "Error": "States.DataLimitExceeded"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "DivideZero": {
+    "cause": null,
+    "error": null,
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"DivideZero\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"DivideZero\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"DivideZero\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"DivideZero\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "DivideZero"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "Id": 5,
+        "PreviousEventId": 4,
+        "StateExitedEventDetails": {
+          "Name": "DivideZero",
+          "Output": "\"Infinity\"",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "\"Infinity\"",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ],
+    "output": "\"Infinity\"",
+    "status": "SUCCEEDED"
+  },
+  "NoFunction": {
+    "cause": "An error occurred while executing the state 'NoFunction' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Output' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"NoFunction\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NoFunction\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"NoFunction\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NoFunction\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "NoFunction"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NoFunction' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Output' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Output",
+          "State": "NoFunction"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NoFunction' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Output' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "NotArray": {
+    "cause": "An error occurred while executing the state 'NotArray' (entered at the event id #4). The JSONata expression ''abc'' specified for the field 'Items' returned an unexpected result type. Expected 'array', but was 'string' for value: \"abc\"",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"NotArray\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NotArray\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"NotArray\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NotArray\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "NotArray"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NotArray' (entered at the event id #4). The JSONata expression ''abc'' specified for the field 'Items' returned an unexpected result type. Expected 'array', but was 'string' for value: \"abc\"",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Items",
+          "State": "NotArray"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NotArray' (entered at the event id #4). The JSONata expression ''abc'' specified for the field 'Items' returned an unexpected result type. Expected 'array', but was 'string' for value: \"abc\"",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 7,
+        "PreviousEventId": 6,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "NotBoolean": {
+    "cause": "An error occurred while executing the state 'NotBoolean' (entered at the event id #4). The JSONata expression ''yes'' specified for the field 'Choices[0]/Condition' returned an unexpected result type. Expected 'boolean', but was 'string' for value: \"yes\"",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"NotBoolean\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NotBoolean\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"NotBoolean\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NotBoolean\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "NotBoolean"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NotBoolean' (entered at the event id #4). The JSONata expression ''yes'' specified for the field 'Choices[0]/Condition' returned an unexpected result type. Expected 'boolean', but was 'string' for value: \"yes\"",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Choices[0]/Condition",
+          "State": "NotBoolean"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NotBoolean' (entered at the event id #4). The JSONata expression ''yes'' specified for the field 'Choices[0]/Condition' returned an unexpected result type. Expected 'boolean', but was 'string' for value: \"yes\"",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "OutputCatch": {
+    "cause": null,
+    "error": null,
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"OutputCatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"OutputCatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"OutputCatch\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"OutputCatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "OutputCatch"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Arguments/Bucket",
+          "State": "OutputCatch"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "StateExitedEventDetails": {
+          "Name": "OutputCatch",
+          "Output": "{\"Cause\":\"An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function\",\"Error\":\"States.QueryEvaluationError\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateExited"
+      },
+      {
+        "Id": 7,
+        "PreviousEventId": 6,
+        "StateEnteredEventDetails": {
+          "Input": "{\"Cause\":\"An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function\",\"Error\":\"States.QueryEvaluationError\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Done"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "Id": 8,
+        "PreviousEventId": 7,
+        "StateExitedEventDetails": {
+          "Name": "Done",
+          "Output": "{\"Cause\":\"An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function\",\"Error\":\"States.QueryEvaluationError\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "{\"Cause\":\"An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function\",\"Error\":\"States.QueryEvaluationError\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 9,
+        "PreviousEventId": 8,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ],
+    "output": "{\"Cause\":\"An error occurred while executing the state 'OutputCatch' (entered at the event id #4). The JSONata expression '$nope()' specified for the field 'Arguments/Bucket' threw an error during evaluation. T1006: Attempted to invoke a non-function\",\"Error\":\"States.QueryEvaluationError\"}",
+    "status": "SUCCEEDED"
+  },
+  "Throw": {
+    "cause": "An error occurred while executing the state 'Throw' (entered at the event id #4). The JSONata expression '$error('custom message')' specified for the field 'Output' threw an error during evaluation. D3137: custom message",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"Throw\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Throw\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"Throw\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Throw\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Throw"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Throw' (entered at the event id #4). The JSONata expression '$error('custom message')' specified for the field 'Output' threw an error during evaluation. D3137: custom message",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Output",
+          "State": "Throw"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Throw' (entered at the event id #4). The JSONata expression '$error('custom message')' specified for the field 'Output' threw an error during evaluation. D3137: custom message",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "TypeError": {
+    "cause": "An error occurred while executing the state 'TypeError' (entered at the event id #4). The JSONata expression ''a' + 1' specified for the field 'Output' threw an error during evaluation. T2001: The left side of the \"+\" operator must evaluate to a number",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"TypeError\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"TypeError\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"TypeError\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"TypeError\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "TypeError"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'TypeError' (entered at the event id #4). The JSONata expression ''a' + 1' specified for the field 'Output' threw an error during evaluation. T2001: The left side of the \"+\" operator must evaluate to a number",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Output",
+          "State": "TypeError"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'TypeError' (entered at the event id #4). The JSONata expression ''a' + 1' specified for the field 'Output' threw an error during evaluation. T2001: The left side of the \"+\" operator must evaluate to a number",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "Undefined": {
+    "cause": "An error occurred while executing the state 'Undefined' (entered at the event id #4). The JSONata expression '$states.input.missing' specified for the field 'Output' returned nothing (undefined).",
+    "error": "States.QueryEvaluationError",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"Undefined\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Undefined\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"Undefined\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Undefined\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Undefined"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "EvaluationFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Undefined' (entered at the event id #4). The JSONata expression '$states.input.missing' specified for the field 'Output' returned nothing (undefined).",
+          "Error": "States.QueryEvaluationError",
+          "Location": "Output",
+          "State": "Undefined"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "EvaluationFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Undefined' (entered at the event id #4). The JSONata expression '$states.input.missing' specified for the field 'Output' returned nothing (undefined).",
+          "Error": "States.QueryEvaluationError"
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  }
+}

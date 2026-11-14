@@ -41,7 +41,7 @@ func TestActivitySuccess(t *testing.T) {
 		t.Fatalf("%+v", started)
 	}
 	_, err = s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp(token), Output: sp(`{}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "TaskDoesNotExist" || !strings.Contains(api.Error(), "Task Does Not Exist: '"+token+"'") {
+	if api := mustAPI(t, err); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: Task Timed Out: 'Provided task does not exist anymore'" {
 		t.Fatal(api)
 	}
 	hist, err := s.GetExecutionHistory(context.Background(), &gen.GetExecutionHistoryInput{ExecutionArn: sp(execARN)})
@@ -159,7 +159,7 @@ func TestActivityFailureCatchAndTimeout(t *testing.T) {
 		t.Fatalf("%+v", started)
 	}
 	_, err := s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp(token), Output: sp(`{}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "TaskDoesNotExist" {
+	if api := mustAPI(t, err); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: Task Timed Out: 'Provided task does not exist anymore'" {
 		t.Fatal(api)
 	}
 }
@@ -182,15 +182,16 @@ func TestActivityCatchRetryAndTimeout(t *testing.T) {
 	timeoutDef := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"` + arn + `","TimeoutSeconds":0,"Parameters":{"token.$":"$$.Task.Token"},"Catch":[{"ErrorEquals":["States.TaskFailed"],"Next":"P"}],"End":true},"P":{"Type":"Pass","Result":{"caught":true},"End":true}}}`
 	sm = createMachine(t, s, "timeout-miss", timeoutDef, roleARN)
 	run = startExec(t, s, *sm.StateMachineArn, "run", `{}`)
+	// TimeoutSeconds counts from when a worker takes the task, as on AWS.
+	pollTask(t, s, arn, "w")
 	ex = waitExec(t, s, *run.ExecutionArn)
-	if ex.Status != store.ExecFailed || ex.Error != "States.Timeout" || ex.Output == `{"caught":true}` || countEvents(ex, "ActivityScheduled") != 1 || countEvents(ex, "ActivityTimedOut") != 1 || countEvents(ex, "ActivityStarted") != 0 || countEvents(ex, "TaskStateExited") != 0 {
+	if ex.Status != store.ExecFailed || ex.Error != "States.Timeout" || ex.Output == `{"caught":true}` || countEvents(ex, "ActivityScheduled") != 1 || countEvents(ex, "ActivityTimedOut") != 1 || countEvents(ex, "ActivityStarted") != 1 || countEvents(ex, "TaskStateExited") != 0 {
 		t.Fatalf("%s %s %s %v", ex.Status, ex.Error, ex.Output, typesOf(ex))
 	}
 	timed := jsonField(t, findEventMust(t, ex, "ActivityScheduled").Input, "token")
-	// Captured from amazon/aws-stepfunctions-local:2.0.0. The argument is the
-	// activity ARN, not the task token. SendTaskFailure and SendTaskHeartbeat
-	// use the same message.
-	wantTimeout := "Task Timed Out: '" + arn + "'"
+	// Recorded from AWS. SendTaskFailure and SendTaskHeartbeat use the same
+	// message.
+	wantTimeout := "Task Timed Out: 'Provided task does not exist anymore'"
 	for _, check := range []struct {
 		name string
 		err  error
@@ -208,6 +209,8 @@ func TestActivityCatchRetryAndTimeout(t *testing.T) {
 	retryDef := `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"` + arn + `","TimeoutSeconds":0,"Parameters":{"token.$":"$$.Task.Token"},"Retry":[{"ErrorEquals":["States.Timeout"],"IntervalSeconds":0,"MaxAttempts":1}],"End":true}}}`
 	sm = createMachine(t, s, "retry", retryDef, roleARN)
 	run = startExec(t, s, *sm.StateMachineArn, "run", `{}`)
+	pollTask(t, s, arn, "w")
+	pollTask(t, s, arn, "w")
 	ex = waitExec(t, s, *run.ExecutionArn)
 	if ex.Status != store.ExecFailed || ex.Error != "States.Timeout" || countEvents(ex, "ActivityScheduled") != 2 || countEvents(ex, "ActivityTimedOut") != 2 || countEvents(ex, "TaskStateExited") != 0 {
 		t.Fatalf("%s %s %v", ex.Error, ex.Cause, typesOf(ex))
@@ -225,6 +228,7 @@ func TestActivityCatchRetryAndTimeout(t *testing.T) {
 	parallel := `{"StartAt":"P","States":{"P":{"Type":"Parallel","Branches":[{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"` + arn + `","TimeoutSeconds":0,"End":true}}}],"End":true}}}`
 	sm = createMachine(t, s, "par", parallel, roleARN)
 	run = startExec(t, s, *sm.StateMachineArn, "run", `{}`)
+	pollTask(t, s, arn, "w")
 	ex = waitExec(t, s, *run.ExecutionArn)
 	if ex.Status != store.ExecFailed || ex.Error != "States.Timeout" || countEvents(ex, "ActivityTimedOut") != 1 || countEvents(ex, "ParallelStateFailed") != 1 || countEvents(ex, "ExecutionAborted") != 0 {
 		t.Fatalf("%s %s %v", ex.Error, ex.Cause, typesOf(ex))
@@ -343,7 +347,7 @@ func TestCallbackWaitAndMock(t *testing.T) {
 		t.Fatalf("%s %v", sex.Status, typesOf(sex))
 	}
 	_, err = s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp(stopToken), Output: sp(`{}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "TaskDoesNotExist" || !strings.Contains(api.Error(), "Task Does Not Exist: '"+stopToken+"'") {
+	if api := mustAPI(t, err); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: Task Timed Out: 'Provided task does not exist anymore'" {
 		t.Fatal(api)
 	}
 
@@ -353,7 +357,7 @@ func TestCallbackWaitAndMock(t *testing.T) {
 		t.Fatalf("%s %s %v", cex.Error, cex.Cause, typesOf(cex))
 	}
 	cbToken := jsonField(t, findEventMust(t, cex, "TaskScheduled").Parameters, "token")
-	cbTimeout := "Task Timed Out: 'arn:aws:states:us-east-1:123456789012:sqs:sendMessage.waitForTaskToken'"
+	cbTimeout := "Task Timed Out: 'Provided task does not exist anymore'"
 	if api := mustAPI(t, sendTaskSuccess(t, s, cbToken)); api.ErrorName() != "TaskTimedOut" || api.Error() != "TaskTimedOut: "+cbTimeout {
 		t.Fatal(api.Error())
 	}
@@ -374,7 +378,7 @@ func TestCallbackWaitAndMock(t *testing.T) {
 func TestTaskTokenRejections(t *testing.T) {
 	s := newService()
 	_, err := s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp("missing"), Output: sp(`{}`)})
-	if api := mustAPI(t, err); api.ErrorName() != "InvalidToken" || !strings.Contains(api.Error(), "Invalid Token: 'missing'") {
+	if api := mustAPI(t, err); api.ErrorName() != "InvalidToken" || !strings.Contains(api.Error(), "Invalid Token: 'Invalid token'") {
 		t.Fatal(api)
 	}
 	_, err = s.SendTaskSuccess(context.Background(), &gen.SendTaskSuccessInput{TaskToken: sp("missing"), Output: sp(`not-json`)})

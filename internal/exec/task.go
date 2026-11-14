@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"math"
 	"math/rand/v2"
@@ -605,7 +606,7 @@ func (r *Runner) invokeLambda(callCtx, parent context.Context, target lambdaTarg
 		return "", &taskFailure{Name: "Lambda.ServiceException", Cause: reply.Err.Error()}
 	}
 	if reply.Status < 200 || reply.Status > 299 {
-		return "", &taskFailure{Name: "Lambda.ServiceException", Cause: "Lambda invoke failed with status " + itoa(reply.Status)}
+		return "", lambdaStatusFailure(reply)
 	}
 	if reply.FunctionError != "" {
 		return "", functionErrorFailure(reply.Payload)
@@ -622,6 +623,37 @@ func (r *Runner) invokeLambda(callCtx, parent context.Context, target lambdaTarg
 		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 	}
 	return text, nil
+}
+
+// lambdaStatusFailure names a Lambda API error as AWS does, in the AWS SDK
+// for Java v1 message shape: Lambda.<code>, and "<message> (Service:
+// AWSLambda; Status Code: 404; Error Code: <code>; Request ID: <id>)".
+func lambdaStatusFailure(reply LambdaReply) *taskFailure {
+	var body struct {
+		Message string
+		Type    string `json:"__type"`
+	}
+	_ = json.Unmarshal([]byte(reply.Payload), &body)
+	code := reply.Headers.Get("X-Amzn-ErrorType")
+	if code == "" {
+		code = body.Type
+	}
+	if i := strings.LastIndexByte(code, '#'); i >= 0 {
+		code = code[i+1:]
+	}
+	code, _, _ = strings.Cut(code, ":")
+	if code == "" {
+		return &taskFailure{Name: "Lambda.ServiceException", Cause: "Lambda invoke failed with status " + itoa(reply.Status)}
+	}
+	name := "Lambda." + code
+	if !strings.HasSuffix(code, "Exception") {
+		name += "Exception"
+	}
+	id := reply.Headers.Get("X-Amzn-Requestid")
+	if id == "" {
+		id = "null"
+	}
+	return &taskFailure{Name: name, Cause: fmt.Sprintf("%s (Service: AWSLambda; Status Code: %d; Error Code: %s; Request ID: %s)", body.Message, reply.Status, code, id)}
 }
 
 func httpInvoke(ctx context.Context, call LambdaCall) LambdaReply {
@@ -830,7 +862,7 @@ func (r *Runner) heartbeatSeconds(ctx context.Context, st *asl.State, root, ctxO
 }
 
 func (r *Runner) evalDuration(ctx context.Context, expr string, root, ctxObj any, label string) (int64, error) {
-	val, err := r.evalExpr(ctx, expr, root, r.bindings(root, ctxObj, entryVars(ctx)))
+	val, err := r.evalExpr(ctx, label, expr, root, r.bindings(root, ctxObj, entryVars(ctx)))
 	if err != nil {
 		return 0, err
 	}

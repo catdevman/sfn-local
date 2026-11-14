@@ -12,8 +12,13 @@ const (
 	maxVarExec   = 10 << 20
 )
 
-// queryError is a States.QueryEvaluationError cause.
-type queryError struct{ Cause string }
+// queryError is a States.QueryEvaluationError cause, or the Name error.
+type queryError struct {
+	Cause string
+	Name  string
+	// recorded is set once the EvaluationFailed event is in the history.
+	recorded bool
+}
 
 func (e *queryError) Error() string {
 	if e == nil {

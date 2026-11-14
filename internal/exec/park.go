@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/catdevman/sfn-local/internal/asl"
+	"github.com/catdevman/sfn-local/internal/sdk"
 	"github.com/catdevman/sfn-local/internal/store"
 )
 
@@ -122,7 +123,13 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 	}
 	limit := fresh.Deadline
 	taskWins := false
-	if hasTimeout {
+	// An activity's TimeoutSeconds counts from when a worker takes the task,
+	// as on AWS. A task no worker takes waits for the execution deadline.
+	var onStart *time.Duration
+	if hasTimeout && meta.kind == kindActivity {
+		d := time.Duration(seconds) * time.Second
+		onStart = &d
+	} else if hasTimeout {
 		taskDL := now.Add(time.Duration(seconds) * time.Second)
 		if !taskDL.After(limit) {
 			limit = taskDL
@@ -133,7 +140,7 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 		if !r.emitActivityScheduled(ctx, arn, meta) {
 			return "", &taskFailure{Halt: true}
 		}
-	} else if !r.emitScheduled(ctx, arn, meta) || !r.emitStarted(ctx, arn, meta) || !r.emitSubmitted(ctx, arn, meta) {
+	} else if !r.emitScheduled(ctx, arn, meta) || !r.emitStarted(ctx, arn, meta) {
 		return "", &taskFailure{Halt: true}
 	}
 	tok := newTaskToken(token, arn, meta)
@@ -142,6 +149,9 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 		tok.ActivityARN = meta.resource
 	}
 	if taskWins && !now.Before(limit) {
+		if meta.kind == kindCallback && !r.emitSubmitted(ctx, arn, meta, "") {
+			return "", &taskFailure{Halt: true}
+		}
 		r.Store.KeepExpired(tok)
 		if !r.emitParkEnd(ctx, arn, meta, "", &taskFailure{Name: "States.Timeout", Timeout: true}) {
 			return "", &taskFailure{Halt: true}
@@ -151,9 +161,25 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 	if meta.kind == kindActivity {
 		r.Store.EnqueueActivity(tok)
 	} else {
+		// The token is open before the call, since the service may answer
+		// it before the call returns.
 		r.Store.RegisterCallback(tok)
+		out, tf := r.submitCallback(ctx, arn, meta, limit, taskWins)
+		if tf != nil {
+			r.Store.AbortToken(tok.ID)
+			if tf.Halt || tf.ExecDeadline {
+				return "", tf
+			}
+			if !r.emitParkEnd(ctx, arn, meta, "", tf) {
+				return "", &taskFailure{Halt: true}
+			}
+			return "", tf
+		}
+		if !r.emitSubmitted(ctx, arn, meta, out) {
+			return "", &taskFailure{Halt: true}
+		}
 	}
-	res := r.awaitToken(ctx, arn, tok, limit, taskWins, hb, hasHB)
+	res := r.awaitToken(ctx, arn, tok, limit, taskWins, hb, hasHB, onStart)
 	switch res.status {
 	case store.TokenSucceeded:
 		if !r.emitParkEnd(ctx, arn, meta, res.output, nil) {
@@ -169,7 +195,7 @@ func (r *Runner) onePark(ctx context.Context, arn string, meta taskMeta, token s
 	case store.TokenTimedOut:
 		// A heartbeat expiry is a task failure even when TimeoutSeconds is unset.
 		// The execution deadline is the only TokenTimedOut that is not.
-		if !taskWins && !res.heartbeat {
+		if !taskWins && !res.heartbeat && !res.task {
 			return "", &taskFailure{ExecDeadline: true}
 		}
 		tf := &taskFailure{Name: "States.Timeout", Timeout: true}
@@ -192,9 +218,13 @@ type parkResult struct {
 	errName   string
 	cause     string
 	heartbeat bool
+	// task marks a task timeout that started when a worker took the token.
+	task bool
 }
 
-func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToken, limit time.Time, taskWins bool, hb int64, hasHB bool) parkResult {
+// awaitToken waits for the token's result. onStart, when set, is a task
+// timeout that starts when a worker takes the token.
+func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToken, limit time.Time, taskWins bool, hb int64, hasHB bool, onStart *time.Duration) parkResult {
 	// A closed started channel stays readable forever. Observe it once, then
 	// drop it from the select so a later heartbeat or result is not starved.
 	started := false
@@ -249,6 +279,12 @@ func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToke
 			announced = true
 			// Callbacks arm here, at the start of the wait, after TaskSubmitted.
 			armHB()
+			if onStart != nil {
+				if dl := r.now().Add(*onStart); dl.Before(limit) {
+					limit, taskWins = dl, true
+					limitTimer.Reset(time.Until(dl))
+				}
+			}
 		}
 		select {
 		case <-ctx.Done():
@@ -285,7 +321,7 @@ func (r *Runner) awaitToken(ctx context.Context, arn string, tok *store.TaskToke
 		case <-limitC:
 			if taskWins {
 				r.Store.ExpireToken(tok.ID)
-				return parkResult{status: store.TokenTimedOut}
+				return parkResult{status: store.TokenTimedOut, task: onStart != nil}
 			}
 			r.Store.AbortToken(tok.ID)
 			return parkResult{status: "deadline"}
@@ -351,13 +387,33 @@ func (r *Runner) emitActivityStarted(ctx context.Context, arn, worker string) bo
 	return r.emit(ctx, arn, ev)
 }
 
-func (r *Runner) emitSubmitted(ctx context.Context, arn string, meta taskMeta) bool {
+// emitSubmitted records the service's reply to a callback task's call.
+func (r *Runner) emitSubmitted(ctx context.Context, arn string, meta taskMeta, output string) bool {
 	ev := store.HistoryEvent{
 		Type: "TaskSubmitted", Resource: meta.shown, HasResource: meta.shown != "",
 		ResourceType: meta.resourceType, HasResourceType: meta.resourceType != "",
-		Output: "", HasOutput: true,
+		Output: output, HasOutput: true,
 	}
 	return r.emit(ctx, arn, ev)
+}
+
+// submitCallback makes a waitForTaskToken task's call, as AWS does, and
+// returns the service's reply. With no endpoint for the service nothing is
+// called and the reply is empty, so a client can still answer the token.
+func (r *Runner) submitCallback(ctx context.Context, arn string, meta taskMeta, limit time.Time, taskWins bool) (string, *taskFailure) {
+	base := strings.TrimSuffix(meta.resource, ".waitForTaskToken")
+	if id, action, ok := sdk.ParseResource(base); ok {
+		if !r.SDK.Supports(id, action) {
+			return "", nil
+		}
+	} else if b, mode, ok := integrationResource(base); !ok || mode != "" || !r.integrationReady(b) {
+		return "", nil
+	}
+	callCtx, cancel := context.WithDeadline(ctx, limit)
+	defer cancel()
+	call := meta
+	call.resource = base
+	return r.invokeService(callCtx, ctx, arn, call, taskWins)
 }
 
 func (r *Runner) emitParkEnd(ctx context.Context, arn string, meta taskMeta, result string, tf *taskFailure) bool {

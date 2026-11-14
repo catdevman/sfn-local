@@ -36,9 +36,12 @@ func TestExpressResourceBansAndParameters(t *testing.T) {
 	}
 
 	stdActivity := createMachine(t, s, "act-std", activity, roleARN)
+	work := createActivity(t, s, "work")
 	arun := startExec(t, s, *stdActivity.StateMachineArn, "a", `{}`)
+	// The timeout starts when a worker takes the task.
+	pollTask(t, s, work, "w")
 	aex := waitExec(t, s, *arun.ExecutionArn)
-	if aex.Status != store.ExecFailed || aex.Error != "States.Timeout" || countEvents(aex, "ActivityScheduled") != 1 || countEvents(aex, "ActivityStarted") != 0 {
+	if aex.Status != store.ExecFailed || aex.Error != "States.Timeout" || countEvents(aex, "ActivityScheduled") != 1 || countEvents(aex, "ActivityStarted") != 1 {
 		t.Fatalf("%s %s %v", aex.Error, aex.Cause, typesOf(aex))
 	}
 	stdSync := createMachine(t, s, "sync-std", `{"StartAt":"T","States":{"T":{"Type":"Task","Resource":"arn:aws:states:::sqs:sendMessage.sync","Parameters":{},"End":true}}}`, roleARN)

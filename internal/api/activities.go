@@ -43,11 +43,17 @@ func (s *Service) DescribeActivity(_ context.Context, in *gen.DescribeActivityIn
 	if err != nil {
 		return nil, err
 	}
-	return &gen.DescribeActivityOutput{
+	out := &gen.DescribeActivityOutput{
 		ActivityArn:  sp(a.ARN),
 		Name:         sp(a.Name),
 		CreationDate: ts(a.Created),
-	}, nil
+	}
+	if s.Profile != ProfileSFNLocal {
+		// AWS reports the AWS-owned key it uses when none was chosen.
+		owned := gen.EncryptionTypeAWS_OWNED_KEY
+		out.EncryptionConfiguration = &gen.EncryptionConfiguration{Type: &owned}
+	}
+	return out, nil
 }
 
 func (s *Service) ListActivities(_ context.Context, in *gen.ListActivitiesInput) (*gen.ListActivitiesOutput, error) {

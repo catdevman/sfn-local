@@ -158,13 +158,18 @@ func (r *Runner) Run(ctx context.Context, arn string) {
 	}
 }
 
-func (r *Runner) entered(ctx context.Context, arn string, st *asl.State, input string) error {
+func (r *Runner) entered(ctx context.Context, arn string, st *asl.State, input string) (int64, error) {
 	ev := store.HistoryEvent{
 		Type: st.Type + "StateEntered", Time: r.now(), Name: st.Name,
 		Input: input, HasInput: true,
 	}
 	stampParent(ctx, &ev)
-	return r.append(arn, ev, store.ExecRunning, "")
+	id, err := r.Store.AppendID(arn, ev)
+	if err != nil {
+		return 0, err
+	}
+	r.log(arn, ev.Name, ev.Type, store.ExecRunning, "")
+	return id, nil
 }
 
 func (r *Runner) exited(ctx context.Context, arn string, st *asl.State, output string) error {

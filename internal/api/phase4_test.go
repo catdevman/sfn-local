@@ -86,11 +86,13 @@ func TestPhase4InlineMap(t *testing.T) {
 	}
 
 	missing := runPhase4(t, s, "missing", def, "run", `{}`)
-	if missing.Error != "States.Runtime" || !strings.Contains(missing.Cause, "was not found") || countEvents(missing, "MapStateStarted") != 0 || countEvents(missing, "MapStateFailed") != 1 {
+	// A JSONPath Map whose items cannot be read fails before it starts, with
+	// no MapStateFailed, as on AWS.
+	if missing.Error != "States.Runtime" || !missingCause(missing.Cause) || countEvents(missing, "MapStateStarted") != 0 || countEvents(missing, "MapStateFailed") != 0 {
 		t.Fatalf("%s %s %v", missing.Error, missing.Cause, typesOf(missing))
 	}
 	bad := runPhase4(t, s, "bad", def, "run", `{"items":1}`)
-	if bad.Error != "States.Runtime" || !strings.Contains(bad.Cause, "must yield an array") {
+	if bad.Error != "States.Runtime" || bad.Cause != `Reference path "$.items" must point to array.` {
 		t.Fatalf("%s %s", bad.Error, bad.Cause)
 	}
 
@@ -369,7 +371,8 @@ func TestPhase4MapContext(t *testing.T) {
 		t.Fatalf("wait scale %s slept %v", waited.Status, slept)
 	}
 	ex = runPhase4(t, s, "retry-path", retry, "run", `{}`)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "was not found") || countEvents(ex, "MapStateStarted") != 0 || countEvents(ex, "MapStateFailed") != 1 || len(slept) != 1 || slept[0] != time.Second {
+	// States.Runtime is not retried, even by States.ALL.
+	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) || countEvents(ex, "MapStateStarted") != 0 || countEvents(ex, "MapStateFailed") != 0 || len(slept) != 0 {
 		t.Fatalf("%s %s slept %v %v", ex.Error, ex.Cause, slept, typesOf(ex))
 	}
 }
@@ -424,7 +427,7 @@ func TestPhase4RetryCountAndIntrinsics(t *testing.T) {
 	}
 
 	redrive := runPhase4(t, s, "redrive", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount"},"End":true}}}`, "run", `{}`)
-	if redrive.Error != "States.Runtime" || !strings.Contains(redrive.Cause, "not found") {
+	if redrive.Error != "States.Runtime" || !missingCause(redrive.Cause) {
 		t.Fatalf("%s %s", redrive.Error, redrive.Cause)
 	}
 	s.Runner.Mocks = writeMock(t, `{
@@ -436,7 +439,7 @@ func TestPhase4RetryCountAndIntrinsics(t *testing.T) {
 	rr := startExec(t, s, *rsm.StateMachineArn+"#Zero", "run", `{}`)
 	ex = waitExec(t, s, *rr.ExecutionArn)
 	assertEnum(t, ex)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not found") {
+	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("%s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
 

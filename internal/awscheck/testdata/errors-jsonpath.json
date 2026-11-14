@@ -1,0 +1,787 @@
+{
+  "ArrayGetItem": {
+    "cause": null,
+    "error": null,
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"ArrayGetItem\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ArrayGetItem\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"ArrayGetItem\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ArrayGetItem\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "ArrayGetItem"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "Id": 5,
+        "PreviousEventId": 4,
+        "StateExitedEventDetails": {
+          "Name": "ArrayGetItem",
+          "Output": "{\"x\":null}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "{\"x\":null}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ],
+    "output": "{\"x\":null}",
+    "status": "SUCCEEDED"
+  },
+  "Caught": {
+    "cause": "An error occurred while executing the state 'Caught' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'Bucket.$' could not be found in the input '{\"case\":\"Caught\"}'",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"Caught\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Caught\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"Caught\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Caught\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Caught"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "TaskStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Caught' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'Bucket.$' could not be found in the input '{\"case\":\"Caught\"}'",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "ErrorPath": {
+    "cause": "An error occurred while executing the state 'ErrorPath' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'ErrorPath' could not be found in the input '{\"case\":\"ErrorPath\"}'",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"ErrorPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ErrorPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"ErrorPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ErrorPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "ErrorPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "FailStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'ErrorPath' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'ErrorPath' could not be found in the input '{\"case\":\"ErrorPath\"}'",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "InputPath": {
+    "cause": "An error occurred while executing the state 'InputPath' (entered at the event id #4). Invalid path '$.missing' : No results for path: $['missing']",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"InputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"InputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"InputPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"InputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "InputPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'InputPath' (entered at the event id #4). Invalid path '$.missing' : No results for path: $['missing']",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "ItemsPath": {
+    "cause": "Reference path \"$.case\" must point to array.",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"ItemsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ItemsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"ItemsPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ItemsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "ItemsPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "Reference path \"$.case\" must point to array.",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "NoMatch": {
+    "cause": "An error occurred while executing the state 'NoMatch' (entered at the event id #4). Failed to transition out of the state. The state does not point to a next state.",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"NoMatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NoMatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"NoMatch\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"NoMatch\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "NoMatch"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'NoMatch' (entered at the event id #4). Failed to transition out of the state. The state does not point to a next state.",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "OutputPath": {
+    "cause": "An error occurred while executing the state 'OutputPath' (entered at the event id #4). Invalid path '$.missing' : No results for path: $['missing']",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"OutputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"OutputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"OutputPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"OutputPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "OutputPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'OutputPath' (entered at the event id #4). Invalid path '$.missing' : No results for path: $['missing']",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "Parameters": {
+    "cause": "An error occurred while executing the state 'Parameters' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'x.$' could not be found in the input '{\"case\":\"Parameters\"}'",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"Parameters\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Parameters\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"Parameters\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"Parameters\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Parameters"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'Parameters' (entered at the event id #4). The JSONPath '$.missing' specified for the field 'x.$' could not be found in the input '{\"case\":\"Parameters\"}'",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "ResultPath": {
+    "cause": "Unable to apply step \"inner\" to input {\"case\":\"ResultPath\"}",
+    "error": "States.ReferencePathConflict",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"ResultPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ResultPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"ResultPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"ResultPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "ResultPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "Unable to apply step \"inner\" to input {\"case\":\"ResultPath\"}",
+          "Error": "States.ReferencePathConflict"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "SecondsPath": {
+    "cause": "An error occurred while executing the state 'SecondsPath' (entered at the event id #4). The SecondsPath parameter does not reference an input value: $.missing",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"SecondsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"SecondsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"SecondsPath\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"SecondsPath\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "SecondsPath"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "WaitStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'SecondsPath' (entered at the event id #4). The SecondsPath parameter does not reference an input value: $.missing",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  },
+  "StringToJson": {
+    "cause": "An error occurred while executing the state 'StringToJson' (entered at the event id #4). There was an error while evaluating the intrinsic function: States.StringToJson($.case). Cannot convert String to Json in States.StringToJson, caused by: Unrecognized token 'StringToJson': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]",
+    "error": "States.Runtime",
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "{\"case\":\"StringToJson\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"StringToJson\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "Route"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateEntered"
+      },
+      {
+        "Id": 3,
+        "PreviousEventId": 2,
+        "StateExitedEventDetails": {
+          "Name": "Route",
+          "Output": "{\"case\":\"StringToJson\"}",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ChoiceStateExited"
+      },
+      {
+        "Id": 4,
+        "PreviousEventId": 3,
+        "StateEnteredEventDetails": {
+          "Input": "{\"case\":\"StringToJson\"}",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "StringToJson"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "PassStateEntered"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "An error occurred while executing the state 'StringToJson' (entered at the event id #4). There was an error while evaluating the intrinsic function: States.StringToJson($.case). Cannot convert String to Json in States.StringToJson, caused by: Unrecognized token 'StringToJson': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: 1]",
+          "Error": "States.Runtime"
+        },
+        "Id": 5,
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "output": null,
+    "status": "FAILED"
+  }
+}

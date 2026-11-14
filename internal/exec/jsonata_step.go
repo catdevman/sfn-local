@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"math"
+	"strconv"
 	"strings"
 	"time"
 
@@ -88,7 +89,7 @@ type carried struct {
 func (r *Runner) evalArguments(ctx context.Context, arn string, st *asl.State, input string, inputVal any, bind map[string]any, ctxObj any) (any, string, carried, bool) {
 	retries := 0
 	for {
-		val, err := r.evalRaw(ctx, st.Arguments, inputVal, bind)
+		val, err := r.evalRaw(ctx, "Arguments", st.Arguments, inputVal, bind)
 		if err == nil {
 			text, cerr := compactValue(val)
 			if cerr != nil {
@@ -120,7 +121,7 @@ func (r *Runner) evalArguments(ctx context.Context, arn string, st *asl.State, i
 func (r *Runner) choiceJSONata(ctx context.Context, arn string, st *asl.State, input string, inputVal, ctxObj any, vars, bind map[string]any) (string, string, bool, bool) {
 	chosen, assignRaw, matched, err := r.matchJSONata(ctx, st, inputVal, bind)
 	if errors.Is(err, errNoChoice) {
-		r.failCtx(ctx, arn, "States.Runtime", "Failed to transition out of the state")
+		r.failCtx(ctx, arn, "States.Runtime", statePrefix(ctx)+noTransition)
 		return "", "", false, true
 	}
 	if err != nil {
@@ -149,18 +150,19 @@ func (r *Runner) matchJSONata(ctx context.Context, st *asl.State, input any, bin
 	if err != nil {
 		return "", nil, false, err
 	}
-	for _, rule := range rules {
+	for i, rule := range rules {
 		body, ok := jsonataBody(rule.Condition)
 		if !ok {
 			body = strings.TrimSpace(rule.Condition)
 		}
-		val, err := r.evalExpr(ctx, body, input, bind)
+		field := "Choices[" + strconv.Itoa(i) + "]/Condition"
+		val, err := r.evalExpr(ctx, field, body, input, bind)
 		if err != nil {
 			return "", nil, false, err
 		}
 		flag, ok := val.(bool)
 		if !ok {
-			return "", nil, false, &queryError{Cause: "Choice Condition must be a boolean"}
+			return "", nil, false, r.queryType(ctx, field, body, "boolean", val)
 		}
 		if flag {
 			return rule.Next, []byte(rule.Assign), true, nil
@@ -210,9 +212,12 @@ func (r *Runner) waitJSONata(ctx context.Context, arn string, st *asl.State, inp
 func (r *Runner) waitDelay(ctx context.Context, st *asl.State, input any, bind map[string]any, now time.Time) (int64, error) {
 	switch {
 	case st.SecondsExpr != "":
-		val, err := r.evalExpr(ctx, st.SecondsExpr, input, bind)
+		val, err := r.evalExpr(ctx, "Seconds", st.SecondsExpr, input, bind)
 		if err != nil {
 			return 0, err
+		}
+		if _, ok := asFloat(val); !ok {
+			return 0, r.queryType(ctx, "Seconds", st.SecondsExpr, "number", val)
 		}
 		sec, err := floored(val, "Seconds")
 		if err != nil {
@@ -222,13 +227,13 @@ func (r *Runner) waitDelay(ctx context.Context, st *asl.State, input any, bind m
 	case st.Seconds != nil:
 		return *st.Seconds * 1000, nil
 	case st.TimestampExpr != "":
-		val, err := r.evalExpr(ctx, st.TimestampExpr, input, bind)
+		val, err := r.evalExpr(ctx, "Timestamp", st.TimestampExpr, input, bind)
 		if err != nil {
 			return 0, err
 		}
 		text, ok := val.(string)
 		if !ok {
-			return 0, &queryError{Cause: "Timestamp must be a string"}
+			return 0, r.queryType(ctx, "Timestamp", st.TimestampExpr, "string", val)
 		}
 		when, ok := parseOffsetTime(text)
 		if !ok {
@@ -278,13 +283,13 @@ func (r *Runner) failJSONata(ctx context.Context, arn string, st *asl.State, inp
 
 func (r *Runner) resolveJSONataText(ctx context.Context, expr string, hasLit bool, lit string, input any, bind map[string]any, label string) (string, bool, error) {
 	if expr != "" {
-		val, err := r.evalExpr(ctx, expr, input, bind)
+		val, err := r.evalExpr(ctx, label, expr, input, bind)
 		if err != nil {
 			return "", false, err
 		}
 		text, ok := val.(string)
 		if !ok {
-			return "", false, &queryError{Cause: label + " must yield a string"}
+			return "", false, r.queryType(ctx, label, expr, "string", val)
 		}
 		return text, true, nil
 	}
@@ -339,7 +344,7 @@ func (r *Runner) commitJSONata(ctx context.Context, inputVal, ctxObj any, vars m
 	}
 	var output any
 	if hasOutput {
-		val, err := r.evalRaw(ctx, outputRaw, inputVal, bind)
+		val, err := r.evalRaw(ctx, "Output", outputRaw, inputVal, bind)
 		if err != nil {
 			return "", err
 		}
@@ -353,7 +358,7 @@ func (r *Runner) commitJSONata(ctx context.Context, inputVal, ctxObj any, vars m
 	}
 	var assigns map[string]any
 	if len(bytes.TrimSpace(assignRaw)) > 0 {
-		val, err := r.evalRaw(ctx, assignRaw, inputVal, bind)
+		val, err := r.evalRaw(ctx, "Assign", assignRaw, inputVal, bind)
 		if err != nil {
 			return "", err
 		}
@@ -368,7 +373,11 @@ func (r *Runner) commitJSONata(ctx context.Context, inputVal, ctxObj any, vars m
 		return "", err
 	}
 	if len(text) > maxPayload {
-		return "", jsonpath.DataLimit("The state output exceeded the maximum size of 262144 bytes.")
+		name := ""
+		if st != nil {
+			name = st.Name
+		}
+		return "", r.outputTooLarge(ctx, name)
 	}
 	if err := scopeOf(ctx).commit(assigns); err != nil {
 		return "", err
@@ -394,25 +403,28 @@ func (r *Runner) jsonataContext(ctx context.Context, ex store.Execution, st *asl
 	return obj
 }
 
-func (r *Runner) evalRaw(ctx context.Context, raw []byte, input any, bindings map[string]any) (any, error) {
+// evalRaw evaluates every expression in a JSONata field. field names the
+// field in error causes, and a nested expression adds its key, as in
+// Arguments/Bucket.
+func (r *Runner) evalRaw(ctx context.Context, field string, raw []byte, input any, bindings map[string]any) (any, error) {
 	parsed, err := parseJSON(string(raw))
 	if err != nil {
 		return nil, err
 	}
-	return r.walkJSONata(ctx, parsed, input, bindings)
+	return r.walkJSONata(ctx, field, parsed, input, bindings)
 }
 
-func (r *Runner) walkJSONata(ctx context.Context, v, input any, bindings map[string]any) (any, error) {
+func (r *Runner) walkJSONata(ctx context.Context, field string, v, input any, bindings map[string]any) (any, error) {
 	switch node := v.(type) {
 	case string:
 		if body, ok := jsonataBody(node); ok {
-			return r.evalExpr(ctx, body, input, bindings)
+			return r.evalExpr(ctx, field, body, input, bindings)
 		}
 		return node, nil
 	case map[string]any:
 		out := make(map[string]any, len(node))
 		for key, child := range node {
-			val, err := r.walkJSONata(ctx, child, input, bindings)
+			val, err := r.walkJSONata(ctx, field+"/"+key, child, input, bindings)
 			if err != nil {
 				return nil, err
 			}
@@ -422,7 +434,7 @@ func (r *Runner) walkJSONata(ctx context.Context, v, input any, bindings map[str
 	case []any:
 		out := make([]any, len(node))
 		for i, child := range node {
-			val, err := r.walkJSONata(ctx, child, input, bindings)
+			val, err := r.walkJSONata(ctx, field+"["+strconv.Itoa(i)+"]", child, input, bindings)
 			if err != nil {
 				return nil, err
 			}
@@ -434,8 +446,14 @@ func (r *Runner) walkJSONata(ctx context.Context, v, input any, bindings map[str
 	}
 }
 
-func (r *Runner) evalExpr(ctx context.Context, expr string, input any, bindings map[string]any) (any, error) {
-	return jsonataEval.Eval(ctx, expr, input, bindings, jsonata.Limits{})
+// evalExpr evaluates one expression of field. A failure is worded as AWS
+// words it and recorded as an EvaluationFailed event.
+func (r *Runner) evalExpr(ctx context.Context, field, expr string, input any, bindings map[string]any) (any, error) {
+	val, err := jsonataEval.Eval(ctx, expr, input, bindings, jsonata.Limits{})
+	if err != nil {
+		return nil, r.queryFailed(ctx, field, expr, err)
+	}
+	return val, nil
 }
 
 func (r *Runner) evalItems(ctx context.Context, st *asl.State, input any, ctxObj map[string]any, vars map[string]any) ([]any, error) {
@@ -446,13 +464,17 @@ func (r *Runner) evalItems(ctx context.Context, st *asl.State, input any, ctxObj
 		}
 		return arr, nil
 	}
-	val, err := r.evalRaw(ctx, st.Items, input, r.bindings(input, ctxObj, vars))
+	val, err := r.evalRaw(ctx, "Items", st.Items, input, r.bindings(input, ctxObj, vars))
 	if err != nil {
 		return nil, err
 	}
 	arr, ok := val.([]any)
 	if !ok {
-		return nil, &queryError{Cause: "Items must be an array"}
+		expr, isExpr := jsonataBody(strings.Trim(strings.TrimSpace(string(st.Items)), `"`))
+		if !isExpr {
+			expr = string(st.Items)
+		}
+		return nil, r.queryType(ctx, "Items", expr, "array", val)
 	}
 	return arr, nil
 }
@@ -461,7 +483,7 @@ func (r *Runner) evalMaxConcurrency(ctx context.Context, st *asl.State, input, c
 	if st.MaxConcurrencyExpr == "" {
 		return st.MaxConcurrency, nil
 	}
-	val, err := r.evalExpr(ctx, st.MaxConcurrencyExpr, input, r.bindings(input, ctxObj, vars))
+	val, err := r.evalExpr(ctx, "MaxConcurrency", st.MaxConcurrencyExpr, input, r.bindings(input, ctxObj, vars))
 	if err != nil {
 		return nil, err
 	}
@@ -519,13 +541,22 @@ func taskFailureFrom(err error) *taskFailure {
 		return &taskFailure{Name: "States.Runtime"}
 	}
 	if cause, ok := queryCause(err); ok {
-		return &taskFailure{Name: "States.QueryEvaluationError", Cause: cause}
+		return &taskFailure{Name: queryName(err), Cause: cause}
 	}
 	var ev *jsonpath.EvalError
 	if errors.As(err, &ev) && ev != nil {
 		return &taskFailure{Name: ev.Name, Cause: ev.Cause, Timeout: ev.Name == "States.Timeout"}
 	}
 	return &taskFailure{Name: "States.Runtime", Cause: err.Error()}
+}
+
+// queryName is the error name of a query failure.
+func queryName(err error) string {
+	var q *queryError
+	if errors.As(err, &q) && q != nil && q.Name != "" {
+		return q.Name
+	}
+	return "States.QueryEvaluationError"
 }
 
 func queryCause(err error) (string, bool) {

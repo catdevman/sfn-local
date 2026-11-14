@@ -40,7 +40,7 @@ func choose(st *asl.State, root, ctx any, vars map[string]any) (string, json.Raw
 	if st.HasDefault {
 		return st.Default, nil, false, nil
 	}
-	return "", nil, false, jsonpath.Runtime("Failed to transition out of the state")
+	return "", nil, false, stated(noTransition)
 }
 
 func evalRule(rule choiceRule, root, ctx any, vars map[string]any) (bool, error) {

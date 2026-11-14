@@ -86,7 +86,7 @@ func (s *Service) SendTaskSuccess(_ context.Context, in *gen.SendTaskSuccessInpu
 	}
 	err = s.Store.FinishToken(valueOf(in.TaskToken), store.TokenDone{Status: store.TokenSucceeded, Output: text})
 	if err != nil {
-		return nil, tokenErr(err)
+		return nil, s.tokenErr(err)
 	}
 	return &gen.SendTaskSuccessOutput{}, nil
 }
@@ -105,7 +105,7 @@ func (s *Service) SendTaskFailure(_ context.Context, in *gen.SendTaskFailureInpu
 		Cause:  valueOf(in.Cause),
 	})
 	if err != nil {
-		return nil, tokenErr(err)
+		return nil, s.tokenErr(err)
 	}
 	return &gen.SendTaskFailureOutput{}, nil
 }
@@ -119,7 +119,7 @@ func (s *Service) SendTaskHeartbeat(_ context.Context, in *gen.SendTaskHeartbeat
 		in = &gen.SendTaskHeartbeatInput{}
 	}
 	if err := s.Store.HeartbeatToken(valueOf(in.TaskToken)); err != nil {
-		return nil, tokenErr(err)
+		return nil, s.tokenErr(err)
 	}
 	return &gen.SendTaskHeartbeatOutput{}, nil
 }
@@ -147,10 +147,22 @@ func compactTaskOutput(text string) (string, error) {
 	return buf.String(), nil
 }
 
-func tokenErr(err error) error {
+// tokenErr names a token failure. AWS reports a token that is closed,
+// finished or timed out, as TaskTimedOut, and never echoes a token. An
+// activity token no worker has taken keeps the jar's TaskDoesNotExist, as
+// does every error in the jar profile.
+func (s *Service) tokenErr(err error) error {
 	var te *store.TokenError
 	if !errors.As(err, &te) || te == nil {
 		return err
+	}
+	if s.Profile != ProfileSFNLocal {
+		if te.Kind == "TaskTimedOut" || te.Closed {
+			return modeled("TaskTimedOut", "Task Timed Out: 'Provided task does not exist anymore'")
+		}
+		if te.Kind == "InvalidToken" {
+			return modeled("InvalidToken", "Invalid Token: 'Invalid token'")
+		}
 	}
 	switch te.Kind {
 	case "TaskTimedOut":

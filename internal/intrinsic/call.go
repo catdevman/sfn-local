@@ -18,7 +18,9 @@ import (
 	"hash"
 	"io"
 	"math"
+	"strconv"
 	"strings"
+	"unicode"
 	"unicode/utf16"
 	"unicode/utf8"
 )
@@ -363,7 +365,7 @@ func fnStringToJson(args []any) (any, error) {
 	dec.UseNumber()
 	var v any
 	if err := dec.Decode(&v); err != nil {
-		return nil, fail("States.StringToJson input is not JSON")
+		return nil, fail("Cannot convert String to Json in States.StringToJson, caused by: " + jacksonError(text))
 	}
 	var extra any
 	if err := dec.Decode(&extra); err != io.EOF {
@@ -788,4 +790,27 @@ func compact(v any) (string, error) {
 		return "", fail("value is not JSON")
 	}
 	return strings.TrimSpace(buf.String()), nil
+}
+
+// jacksonError is the parse error AWS's JSON parser reports for text. Only
+// an unrecognized leading word is worded exactly. Anything else gets a
+// generic message.
+func jacksonError(text string) string {
+	col := 1
+	rest := text
+	for rest != "" && strings.ContainsRune(" \t\r", rune(rest[0])) {
+		rest = rest[1:]
+		col++
+	}
+	end := strings.IndexFunc(rest, func(r rune) bool {
+		return !(r == '_' || r == '$' || unicode.IsLetter(r) || unicode.IsDigit(r))
+	})
+	if end < 0 {
+		end = len(rest)
+	}
+	if word := rest[:end]; word != "" && !unicode.IsDigit(rune(word[0])) {
+		return "Unrecognized token '" + word + "': was expecting (JSON String, Number, Array, Object or token 'null', 'true' or 'false')\n" +
+			" at [Source: REDACTED (`StreamReadFeature.INCLUDE_SOURCE_IN_LOCATION` disabled); line: 1, column: " + strconv.Itoa(col) + "]"
+	}
+	return "the input is not valid JSON"
 }

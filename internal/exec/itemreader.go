@@ -36,7 +36,7 @@ func (r *Runner) readItems(ctx context.Context, st *asl.State, root, ctxObj any,
 	rd := st.Dist.Reader
 	var params string
 	if st.JSONata {
-		val, err := r.evalRaw(ctx, rd.Parameters, root, r.bindings(root, ctxObj, vars))
+		val, err := r.evalRaw(ctx, "ItemReader/Arguments", rd.Parameters, root, r.bindings(root, ctxObj, vars))
 		if err != nil {
 			return nil, err
 		}

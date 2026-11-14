@@ -1,0 +1,51 @@
+{
+  "bad": {
+    "BillingDetails": {
+      "BilledDurationInMilliseconds": "\u003cbilled\u003e",
+      "BilledMemoryUsedInMB": "\u003cbilled\u003e"
+    },
+    "Cause": "failed on purpose",
+    "Error": "Check.Failed",
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:express:express:bad:\u003cuuid\u003e",
+    "Input": "{\"fail\":true}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "bad",
+    "OutputDetails": {
+      "Included": true
+    },
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:express",
+    "Status": "FAILED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "describeExpress": {
+    "code": "InvalidArn",
+    "message": "Invalid Arn: 'Resource type not valid in this context: express'"
+  },
+  "ok": {
+    "BillingDetails": {
+      "BilledDurationInMilliseconds": "\u003cbilled\u003e",
+      "BilledMemoryUsedInMB": "\u003cbilled\u003e"
+    },
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:express:express:ok:\u003cuuid\u003e",
+    "Input": "{\"fail\":false}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "ok",
+    "Output": "{\"input\":{\"fail\":false},\"name\":\"ok\"}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:express",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "syncStandard": {
+    "code": "StateMachineTypeNotSupported",
+    "message": "This operation is not supported by this type of state machine"
+  }
+}

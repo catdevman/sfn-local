@@ -55,7 +55,11 @@ func (s *Service) StartSyncExecution(ctx context.Context, in *gen.StartSyncExecu
 	if !ok {
 		finished = ex
 	}
-	return syncOutput(finished), nil
+	out := syncOutput(finished)
+	if s.Profile != ProfileSFNLocal {
+		awsSyncOutput(out, finished)
+	}
+	return out, nil
 }
 
 func (s *Service) DescribeExecution(_ context.Context, in *gen.DescribeExecutionInput) (*gen.DescribeExecutionOutput, error) {
@@ -431,6 +435,9 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 	}
 	m := ref.machine
 	if sync && m.Type != store.TypeExpress {
+		if s.Profile != ProfileSFNLocal {
+			return store.Execution{}, nil, modeled("StateMachineTypeNotSupported", "This operation is not supported by this type of state machine")
+		}
 		return store.Execution{}, nil, modeled("StateMachineTypeNotSupported", "State Machine Type Not Supported: 'StartSyncExecution is not supported for STANDARD State Machines'")
 	}
 	if m.Status == store.StatusDeleting {
@@ -452,6 +459,11 @@ func (s *Service) beginExecution(machineARN, name string, nameSet bool, input st
 	}
 	express := m.Type == store.TypeExpress
 	arn := ExecutionARN(s.region(), s.account(), m.Name, name, express)
+	if express && s.Profile != ProfileSFNLocal {
+		// An Express execution ARN ends in a UUID, since Express names need
+		// not be unique.
+		arn += ":" + newExecutionName()
+	}
 	if existing, found := s.Store.Execution(arn); found {
 		if existing.Input == input && existing.Status == store.ExecRunning {
 			return existing, nil, nil
@@ -522,6 +534,11 @@ func (s *Service) standardExecution(arn string) (store.Execution, error) {
 			return store.Execution{}, modeled("ExecutionDoesNotExist", "Execution Does Not Exist: '"+arn+"'")
 		}
 		return ex, nil
+	case "express":
+		if s.Profile != ProfileSFNLocal {
+			return store.Execution{}, modeled("InvalidArn", "Invalid Arn: '"+expressPlaceholderMessage+"'")
+		}
+		return store.Execution{}, modeled("InvalidArn", "Invalid Arn: '"+arn+"'")
 	default:
 		return store.Execution{}, modeled("InvalidArn", "Invalid Arn: '"+arn+"'")
 	}
@@ -689,6 +706,22 @@ func syncOutput(ex store.Execution) *gen.StartSyncExecutionOutput {
 	return out
 }
 
+// awsSyncOutput adds what AWS reports and the jar does not: output details
+// on a failed run, and billing at Express rates, which round the duration up
+// to 100 ms and the memory up to 64 MB.
+func awsSyncOutput(out *gen.StartSyncExecutionOutput, ex store.Execution) {
+	included := true
+	out.OutputDetails = &gen.CloudWatchEventsExecutionDataDetails{Included: &included}
+	ms := int64(100)
+	if ex.Stopped != nil {
+		if d := ex.Stopped.Sub(ex.Started).Milliseconds(); d > ms {
+			ms = (d + 99) / 100 * 100
+		}
+	}
+	mb := int64(64)
+	out.BillingDetails = &gen.BillingDetails{BilledDurationInMilliseconds: &ms, BilledMemoryUsedInMB: &mb}
+}
+
 // markUntruncated sets inputDetails and outputDetails to {"truncated":false}
 // on every event detail that has them, as AWS does.
 func markUntruncated(ev *gen.HistoryEvent) {
@@ -781,6 +814,15 @@ func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {
 			d.Cause = sp(ev.Cause)
 		}
 		out.MapRunFailedEventDetails = d
+	case "EvaluationFailed":
+		d := &gen.EvaluationFailedEventDetails{State: sp(ev.Name), Location: sp(ev.Location)}
+		if ev.HasError {
+			d.Error = sp(ev.Error)
+		}
+		if ev.HasCause {
+			d.Cause = sp(ev.Cause)
+		}
+		out.EvaluationFailedEventDetails = d
 	case "ExecutionRedriven":
 		d := &gen.ExecutionRedrivenEventDetails{}
 		if ev.HasRedrive {

@@ -70,7 +70,8 @@ func TestRedriveResumesOpenState(t *testing.T) {
 		t.Fatalf("%s count %d output %s cause %s", ex.Status, ex.RedriveCount, ex.Output, ex.Cause)
 	}
 	jsonEqual(t, ex.Output, `1`)
-	if countEvents(ex, "PassStateEntered") != 4 || countEvents(ex, "ExecutionRedriven") != 1 {
+	// The failed Pass resumes in place, with no second entered event.
+	if countEvents(ex, "PassStateEntered") != 3 || countEvents(ex, "ExecutionRedriven") != 1 {
 		t.Fatalf("history %v", typesOf(ex))
 	}
 	storeEntered := 0
@@ -119,17 +120,17 @@ func TestRedriveKeepsJSONPathContext(t *testing.T) {
 	sm := createMachine(t, s, "redrive-path", def, roleARN)
 	started := startExec(t, s, *sm.StateMachineArn, "run", `{}`)
 	ex := waitExec(t, s, *started.ExecutionArn)
-	if ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not found") {
+	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("%s %s", ex.Error, ex.Cause)
 	}
 	if _, err := s.RedriveExecution(context.Background(), &gen.RedriveExecutionInput{ExecutionArn: started.ExecutionArn}); err != nil {
 		t.Fatal(err)
 	}
 	ex = waitExec(t, s, *started.ExecutionArn)
-	if ex.Status != store.ExecFailed || ex.RedriveCount != 1 || ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "not found") {
+	if ex.Status != store.ExecFailed || ex.RedriveCount != 1 || ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("%s %s %s %d", ex.Status, ex.Error, ex.Cause, ex.RedriveCount)
 	}
-	if countEvents(ex, "PassStateEntered") != 2 || countEvents(ex, "ExecutionRedriven") != 1 {
+	if countEvents(ex, "PassStateEntered") != 1 || countEvents(ex, "ExecutionRedriven") != 1 {
 		t.Fatalf("%v", typesOf(ex))
 	}
 }
@@ -188,7 +189,7 @@ func TestRedriveAfterAbort(t *testing.T) {
 		t.Fatal(err)
 	}
 	ex = waitExec(t, s, *started.ExecutionArn)
-	if ex.Status != store.ExecSucceeded || ex.RedriveCount != 1 || countEvents(ex, "WaitStateEntered") != 2 || countEvents(ex, "ExecutionAborted") != 1 {
+	if ex.Status != store.ExecSucceeded || ex.RedriveCount != 1 || countEvents(ex, "WaitStateEntered") != 1 || countEvents(ex, "ExecutionAborted") != 1 {
 		t.Fatalf("%s %d %v", ex.Status, ex.RedriveCount, typesOf(ex))
 	}
 }

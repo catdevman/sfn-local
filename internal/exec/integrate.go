@@ -130,7 +130,7 @@ func (r *Runner) invokeLambdaOptimized(callCtx, parent context.Context, raw stri
 		return "", transportFailure(reply.Err, parent, callCtx, taskWins, "Lambda.ServiceException")
 	}
 	if reply.Status < 200 || reply.Status > 299 {
-		return "", &taskFailure{Name: "Lambda.ServiceException", Cause: "Lambda invoke failed with status " + itoa(reply.Status)}
+		return "", lambdaStatusFailure(reply)
 	}
 	if reply.FunctionError != "" {
 		return "", functionErrorFailure(reply.Payload)

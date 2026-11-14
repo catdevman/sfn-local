@@ -116,7 +116,7 @@ func run(outDir, only string, keep bool, timeout time.Duration) error {
 			want[name] = true
 		}
 	}
-	if len(want) == 0 || want["lambda-invoke"] {
+	if len(want) == 0 || want["lambda-invoke"] || want["task-tokens"] {
 		fmt.Println("creating the echo function ...")
 		fn, drop, err := echoFunction(ctx, cfg, iamc, prefix)
 		if drop != nil && !keep {

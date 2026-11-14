@@ -3,6 +3,7 @@ package exec
 import (
 	"context"
 	"math"
+	"strconv"
 	"sync"
 
 	"github.com/catdevman/sfn-local/internal/asl"
@@ -56,6 +57,12 @@ func (r *Runner) runMap(ctx context.Context, arn string, st *asl.State, input, e
 		} else {
 			items, err = mapItems(st, effVal, ctxObj, entryVars(ctx))
 			maxc = st.MaxConcurrency
+			if err != nil {
+				// A JSONPath Map whose items cannot be read fails before it
+				// starts, with no MapStateFailed.
+				r.failEval(ctx, arn, err)
+				return "", "", false, true
+			}
 		}
 		if err != nil {
 			next, output, terminal, done, again := r.retryOrFinish(ctx, arn, st, input, ctxObj, "MapStateFailed", failureFrom(err), &retries)
@@ -139,7 +146,7 @@ func mapItems(st *asl.State, root, ctx any, vars map[string]any) ([]any, error) 
 	}
 	arr, ok := got.([]any)
 	if !ok {
-		return nil, jsonpath.Runtime("ItemsPath " + path + " must yield an array")
+		return nil, jsonpath.Runtime("Reference path " + strconv.Quote(path) + " must point to array.")
 	}
 	return arr, nil
 }
@@ -334,7 +341,7 @@ func (r *Runner) iterationInput(ctx context.Context, arn string, st *asl.State, 
 			return "", jsonpath.Runtime("execution disappeared")
 		}
 		ctxObj := r.jsonataContext(withItem(ctx, index, elem), ex, st, r.now(), retries)
-		val, err := r.evalRaw(ctx, st.ItemSelector, root, r.bindings(root, ctxObj, entryVars(ctx)))
+		val, err := r.evalRaw(ctx, "ItemSelector", st.ItemSelector, root, r.bindings(root, ctxObj, entryVars(ctx)))
 		if err != nil {
 			return "", err
 		}

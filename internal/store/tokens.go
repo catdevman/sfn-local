@@ -52,6 +52,8 @@ type TokenError struct {
 	Kind     string
 	ID       string
 	Resource string
+	// Closed marks a token whose task finished or was aborted.
+	Closed bool
 }
 
 func (e *TokenError) Error() string {
@@ -232,8 +234,9 @@ func (s *Store) FinishToken(id string, done TokenDone) error {
 		}
 		return nil
 	default:
+		closed := tok.Status != TokenScheduled
 		s.mu.Unlock()
-		return &TokenError{Kind: "TaskDoesNotExist", ID: id}
+		return &TokenError{Kind: "TaskDoesNotExist", ID: id, Closed: closed}
 	}
 }
 
@@ -262,8 +265,9 @@ func (s *Store) HeartbeatToken(id string) error {
 		}
 		return nil
 	default:
+		closed := tok.Status != TokenScheduled
 		s.mu.Unlock()
-		return &TokenError{Kind: "TaskDoesNotExist", ID: id}
+		return &TokenError{Kind: "TaskDoesNotExist", ID: id, Closed: closed}
 	}
 }
 

@@ -4,6 +4,7 @@
 package jsonpath
 
 import (
+	"encoding/json"
 	"errors"
 	"strconv"
 	"strings"
@@ -17,6 +18,15 @@ import (
 type EvalError struct {
 	Name  string
 	Cause string
+	// Stated marks a cause that AWS starts with the state's name and entered
+	// event id.
+	Stated bool
+	// Missing is a path that was not found. Field is the template key that
+	// held it, and Input the document it was read from, when a template held
+	// it.
+	Missing string
+	Field   string
+	Input   any
 }
 
 func (e *EvalError) Error() string {
@@ -34,6 +44,11 @@ func Runtime(cause string) error {
 // Conflict returns a States.ReferencePathConflict failure.
 func Conflict(cause string) error {
 	return &EvalError{Name: "States.ReferencePathConflict", Cause: cause}
+}
+
+// Missing returns a States.Runtime failure for a path that was not found.
+func Missing(path string) error {
+	return &EvalError{Name: "States.Runtime", Cause: "path " + path + " was not found", Missing: path}
 }
 
 // DataLimit returns a States.DataLimitExceeded failure.
@@ -124,7 +139,13 @@ func Set(root any, path string, value any) (any, error) {
 	if len(parsed.segs) == 0 {
 		return value, nil
 	}
-	return write(clone(root), parsed.segs, value, path)
+	out, err := write(clone(root), parsed.segs, value, path)
+	var ev *EvalError
+	if errors.As(err, &ev) && ev.Name == "States.ReferencePathConflict" {
+		ev.Cause = "Unable to apply step " + strconv.Quote(ev.Field) + " to input " + compactText(root)
+		ev.Field = ""
+	}
+	return out, err
 }
 
 // Apply evaluates a payload template. A key ending in `.$` is a reference
@@ -155,6 +176,12 @@ func ApplyBound(template, root, ctx any, vars map[string]any) (any, error) {
 				}
 				val, err := EvalBound(text, root, ctx, vars)
 				if err != nil {
+					var ev *EvalError
+					if errors.As(err, &ev) && ev.Missing != "" && ev.Field == "" {
+						withField := *ev
+						withField.Field, withField.Input = key, root
+						return nil, &withField
+					}
 					return nil, err
 				}
 				out[strings.TrimSuffix(key, ".$")] = val
@@ -201,7 +228,8 @@ func EvalBound(expr string, root, ctx any, vars map[string]any) (any, error) {
 			if errors.As(err, &ev) {
 				return nil, err
 			}
-			return nil, Runtime(err.Error())
+			return nil, &EvalError{Name: "States.Runtime", Stated: true,
+				Cause: "There was an error while evaluating the intrinsic function: " + expr + ". " + err.Error()}
 		}
 		return val, nil
 	}
@@ -213,7 +241,7 @@ func EvalBound(expr string, root, ctx any, vars map[string]any) (any, error) {
 		if name, rest, ok := splitVariable(expr); ok && rest == "" {
 			return nil, Runtime("variable $" + name + " was not found")
 		}
-		return nil, Runtime("path " + expr + " was not found")
+		return nil, Missing(expr)
 	}
 	return val, nil
 }
@@ -403,7 +431,7 @@ func write(node any, segs []segment, value any, path string) (any, error) {
 	case segKey:
 		obj, ok := node.(map[string]any)
 		if !ok {
-			return nil, Conflict("Reference path conflict at " + path)
+			return nil, conflictAt(seg.key)
 		}
 		if last {
 			obj[seg.key] = value
@@ -422,7 +450,7 @@ func write(node any, segs []segment, value any, path string) (any, error) {
 	case segIndex:
 		arr, ok := node.([]any)
 		if !ok || seg.index < 0 || seg.index >= len(arr) {
-			return nil, Conflict("Reference path conflict at " + path)
+			return nil, conflictAt(strconv.Itoa(seg.index))
 		}
 		if last {
 			arr[seg.index] = value
@@ -464,4 +492,39 @@ func isIdentStart(b byte) bool {
 
 func isIdentCont(b byte) bool {
 	return isIdentStart(b) || (b >= '0' && b <= '9')
+}
+
+// conflictAt is a ResultPath conflict at one step. Set fills in the cause.
+func conflictAt(step string) error {
+	return &EvalError{Name: "States.ReferencePathConflict", Cause: "Reference path conflict", Field: step}
+}
+
+func compactText(v any) string {
+	var b strings.Builder
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	if enc.Encode(v) != nil {
+		return ""
+	}
+	return strings.TrimSuffix(b.String(), "\n")
+}
+
+// Bracketed writes a data path the way AWS's JSONPath library names it in
+// "No results for path", so $.a[0].b is $['a'][0]['b']. Any other path is
+// returned as is.
+func Bracketed(path string) string {
+	parsed, err := parse(path)
+	if err != nil || parsed.kind != dataRoot {
+		return path
+	}
+	var b strings.Builder
+	b.WriteString("$")
+	for _, seg := range parsed.segs {
+		if seg.kind == segIndex {
+			b.WriteString("[" + strconv.Itoa(seg.index) + "]")
+			continue
+		}
+		b.WriteString("['" + seg.key + "']")
+	}
+	return b.String()
 }

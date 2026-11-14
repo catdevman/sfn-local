@@ -1,0 +1,193 @@
+{
+  "events": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "[1,2,3]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "<role>"
+      },
+      "Type": "ExecutionStarted"
+    },
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "[1,2,3]",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "ExecutionSucceeded"
+    },
+    {
+      "MapIterationStartedEventDetails": {
+        "Index": 0,
+        "Name": "M"
+      },
+      "Type": "MapIterationStarted"
+    },
+    {
+      "MapIterationStartedEventDetails": {
+        "Index": 1,
+        "Name": "M"
+      },
+      "Type": "MapIterationStarted"
+    },
+    {
+      "MapIterationStartedEventDetails": {
+        "Index": 2,
+        "Name": "M"
+      },
+      "Type": "MapIterationStarted"
+    },
+    {
+      "MapIterationSucceededEventDetails": {
+        "Index": 0,
+        "Name": "M"
+      },
+      "Type": "MapIterationSucceeded"
+    },
+    {
+      "MapIterationSucceededEventDetails": {
+        "Index": 1,
+        "Name": "M"
+      },
+      "Type": "MapIterationSucceeded"
+    },
+    {
+      "MapIterationSucceededEventDetails": {
+        "Index": 2,
+        "Name": "M"
+      },
+      "Type": "MapIterationSucceeded"
+    },
+    {
+      "MapStateStartedEventDetails": {
+        "Length": 3
+      },
+      "Type": "MapStateStarted"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "1",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Type": "PassStateEntered"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "2",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Type": "PassStateEntered"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "3",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "P"
+      },
+      "Type": "PassStateEntered"
+    },
+    {
+      "StateEnteredEventDetails": {
+        "Input": "[1,2,3]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "M"
+      },
+      "Type": "MapStateEntered"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "M",
+        "Output": "[1,2,3]",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "MapStateExited"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "1",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "PassStateExited"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "2",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "PassStateExited"
+    },
+    {
+      "StateExitedEventDetails": {
+        "Name": "P",
+        "Output": "3",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Type": "PassStateExited"
+    },
+    {
+      "Type": "MapStateSucceeded"
+    }
+  ],
+  "execution": {
+    "ExecutionArn": "arn:aws:states:<region>:<account>:execution:map-concurrent:run",
+    "Input": "[1,2,3]",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "[1,2,3]",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "<time>",
+    "StateMachineArn": "arn:aws:states:<region>:<account>:stateMachine:map-concurrent",
+    "Status": "SUCCEEDED",
+    "StopDate": "<time>"
+  },
+  "links": [
+    "ExecutionStarted <- 0",
+    "ExecutionSucceeded <- MapStateExited",
+    "MapIterationStarted[0] <- MapStateStarted",
+    "MapIterationStarted[1] <- MapStateStarted",
+    "MapIterationStarted[2] <- MapStateStarted",
+    "MapIterationSucceeded[0] <- PassStateExited",
+    "MapIterationSucceeded[1] <- PassStateExited",
+    "MapIterationSucceeded[2] <- PassStateExited",
+    "MapStateEntered <- 0",
+    "MapStateExited <- MapIterationSucceeded",
+    "MapStateStarted <- MapStateEntered",
+    "MapStateSucceeded <- MapIterationSucceeded",
+    "PassStateEntered <- MapIterationStarted",
+    "PassStateEntered <- MapIterationStarted",
+    "PassStateEntered <- MapIterationStarted",
+    "PassStateExited <- PassStateEntered",
+    "PassStateExited <- PassStateEntered",
+    "PassStateExited <- PassStateEntered"
+  ]
+}

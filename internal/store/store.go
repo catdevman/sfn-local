@@ -81,11 +81,13 @@ type HistoryEvent struct {
 	// Chain names the Parallel branch or Map iteration the event belongs to,
 	// such as "/P#1" or "/P#1/M@0". It is "" at the top level and is not
 	// part of the API. A Side event does not move its chain forward.
-	Chain            string
-	Side             bool
-	Type             string
-	Time             time.Time
-	Name             string
+	Chain string
+	Side  bool
+	Type  string
+	Time  time.Time
+	Name  string
+	// Location is the field an EvaluationFailed event names.
+	Location         string
 	Input            string
 	Output           string
 	RoleArn          string

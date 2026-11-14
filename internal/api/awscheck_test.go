@@ -90,13 +90,23 @@ func localEnv(t *testing.T) *awscheck.Env {
 	s.Runner.LambdaEndpoint = missing.URL
 	creds := credentials.NewStaticCredentialsProvider("local", "local", "")
 	return &awscheck.Env{
-		SFN: sfn.New(sfn.Options{Region: "us-east-1", Credentials: creds, BaseEndpoint: aws.String(api.URL)}),
+		SFN: sfn.New(sfn.Options{Region: "us-east-1", Credentials: creds, BaseEndpoint: aws.String(api.URL), HTTPClient: unprefixed{}}),
 		S3: s3.New(s3.Options{Region: "us-east-1", Credentials: creds, BaseEndpoint: aws.String(store.URL), UsePathStyle: true,
 			RequestChecksumCalculation: aws.RequestChecksumCalculationWhenRequired}),
 		Account: "123456789012", Region: "us-east-1", RoleARN: roleARN,
 		Bucket: "sfnlocal-check-local-123456789012", Prefix: "sfnlocal-check-local-",
 		Poll: 5 * time.Millisecond, Timeout: 10 * time.Second, Function: echoFunction,
 	}
+}
+
+// unprefixed sends StartSyncExecution's sync-<host> requests to <host>.
+// The SDK adds the prefix even to an IP address.
+type unprefixed struct{}
+
+func (unprefixed) Do(r *http.Request) (*http.Response, error) {
+	r.URL.Host = strings.TrimPrefix(r.URL.Host, "sync-")
+	r.Host = ""
+	return http.DefaultClient.Do(r)
 }
 
 // echoFunction is the one Lambda function fakeServices runs.
@@ -121,8 +131,10 @@ func fakeServices(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("X-Amzn-Requestid", "6f1e2d3c-4b5a-4987-8a6b-5c4d3e2f1a0b")
 		io.WriteString(w, `{"echo":`+string(body)+`}`)
 	default:
+		name := strings.TrimSuffix(strings.TrimPrefix(r.URL.Path, "/2015-03-31/functions/"), "/invocations")
 		w.Header().Set("X-Amzn-ErrorType", "ResourceNotFoundException")
+		w.Header().Set("X-Amzn-Requestid", "0b1c2d3e-4f50-4617-8293-a4b5c6d7e8f9")
 		w.WriteHeader(http.StatusNotFound)
-		io.WriteString(w, `{"Type":"User","Message":"Function not found"}`)
+		io.WriteString(w, `{"Type":"User","Message":"Function not found: arn:aws:lambda:us-east-1:123456789012:function:`+name+`:$LATEST"}`)
 	}
 }
