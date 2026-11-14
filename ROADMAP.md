@@ -283,6 +283,7 @@ These stay deferred for the life of this plan.
 - [x] Lambda (30 operations, `invoke` payloads as strings), Secrets Manager (all 23), SSM (Parameter Store, Run Command, and tags), and Step Functions (all 37, which can call this server).
 - [x] `internal/awscheck` scenarios, `cmd/awsrecord`, and `TestAWSRecordings`. docs/spec.md has the workflow.
 - [x] Record against AWS, then fix or document each difference. Every recorded scenario matches.
+- [x] Parallel, inline Map, Retry and Catch, redrive inside Parallel and Map, `StopExecution`, versions and aliases, pending and `JSONL` exports, a stopped Map Run, and a real Lambda invoke, recorded and matched.
 
 ## Phase D — Distributed Map
 
