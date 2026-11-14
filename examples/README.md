@@ -1,6 +1,6 @@
 # Examples
 
-State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs eight of them and checks those outputs. The dynamodb machine calls a DynamoDB endpoint, so the test leaves it out.
+State machine definitions for this server. Each directory has a definition, one input, and the output that input produces. `go test ./examples` runs eight of them and checks those outputs. The dynamodb and lambda machines call outside endpoints, so the test leaves them out.
 
 The small, medium, and large machines use Pass, Choice, and Fail. They change the document as it moves: `Parameters` replaces it, `ResultPath` adds a field, `InputPath` narrows what a state sees, and the last Pass publishes a smaller result. Change a field in `input.json` to take another branch.
 
@@ -133,3 +133,36 @@ DynamoDB Local refuses an unsigned request. The server signs DynamoDB calls with
 A second run with the same `orderId` fails at `SaveOrder` with `DynamoDB.ConditionalCheckFailedException`. Change `orderId` or delete the item to run it again.
 
 Output: order `ord-ddb-1`, total 4900, saved as `new`, status `paid` by `card`.
+
+## lambda
+
+This one needs a Lambda endpoint. `go test ./examples` does not run it. It calls the `HelloWorldFunction` from the SAM `hello-world` Go template three ways. `Greet` uses the optimized `lambda:invoke` integration and sends an API Gateway style request, so the function greets the visitor's IP. `CheckGreeting` fails the run unless the status is 200. `GreetWithSdk` uses `aws-sdk:lambda:invoke`, whose `Payload` comes back as a string, so `States.StringToJson` reads it. `GreetDirect` uses the function ARN as the resource and gets the function's response itself.
+
+Start the function with SAM on port 3001, then point the server at it with `LAMBDA_ENDPOINT`. `aws-sdk:lambda` uses the same endpoint:
+
+```bash
+sam build && sam local start-lambda --port 3001
+
+export AWS_ACCESS_KEY_ID=local AWS_SECRET_ACCESS_KEY=local AWS_DEFAULT_REGION=us-east-1
+LAMBDA_ENDPOINT=http://127.0.0.1:3001 go run ./cmd/sfnlocal --bind-address 127.0.0.1
+```
+
+SAM runs a Go function on `provided.al2`, which has glibc 2.26. Build it static with `CGO_ENABLED=0`, or SAM answers every invoke with status 200 and an empty body, and the container log shows `GLIBC_2.32 not found`.
+
+Create the machine and start it:
+
+```bash
+command aws stepfunctions create-state-machine \
+  --endpoint-url http://127.0.0.1:8083 \
+  --name lambda \
+  --definition file://examples/lambda/definition.json \
+  --role-arn arn:aws:iam::123456789012:role/local
+
+command aws stepfunctions start-execution \
+  --endpoint-url http://127.0.0.1:8083 \
+  --state-machine-arn arn:aws:states:us-east-1:123456789012:stateMachine:lambda \
+  --name lambda-run \
+  --input file://examples/lambda/input.json
+```
+
+Output: `Hello, 203.0.113.7!` from the integration, `Hello, world!` from aws-sdk with an empty request, and `Hello, 198.51.100.20!` from the direct call. SAM does not send `X-Amz-Executed-Version`, so the server reports `$LATEST`.

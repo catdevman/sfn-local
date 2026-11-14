@@ -1,0 +1,73 @@
+{
+  "Comment": "Greet a visitor through the SAM HelloWorldFunction three ways: the optimized integration, aws-sdk, and a direct function ARN. Needs LAMBDA_ENDPOINT.",
+  "StartAt": "Greet",
+  "States": {
+    "Greet": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::lambda:invoke",
+      "Parameters": {
+        "FunctionName": "HelloWorldFunction",
+        "Payload": {
+          "requestContext": { "identity": { "sourceIp.$": "$.visitor" } }
+        }
+      },
+      "Retry": [
+        { "ErrorEquals": ["Lambda.ServiceException", "Lambda.TooManyRequestsException"], "IntervalSeconds": 1, "MaxAttempts": 2 }
+      ],
+      "ResultSelector": {
+        "statusCode.$": "$.Payload.statusCode",
+        "body.$": "$.Payload.body",
+        "version.$": "$.ExecutedVersion"
+      },
+      "ResultPath": "$.optimized",
+      "Next": "CheckGreeting"
+    },
+    "CheckGreeting": {
+      "Type": "Choice",
+      "Choices": [
+        { "Variable": "$.optimized.statusCode", "NumericEquals": 200, "Next": "GreetWithSdk" }
+      ],
+      "Default": "GreetingFailed"
+    },
+    "GreetingFailed": {
+      "Type": "Fail",
+      "Error": "Greeting.Failed",
+      "Cause": "HelloWorldFunction did not answer 200"
+    },
+    "GreetWithSdk": {
+      "Type": "Task",
+      "Resource": "arn:aws:states:::aws-sdk:lambda:invoke",
+      "Parameters": {
+        "FunctionName": "HelloWorldFunction",
+        "Payload": {}
+      },
+      "ResultSelector": {
+        "status.$": "$.StatusCode",
+        "response.$": "States.StringToJson($.Payload)"
+      },
+      "ResultPath": "$.sdk",
+      "Next": "GreetDirect"
+    },
+    "GreetDirect": {
+      "Type": "Task",
+      "Resource": "arn:aws:lambda:us-east-1:123456789012:function:HelloWorldFunction",
+      "Parameters": {
+        "requestContext": { "identity": { "sourceIp": "198.51.100.20" } }
+      },
+      "ResultSelector": { "body.$": "$.body" },
+      "ResultPath": "$.direct",
+      "Next": "Summarize"
+    },
+    "Summarize": {
+      "Type": "Pass",
+      "Parameters": {
+        "visitor.$": "$.visitor",
+        "greeting.$": "$.optimized.body",
+        "anonymous.$": "$.sdk.response.body",
+        "direct.$": "$.direct.body",
+        "version.$": "$.optimized.version"
+      },
+      "End": true
+    }
+  }
+}
