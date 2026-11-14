@@ -106,11 +106,35 @@ func (s *Store) Cancel(arn string) {
 }
 
 // Append adds a non-terminal or terminal event. A non-terminal event is
-// refused when 24999 events already exist. PreviousEventId chains from 0.
+// refused when 24999 events already exist.
+//
+// PreviousEventId follows AWS. ExecutionStarted and the event right after it
+// have 0. An event with HasPrevious uses Previous. An event that matches a
+// HintPrevious uses the hint. Every other event points at the one before it.
 func (s *Store) Append(arn string, ev HistoryEvent) error {
+	_, err := s.AppendID(arn, ev)
+	return err
+}
+
+// AppendID is Append, and it returns the new event's id.
+func (s *Store) AppendID(arn string, ev HistoryEvent) (int64, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.appendLocked(arn, ev)
+	if err := s.appendLocked(arn, ev); err != nil {
+		return 0, err
+	}
+	h := s.execs[arn].History
+	return h[len(h)-1].ID, nil
+}
+
+// HintPrevious sets the PreviousEventId of the next event appended to arn,
+// when that event's type is typ or typ is "". Any other event clears it.
+func (s *Store) HintPrevious(arn string, id int64, typ string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if rec, ok := s.execs[arn]; ok {
+		rec.hint = prevHint{id: id, typ: typ, set: true}
+	}
 }
 
 func (s *Store) appendLocked(arn string, ev HistoryEvent) error {
@@ -126,9 +150,16 @@ func (s *Store) appendLocked(arn string, ev HistoryEvent) error {
 		return ErrHistoryLimit
 	}
 	ev.ID = int64(n + 1)
-	if n == 0 {
+	hint := rec.hint
+	rec.hint = prevHint{}
+	switch {
+	case ev.HasPrevious:
+		ev.PreviousID = ev.Previous
+	case hint.set && (hint.typ == "" || hint.typ == ev.Type):
+		ev.PreviousID = hint.id
+	case n <= 1:
 		ev.PreviousID = 0
-	} else {
+	default:
 		ev.PreviousID = rec.History[n-1].ID
 	}
 	rec.History = append(rec.History, ev)

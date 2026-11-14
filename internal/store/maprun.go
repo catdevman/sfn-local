@@ -44,6 +44,10 @@ type MapRun struct {
 	WritePrefix  string
 	RedriveCount int32
 	RedriveDate  *time.Time
+	// StartedEventID is the parent's MapStateStarted event for this run.
+	// RunEventID is its latest MapRunStarted or MapRunRedriven event.
+	StartedEventID int64
+	RunEventID     int64
 }
 
 // MapRunCounts are the item or child execution counts of a Map Run.

@@ -291,7 +291,7 @@ func TestCallbackWaitAndMock(t *testing.T) {
 		t.Fatal("missing")
 	}
 	scheduled := findEventMust(t, ex, "TaskScheduled")
-	if scheduled.ResourceType != "states" || scheduled.Region != "us-east-1" || !scheduled.HasParameters {
+	if scheduled.ResourceType != "sqs" || scheduled.Resource != "sendMessage.waitForTaskToken" || scheduled.Region != "us-east-1" || !scheduled.HasParameters {
 		t.Fatalf("%+v", scheduled)
 	}
 	token := jsonField(t, scheduled.Parameters, "token")

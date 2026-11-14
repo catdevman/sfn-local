@@ -1,12 +1,14 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -62,6 +64,18 @@ func (s *Service) DescribeExecution(_ context.Context, in *gen.DescribeExecution
 		return nil, err
 	}
 	out := describeExecution(ex)
+	if s.Profile == ProfileSFNLocal {
+		// The jar returns neither error and cause nor the redrive status.
+		return out, nil
+	}
+	if ex.HasError {
+		out.Error = sp(ex.Error)
+	}
+	if ex.HasCause {
+		out.Cause = sp(ex.Cause)
+	}
+	n := ex.RedriveCount
+	out.RedriveCount = &n
 	status, reason := store.RedriveStatus(ex)
 	if status == "REDRIVABLE" {
 		if m, ok := s.Store.Machine(ex.StateMachineARN); !ok || m.Status == store.StatusDeleting {
@@ -150,7 +164,11 @@ func (s *Service) GetExecutionHistory(_ context.Context, in *gen.GetExecutionHis
 	}
 	list := make(gen.HistoryEventList, 0, end-start)
 	for _, ev := range events[start:end] {
-		list = append(list, toGenHistory(ev, include))
+		out := toGenHistory(ev, include)
+		if s.Profile != ProfileSFNLocal {
+			markUntruncated(&out)
+		}
+		list = append(list, out)
 	}
 	return &gen.GetExecutionHistoryOutput{Events: &list, NextToken: next}, nil
 }
@@ -249,12 +267,17 @@ func (s *Service) ListExecutions(_ context.Context, in *gen.ListExecutionsInput)
 		if row.AliasARN != "" {
 			item.StateMachineAliasArn = sp(row.AliasARN)
 		}
-		if row.RedriveCount > 0 {
+		if row.RedriveCount > 0 || s.Profile != ProfileSFNLocal {
 			n := row.RedriveCount
 			item.RedriveCount = &n
 		}
 		if row.RedriveDate != nil {
 			item.RedriveDate = ts(*row.RedriveDate)
+		}
+		if row.MapRunARN != "" {
+			item.MapRunArn = sp(row.MapRunARN)
+			n := row.ItemCount
+			item.ItemCount = &n
 		}
 		list = append(list, item)
 	}
@@ -528,20 +551,51 @@ func newExecutionName() string {
 
 // childMachine describes the machine a Distributed Map child ran: the
 // ItemProcessor as its own definition, named <parent>/<label>.
+// childMachine describes a Map Run child's state machine the way AWS does:
+// the parent machine's name, the ItemProcessor definition as written, and
+// the default logging, encryption, and tracing settings.
 func childMachine(ex store.Execution) *gen.DescribeStateMachineForExecutionOutput {
-	_, name := splitMachine(ex.StateMachineARN)
+	_, name := splitMachine(ex.ParentMachineARN)
+	off := gen.LogLevelOFF
+	no := false
+	owned := gen.EncryptionTypeAWS_OWNED_KEY
 	out := &gen.DescribeStateMachineForExecutionOutput{
-		StateMachineArn: sp(ex.StateMachineARN),
-		Name:            sp(name),
-		Definition:      sp(ex.Definition),
-		MapRunArn:       sp(ex.MapRunARN),
-		Label:           sp(ex.Label),
-		UpdateDate:      ts(ex.Started),
+		StateMachineArn:         sp(ex.StateMachineARN),
+		Name:                    sp(name),
+		Definition:              sp(writtenDefinition(ex.Definition)),
+		MapRunArn:               sp(ex.MapRunARN),
+		Label:                   sp(ex.Label),
+		UpdateDate:              ts(ex.Started),
+		LoggingConfiguration:    &gen.LoggingConfiguration{Level: &off, IncludeExecutionData: &no},
+		EncryptionConfiguration: &gen.EncryptionConfiguration{Type: &owned},
+		TracingConfiguration:    &gen.TracingConfiguration{Enabled: &no},
 	}
 	if ex.RoleArn != "" {
 		out.RoleArn = sp(ex.RoleArn)
 	}
 	return out
+}
+
+// writtenDefinition drops the QueryLanguage that a JSONata parent passes
+// down to its Distributed Map children, which the ItemProcessor did not say.
+func writtenDefinition(def string) string {
+	dec := json.NewDecoder(strings.NewReader(def))
+	dec.UseNumber()
+	var obj map[string]any
+	if err := dec.Decode(&obj); err != nil {
+		return def
+	}
+	if _, ok := obj["QueryLanguage"]; !ok {
+		return def
+	}
+	delete(obj, "QueryLanguage")
+	var b bytes.Buffer
+	enc := json.NewEncoder(&b)
+	enc.SetEscapeHTML(false)
+	if err := enc.Encode(obj); err != nil {
+		return def
+	}
+	return strings.TrimSuffix(b.String(), "\n")
 }
 
 func splitMachine(arn string) (string, string) {
@@ -619,6 +673,25 @@ func syncOutput(ex store.Execution) *gen.StartSyncExecutionOutput {
 		out.Cause = sp(ex.Cause)
 	}
 	return out
+}
+
+// markUntruncated sets inputDetails and outputDetails to {"truncated":false}
+// on every event detail that has them, as AWS does.
+func markUntruncated(ev *gen.HistoryEvent) {
+	untruncated := false
+	data := reflect.TypeFor[*gen.HistoryEventExecutionDataDetails]()
+	v := reflect.ValueOf(ev).Elem()
+	for i := 0; i < v.NumField(); i++ {
+		d := v.Field(i)
+		if d.Kind() != reflect.Pointer || d.IsNil() || d.Elem().Kind() != reflect.Struct {
+			continue
+		}
+		for _, name := range []string{"InputDetails", "OutputDetails"} {
+			if f := d.Elem().FieldByName(name); f.IsValid() && f.Type() == data && f.IsNil() {
+				f.Set(reflect.ValueOf(&gen.HistoryEventExecutionDataDetails{Truncated: &untruncated}))
+			}
+		}
+	}
 }
 
 func toGenHistory(ev store.HistoryEvent, include bool) gen.HistoryEvent {

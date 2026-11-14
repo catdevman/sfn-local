@@ -259,7 +259,7 @@ func (r *Runner) invokeStartExecution(callCtx, parent context.Context, arn strin
 
 func storeHistorySubmitted(meta taskMeta, output string) store.HistoryEvent {
 	return store.HistoryEvent{
-		Type: "TaskSubmitted", Resource: meta.resource, HasResource: meta.resource != "",
+		Type: "TaskSubmitted", Resource: meta.shown, HasResource: meta.shown != "",
 		ResourceType: meta.resourceType, HasResourceType: meta.resourceType != "",
 		Output: output, HasOutput: true,
 	}

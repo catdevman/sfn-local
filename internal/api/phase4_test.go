@@ -608,7 +608,8 @@ func assertEnum(t *testing.T, ex store.Execution) {
 		if i == 0 && (ev.ID != 1 || ev.PreviousID != 0) {
 			t.Fatalf("first id %d previous %d", ev.ID, ev.PreviousID)
 		}
-		if i > 0 && ev.PreviousID != ex.History[i-1].ID {
+		// The event after ExecutionStarted points at 0, as on AWS.
+		if i == 1 && ev.PreviousID != 0 || i > 1 && ev.PreviousID != ex.History[i-1].ID {
 			t.Fatalf("previous %d at %d", ev.PreviousID, i)
 		}
 	}

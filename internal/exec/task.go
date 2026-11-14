@@ -63,9 +63,11 @@ type lambdaTarget struct {
 }
 
 type taskMeta struct {
-	kind         taskKind
-	state        string
-	resource     string
+	kind     taskKind
+	state    string
+	resource string
+	// shown and resourceType are the resource as history events report it.
+	shown        string
 	resourceType string
 	region       string
 	input        string
@@ -93,7 +95,7 @@ func (r *Runner) runTask(ctx context.Context, arn string, st *asl.State, input, 
 		return r.runParked(ctx, arn, st, input, effective, effVal, ctxObj, kind)
 	}
 	meta := taskMeta{
-		kind: kind, state: st.Name, resource: st.Resource, resourceType: resourceTypeOf(st.Resource),
+		kind: kind, state: st.Name, resource: st.Resource, shown: shownResource(st.Resource), resourceType: resourceTypeOf(st.Resource),
 		region: r.Region, input: effective, heartbeat: st.HeartbeatSeconds,
 	}
 	retries := 0
@@ -480,7 +482,7 @@ func (r *Runner) clearAttempts(arn string) {
 }
 
 func (r *Runner) emitScheduled(ctx context.Context, arn string, meta taskMeta) bool {
-	ev := store.HistoryEvent{Resource: meta.resource, HasResource: meta.resource != ""}
+	ev := store.HistoryEvent{Resource: meta.shown, HasResource: meta.shown != ""}
 	if meta.kind == kindLambda {
 		ev.Type = "LambdaFunctionScheduled"
 		ev.Input = meta.input
@@ -511,8 +513,8 @@ func (r *Runner) emitStarted(ctx context.Context, arn string, meta taskMeta) boo
 		ev.Type = "LambdaFunctionStarted"
 	} else {
 		ev.Type = "TaskStarted"
-		ev.Resource = meta.resource
-		ev.HasResource = meta.resource != ""
+		ev.Resource = meta.shown
+		ev.HasResource = meta.shown != ""
 		ev.ResourceType = meta.resourceType
 		ev.HasResourceType = meta.resourceType != ""
 	}
@@ -526,8 +528,8 @@ func (r *Runner) emitAttemptEnd(ctx context.Context, arn string, meta taskMeta, 
 			ev.Type = "LambdaFunctionSucceeded"
 		} else {
 			ev.Type = "TaskSucceeded"
-			ev.Resource = meta.resource
-			ev.HasResource = meta.resource != ""
+			ev.Resource = meta.shown
+			ev.HasResource = meta.shown != ""
 			ev.ResourceType = meta.resourceType
 			ev.HasResourceType = meta.resourceType != ""
 		}
@@ -542,8 +544,8 @@ func (r *Runner) emitAttemptEnd(ctx context.Context, arn string, meta taskMeta, 
 			ev.Type = "LambdaFunctionFailed"
 		}
 	} else {
-		ev.Resource = meta.resource
-		ev.HasResource = meta.resource != ""
+		ev.Resource = meta.shown
+		ev.HasResource = meta.shown != ""
 		ev.ResourceType = meta.resourceType
 		ev.HasResourceType = meta.resourceType != ""
 		if tf.Timeout {
@@ -562,13 +564,21 @@ func (r *Runner) emitAttemptEnd(ctx context.Context, arn string, meta taskMeta, 
 }
 
 func (r *Runner) emit(ctx context.Context, arn string, ev store.HistoryEvent) bool {
+	_, ok := r.emitID(ctx, arn, ev)
+	return ok
+}
+
+// emitID is emit, and it returns the new event's id.
+func (r *Runner) emitID(ctx context.Context, arn string, ev store.HistoryEvent) (int64, bool) {
 	stampParent(ctx, &ev)
 	ev.Time = r.now()
-	if err := r.append(arn, ev, store.ExecRunning, ""); err != nil {
+	id, err := r.Store.AppendID(arn, ev)
+	if err != nil {
 		r.onAppendErr(arn, err)
-		return false
+		return 0, false
 	}
-	return true
+	r.log(arn, ev.Name, ev.Type, store.ExecRunning, "")
+	return id, true
 }
 
 func (r *Runner) invokeLambda(callCtx, parent context.Context, target lambdaTarget, payload string, taskWins bool) (string, *taskFailure) {
@@ -890,12 +900,49 @@ func parseLambdaARN(resource, region, account string) (lambdaTarget, bool) {
 	return target, true
 }
 
+// integrationPrefix starts every optimized and aws-sdk integration resource.
+const integrationPrefix = "arn:aws:states:::"
+
+// splitIntegration splits arn:aws:states:::<type>:<action><suffix> into the
+// resourceType and resource that AWS history events report, such as
+// "aws-sdk:s3" and "getObject", or "sqs" and "sendMessage.waitForTaskToken".
+func splitIntegration(resource string) (typ, action string, ok bool) {
+	rest, ok := strings.CutPrefix(resource, integrationPrefix)
+	if !ok {
+		return "", "", false
+	}
+	suffix := ""
+	for _, s := range []string{".sync:2", ".sync", ".waitForTaskToken"} {
+		if strings.HasSuffix(rest, s) {
+			rest, suffix = strings.TrimSuffix(rest, s), s
+			break
+		}
+	}
+	i := strings.LastIndex(rest, ":")
+	if i <= 0 {
+		return "", "", false
+	}
+	return rest[:i], rest[i+1:] + suffix, true
+}
+
 func resourceTypeOf(resource string) string {
+	if typ, _, ok := splitIntegration(resource); ok {
+		return typ
+	}
 	parts := strings.Split(resource, ":")
 	if len(parts) >= 3 && parts[0] == "arn" && parts[2] != "" {
 		return parts[2]
 	}
 	return "states"
+}
+
+// shownResource is the resource history events report: the action for an
+// integration, and the ARN otherwise.
+func shownResource(resource string) string {
+	if _, action, ok := splitIntegration(resource); ok {
+		return action
+	}
+	return resource
 }
 
 func evalSelector(raw []byte, root, ctx any, vars map[string]any) (any, string, error) {

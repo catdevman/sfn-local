@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"math"
 	"regexp"
 
 	"github.com/catdevman/sfn-local/internal/api/gen"
@@ -27,7 +28,11 @@ func (s *Service) DescribeMapRun(_ context.Context, in *gen.DescribeMapRunInput)
 		return nil, err
 	}
 	status := gen.MapRunStatus(run.Status)
+	// AWS reports an unbounded run as the largest int32.
 	maxc := run.MaxConcurrency
+	if maxc <= 0 {
+		maxc = math.MaxInt32
+	}
 	pct := 0.0
 	if run.TolerancePct != nil {
 		pct = float64(*run.TolerancePct)

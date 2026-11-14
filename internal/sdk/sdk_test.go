@@ -74,6 +74,7 @@ func (f *fakeS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		if !ok {
 			w.Header().Set("Content-Type", "application/xml")
 			w.Header().Set("X-Amz-Request-Id", "req-1")
+			w.Header().Set("X-Amz-Id-2", "host-1")
 			w.WriteHeader(http.StatusNotFound)
 			io.WriteString(w, `<?xml version="1.0" encoding="UTF-8"?><Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>`)
 			return
@@ -150,7 +151,7 @@ func TestS3Errors(t *testing.T) {
 	if !errors.As(err, &se) || se.Name != "S3.NoSuchKeyException" {
 		t.Fatalf("missing %v", err)
 	}
-	if se.Cause != "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: req-1)" {
+	if se.Cause != "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: req-1, Extended Request ID: host-1) (SDK Attempt Count: 1)" {
 		t.Fatalf("cause %q", se.Cause)
 	}
 	for params, want := range map[string]string{

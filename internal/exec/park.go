@@ -73,7 +73,7 @@ func (r *Runner) runParked(ctx context.Context, arn string, st *asl.State, input
 			}
 		}
 		meta := taskMeta{
-			kind: kind, state: st.Name, resource: st.Resource, resourceType: resourceTypeOf(st.Resource),
+			kind: kind, state: st.Name, resource: st.Resource, shown: shownResource(st.Resource), resourceType: resourceTypeOf(st.Resource),
 			region: r.Region, input: attemptInput,
 		}
 		if hasTimeout {
@@ -353,7 +353,7 @@ func (r *Runner) emitActivityStarted(ctx context.Context, arn, worker string) bo
 
 func (r *Runner) emitSubmitted(ctx context.Context, arn string, meta taskMeta) bool {
 	ev := store.HistoryEvent{
-		Type: "TaskSubmitted", Resource: meta.resource, HasResource: meta.resource != "",
+		Type: "TaskSubmitted", Resource: meta.shown, HasResource: meta.shown != "",
 		ResourceType: meta.resourceType, HasResourceType: meta.resourceType != "",
 		Output: "", HasOutput: true,
 	}

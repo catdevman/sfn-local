@@ -88,17 +88,32 @@ func TestMapRunRedrive(t *testing.T) {
 	if calls[`"a"`] != 1 || calls[`"bad"`] != 2 || calls[`"c"`] != 1 {
 		t.Fatalf("calls %v", calls)
 	}
-	tail := typesOf(ex)[len(typesOf(ex))-6:]
-	want := []string{"ExecutionRedriven", "MapStateEntered", "MapRunRedriven", "MapRunSucceeded", "MapStateExited", "ExecutionSucceeded"}
-	if strings.Join(tail, ",") != strings.Join(want, ",") {
+	want := []string{"ExecutionStarted", "MapStateEntered", "MapStateStarted", "MapRunStarted", "MapRunFailed", "MapStateFailed", "ExecutionFailed",
+		"ExecutionRedriven", "MapRunRedriven", "MapRunSucceeded", "MapStateSucceeded", "MapStateExited", "ExecutionSucceeded"}
+	if strings.Join(typesOf(ex), ",") != strings.Join(want, ",") {
 		t.Fatalf("history %v", typesOf(ex))
+	}
+	// MapRunRedriven follows MapStateStarted, and MapStateExited follows it.
+	if ex.History[8].PreviousID != 3 || ex.History[11].PreviousID != 9 {
+		t.Fatalf("previous ids %d %d", ex.History[8].PreviousID, ex.History[11].PreviousID)
 	}
 	runs := s.Store.MapRuns(ex.ARN)
 	if len(runs) != 1 || runs[0].Children[1] != failedChild {
 		t.Fatalf("runs %+v", runs)
 	}
-	if child, _ := s.Store.Execution(failedChild); child.Status != store.ExecSucceeded || child.RedriveCount != 1 {
+	child, _ := s.Store.Execution(failedChild)
+	if child.Status != store.ExecSucceeded || child.RedriveCount != 1 {
 		t.Fatalf("child %s %d", child.Status, child.RedriveCount)
+	}
+	// The child resumes its Task without entering it again. The first
+	// event after the redrive follows the original entered event.
+	if countEvents(child, "TaskStateEntered") != 1 {
+		t.Fatalf("child history %v", typesOf(child))
+	}
+	for i, ev := range child.History {
+		if ev.Type == "ExecutionRedriven" && child.History[i+1].PreviousID != 2 {
+			t.Fatalf("resumed event %+v", child.History[i+1])
+		}
 	}
 	for filter, want := range map[gen.ExecutionRedriveFilter]int{gen.ExecutionRedriveFilterREDRIVEN: 1, gen.ExecutionRedriveFilterNOT_REDRIVEN: 3} {
 		list, err := s.ListExecutions(ctx, &gen.ListExecutionsInput{MapRunArn: &run.ARN, RedriveFilter: &filter})

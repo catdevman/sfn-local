@@ -13,7 +13,14 @@ import (
 
 func (r *Runner) step(ctx context.Context, arn string, st *asl.State, input string) (next, output string, terminal, done bool) {
 	ctx = r.ensureScope(ctx, arn)
-	if err := r.entered(ctx, arn, st, input); err != nil {
+	if m := takeResume(ctx, st); m != nil && (st.Type == "Task" || st.Dist != nil) {
+		// A redrive resumes this state in place. Its first event follows
+		// the original entered event. A Distributed Map sets its own.
+		m.inPlace = true
+		if st.Type == "Task" {
+			r.Store.HintPrevious(arn, m.entered, "")
+		}
+	} else if err := r.entered(ctx, arn, st, input); err != nil {
 		r.onAppendErr(arn, err)
 		return "", "", false, true
 	}
@@ -422,4 +429,31 @@ func (r *Runner) commitJSONPath(ctx context.Context, arn string, st *asl.State, 
 		return false
 	}
 	return r.exit(ctx, arn, st, output)
+}
+
+// resumeMark is the state a redrive resumes. The first step consumes it.
+type resumeMark struct {
+	name    string
+	entered int64
+	used    bool
+	// inPlace is set when the state resumed without a new entered event.
+	inPlace bool
+	// mapUsed is set once a Distributed Map has resumed its Map Run.
+	mapUsed bool
+}
+
+type resumeKey struct{}
+
+// takeResume returns the redrive mark when st is the first state stepped
+// after the redrive. Any later step gets nil.
+func takeResume(ctx context.Context, st *asl.State) *resumeMark {
+	m, _ := ctx.Value(resumeKey{}).(*resumeMark)
+	if m == nil || m.used {
+		return nil
+	}
+	m.used = true
+	if m.name != st.Name {
+		return nil
+	}
+	return m
 }

@@ -43,7 +43,7 @@ func TestRedriveResumesOpenState(t *testing.T) {
 		t.Fatalf("first history %v", typesOf(ex))
 	}
 	desc, err := s.DescribeExecution(context.Background(), &gen.DescribeExecutionInput{ExecutionArn: started.ExecutionArn})
-	if err != nil || desc.RedriveCount != nil {
+	if err != nil || desc.RedriveCount == nil || *desc.RedriveCount != 0 {
 		t.Fatalf("describe before redrive %+v %v", desc, err)
 	}
 	token := "again"

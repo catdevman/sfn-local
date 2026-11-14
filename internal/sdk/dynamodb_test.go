@@ -47,7 +47,7 @@ func TestDynamoDBAttributeValues(t *testing.T) {
 	_, err = c.Call(ctx, "dynamodb", "putItem", []byte(`{"TableName":"orders","Item":`+item+`,"ConditionExpression":"attribute_not_exists(pk)"}`))
 	sameJSON(t, body, `{"TableName":"orders","Item":`+item+`,"ConditionExpression":"attribute_not_exists(pk)"}`)
 	var se *ServiceError
-	if !errors.As(err, &se) || se.Name != "DynamoDb.ConditionalCheckFailedException" || se.Cause != "The conditional request failed (Service: DynamoDb, Status Code: 400, Request ID: req-9)" {
+	if !errors.As(err, &se) || se.Name != "DynamoDb.ConditionalCheckFailedException" || se.Cause != "The conditional request failed (Service: DynamoDb, Status Code: 400, Request ID: req-9) (SDK Attempt Count: 1)" {
 		t.Fatalf("put %v", err)
 	}
 }

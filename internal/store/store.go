@@ -69,8 +69,12 @@ type Activity struct {
 
 // HistoryEvent is one history row. Id assignment belongs to Append.
 type HistoryEvent struct {
-	ID               int64
-	PreviousID       int64
+	ID         int64
+	PreviousID int64
+	// Previous sets PreviousID when HasPrevious is true. Otherwise Append
+	// chains it, as described there.
+	Previous         int64
+	HasPrevious      bool
 	Type             string
 	Time             time.Time
 	Name             string
@@ -165,6 +169,8 @@ type Execution struct {
 	MapRunARN        string
 	Label            string
 	ParentMachineARN string
+	// ItemCount is how many items a Map Run child holds: 1, or its batch size.
+	ItemCount int32
 }
 
 // ExistsError is a duplicate name whose definition differs.
@@ -203,6 +209,15 @@ type execRec struct {
 	Execution
 	cancel context.CancelFunc
 	done   chan struct{}
+	// hint is the PreviousID for the next appended event, set by
+	// HintPrevious. It is cleared by the next append either way.
+	hint prevHint
+}
+
+type prevHint struct {
+	id  int64
+	typ string
+	set bool
 }
 
 // RunHandle is the worker context and the channel closed when the worker returns.

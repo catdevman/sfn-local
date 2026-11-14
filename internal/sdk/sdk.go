@@ -243,7 +243,7 @@ func mapError(prefix, fallback string, err error) error {
 	}
 	msg := apiErr.ErrorMessage()
 	if msg == "" {
-		msg = code
+		msg = "Service returned error code " + code
 	}
 	detail := "Service: " + prefix
 	var respErr *awshttp.ResponseError
@@ -253,5 +253,10 @@ func mapError(prefix, fallback string, err error) error {
 			detail += ", Request ID: " + id
 		}
 	}
-	return &ServiceError{Name: name, Cause: msg + " (" + detail + ")"}
+	var host interface{ ServiceHostID() string }
+	if errors.As(err, &host) && host.ServiceHostID() != "" {
+		detail += ", Extended Request ID: " + host.ServiceHostID()
+	}
+	// SDK retries are off, so every call is one attempt.
+	return &ServiceError{Name: name, Cause: msg + " (" + detail + ") (SDK Attempt Count: 1)"}
 }

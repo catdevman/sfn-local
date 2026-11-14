@@ -35,7 +35,7 @@ var s3Service = service{
 			"getObjectAttributes":     op(c.GetObjectAttributes),
 			"getObjectTagging":        op(c.GetObjectTagging),
 			"headBucket":              op(c.HeadBucket),
-			"headObject":              op(c.HeadObject),
+			"headObject":              s3HeadObject(c),
 			"listBuckets":             op(c.ListBuckets),
 			"listMultipartUploads":    op(c.ListMultipartUploads),
 			"listObjectVersions":      op(c.ListObjectVersions),
@@ -80,7 +80,31 @@ func s3GetObject(c *s3.Client) handler {
 			return "", &ServiceError{Name: "States.DataLimitExceeded", Cause: "The S3 object body exceeded the maximum size of 262144 bytes."}
 		}
 		out.Body = nil
-		return encode(out, map[string]any{"Body": string(body)})
+		extra := map[string]any{"Body": string(body)}
+		if out.Metadata == nil {
+			extra["Metadata"] = map[string]any{}
+		}
+		return encode(out, extra)
+	}
+}
+
+// s3HeadObject always returns Metadata, as AWS does. The Go SDK leaves it
+// nil when the object has no user metadata.
+func s3HeadObject(c *s3.Client) handler {
+	return func(ctx context.Context, params []byte) (string, error) {
+		in := new(s3.HeadObjectInput)
+		if err := decode(params, in); err != nil {
+			return "", err
+		}
+		out, err := c.HeadObject(ctx, in)
+		if err != nil {
+			return "", err
+		}
+		var extra map[string]any
+		if out.Metadata == nil {
+			extra = map[string]any{"Metadata": map[string]any{}}
+		}
+		return encode(out, extra)
 	}
 }
 

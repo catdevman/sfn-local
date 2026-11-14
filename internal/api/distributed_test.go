@@ -26,7 +26,7 @@ func TestDistributedMapRun(t *testing.T) {
 		t.Fatalf("%s %s %s %v", ex.Status, ex.Error, ex.Cause, typesOf(ex))
 	}
 	jsonEqual(t, ex.Output, `{"lines":[{"sku":"pen"},{"sku":"desk"},{"sku":"book"}],"picked":[{"picked":"pen","n":0},{"picked":"desk","n":1},{"picked":"book","n":2}]}`)
-	want := []string{"ExecutionStarted", "MapStateEntered", "MapRunStarted", "MapRunSucceeded", "MapStateExited", "ExecutionSucceeded"}
+	want := []string{"ExecutionStarted", "MapStateEntered", "MapStateStarted", "MapRunStarted", "MapRunSucceeded", "MapStateSucceeded", "MapStateExited", "ExecutionSucceeded"}
 	if strings.Join(typesOf(ex), ",") != strings.Join(want, ",") {
 		t.Fatalf("history %v", typesOf(ex))
 	}
@@ -41,7 +41,7 @@ func TestDistributedMapRun(t *testing.T) {
 	if !strings.HasPrefix(runARN, "arn:aws:states:us-east-1:123456789012:mapRun:dmap/lines:") || *item.StateMachineArn != ex.StateMachineARN || item.StopDate == nil {
 		t.Fatalf("map run item %+v", item)
 	}
-	if ev := ex.History[2]; ev.MapRunARN != runARN {
+	if ev := ex.History[3]; ev.MapRunARN != runARN || ex.History[2].Length != 3 || ex.History[6].PreviousID != ev.ID {
 		t.Fatalf("MapRunStarted %+v", ev)
 	}
 	desc, err := s.DescribeMapRun(ctx, &gen.DescribeMapRunInput{MapRunArn: &runARN})
@@ -69,7 +69,7 @@ func TestDistributedMapRun(t *testing.T) {
 		t.Fatalf("child history %v %v", hist, err)
 	}
 	sm, err := s.DescribeStateMachineForExecution(ctx, &gen.DescribeStateMachineForExecutionInput{ExecutionArn: child.ExecutionArn})
-	if err != nil || *sm.Name != "dmap/lines" || valueOf(sm.Label) != "lines" || valueOf(sm.MapRunArn) != runARN || !strings.Contains(*sm.Definition, `"StartAt":"Pick"`) {
+	if err != nil || *sm.Name != "dmap" || valueOf(sm.Label) != "lines" || valueOf(sm.MapRunArn) != runARN || !strings.Contains(*sm.Definition, `"StartAt":"Pick"`) {
 		t.Fatalf("child machine %+v %v", sm, err)
 	}
 	if mine, _ := s.ListExecutions(ctx, &gen.ListExecutionsInput{StateMachineArn: &ex.StateMachineARN}); len(*mine.Executions) != 1 {

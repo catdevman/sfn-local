@@ -54,7 +54,8 @@ func assertTypes(t *testing.T, ex store.Execution, want ...string) {
 		if i == 0 && (ev.ID != 1 || ev.PreviousID != 0) {
 			t.Fatalf("first event id %d previous %d", ev.ID, ev.PreviousID)
 		}
-		if i > 0 && ev.PreviousID != ex.History[i-1].ID {
+		// The event after ExecutionStarted points at 0, as on AWS.
+		if i == 1 && ev.PreviousID != 0 || i > 1 && ev.PreviousID != ex.History[i-1].ID {
 			t.Fatalf("previous %d at %d", ev.PreviousID, i)
 		}
 	}
@@ -171,9 +172,15 @@ func TestPassSucceedFail(t *testing.T) {
 	}
 	assertTypes(t, failEx, "ExecutionStarted", "FailStateEntered", "ExecutionFailed")
 	failDesc, err := s.DescribeExecution(context.Background(), &gen.DescribeExecutionInput{ExecutionArn: failRun.ExecutionArn})
-	if err != nil || strings.Contains(jsonText(t, failDesc), `"error"`) {
+	if err != nil || valueOf(failDesc.Error) != "Boom" || valueOf(failDesc.Cause) != "no" {
 		t.Fatal(jsonText(t, failDesc), err)
 	}
+	s.Profile = ProfileSFNLocal
+	jarDesc, err := s.DescribeExecution(context.Background(), &gen.DescribeExecutionInput{ExecutionArn: failRun.ExecutionArn})
+	if text := jsonText(t, jarDesc); err != nil || strings.Contains(text, `"error"`) || strings.Contains(text, `"redrive`) {
+		t.Fatal(text, err)
+	}
+	s.Profile = ProfileSmithy
 	include := false
 	stripped, err := s.GetExecutionHistory(context.Background(), &gen.GetExecutionHistoryInput{
 		ExecutionArn: failRun.ExecutionArn, IncludeExecutionData: &include,

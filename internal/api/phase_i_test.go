@@ -373,7 +373,7 @@ func TestPhaseIStartExecutionSync(t *testing.T) {
 		}
 		sawSubmit = true
 		d := ev.TaskSubmitFailedEventDetails
-		if d == nil || str(d.Error) != "StepFunctions.ServiceException" || str(d.Cause) != "bad start" || str(d.Resource) != "arn:aws:states:::states:startExecution.sync" {
+		if d == nil || str(d.Error) != "StepFunctions.ServiceException" || str(d.Cause) != "bad start" || str(d.Resource) != "startExecution.sync" || str(d.ResourceType) != "states" {
 			t.Fatalf("submit details %+v", d)
 		}
 	}

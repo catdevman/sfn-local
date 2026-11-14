@@ -16,23 +16,30 @@ func (e RedriveRefusal) Error() string { return e.Reason }
 // The input is the input recorded on that state's entered event.
 // An inner state with the same name does not pop the outer frame.
 func OpenState(history []HistoryEvent) (name, input string, ok bool) {
+	name, input, _, ok = OpenStateEvent(history)
+	return name, input, ok
+}
+
+// OpenStateEvent is OpenState, and it also returns the entered event's id.
+func OpenStateEvent(history []HistoryEvent) (name, input string, entered int64, ok bool) {
 	type frame struct {
 		name  string
 		input string
+		id    int64
 	}
 	var stack []frame
 	for _, ev := range history {
 		switch {
 		case strings.HasSuffix(ev.Type, "StateEntered"):
-			stack = append(stack, frame{name: ev.Name, input: ev.Input})
+			stack = append(stack, frame{name: ev.Name, input: ev.Input, id: ev.ID})
 		case strings.HasSuffix(ev.Type, "StateExited") && len(stack) > 0 && stack[len(stack)-1].name == ev.Name:
 			stack = stack[:len(stack)-1]
 		}
 	}
 	if len(stack) == 0 {
-		return "", "", false
+		return "", "", 0, false
 	}
-	return stack[0].name, stack[0].input, true
+	return stack[0].name, stack[0].input, stack[0].id, true
 }
 
 // redriveBlock is why an execution cannot be redriven, or "" when it can.
