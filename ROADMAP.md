@@ -282,7 +282,7 @@ These stay deferred for the life of this plan.
 - [x] SQS, SNS, and EventBridge as `aws-sdk:` services. The Phase I DynamoDB, SQS, SNS, and EventBridge resources run through the same clients.
 - [x] Lambda (30 operations, `invoke` payloads as strings), Secrets Manager (all 23), SSM (Parameter Store, Run Command, and tags), and Step Functions (all 37, which can call this server).
 - [x] `internal/awscheck` scenarios, `cmd/awsrecord`, and `TestAWSRecordings`. docs/spec.md has the workflow.
-- [ ] Record against AWS, then fix or document each difference.
+- [x] Record against AWS, then fix or document each difference. Every recorded scenario matches.
 
 ## Phase D — Distributed Map
 
@@ -297,7 +297,7 @@ These stay deferred for the life of this plan.
 - [x] Map Run redrive through the parent's `RedriveExecution`: succeeded children kept, STANDARD children redriven in place, EXPRESS children and unstarted items started again, `MapRunRedriven`, and the run's redrive counts.
 - [x] Unique labels, zstd input, and `redriveStatus` on `DescribeExecution`.
 - [ ] Parquet and Athena manifest input.
-- [ ] Check the parent event sequence, the threshold cause, the manifest layout, and the redrive counts against AWS.
+- [x] Check the parent event sequence, the threshold cause, the manifest layout, and the redrive counts against AWS.
 
 ## Standing CI
 
