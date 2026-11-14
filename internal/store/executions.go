@@ -46,7 +46,6 @@ func (s *Store) PutExecution(ex Execution) (Execution, *RunHandle, bool) {
 		Execution: ex.snapshot(),
 		cancel:    cancel,
 		done:      done,
-		once:      once,
 	}
 	rec.History = copyHistory(ex.History)
 	s.execs[ex.ARN] = rec

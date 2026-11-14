@@ -203,7 +203,6 @@ type execRec struct {
 	Execution
 	cancel context.CancelFunc
 	done   chan struct{}
-	once   sync.Once
 }
 
 // RunHandle is the worker context and the channel closed when the worker returns.

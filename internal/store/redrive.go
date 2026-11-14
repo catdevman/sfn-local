@@ -77,7 +77,6 @@ func (s *Store) BeginRedrive(arn string, when time.Time, token string, deadline 
 	prevToken := rec.RedriveToken
 	prevDeadline := rec.Deadline
 	prevDone := rec.done
-	prevOnce := rec.once
 	oldCancel := rec.cancel
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})
@@ -97,7 +96,6 @@ func (s *Store) BeginRedrive(arn string, when time.Time, token string, deadline 
 	rec.Deadline = deadline
 	rec.cancel = cancel
 	rec.done = done
-	rec.once = once
 	ev := HistoryEvent{Type: "ExecutionRedriven", Time: when, RedriveCount: rec.RedriveCount, HasRedrive: true}
 	if err := s.appendLocked(arn, ev); err != nil {
 		rec.Status = prevStatus
@@ -111,7 +109,6 @@ func (s *Store) BeginRedrive(arn string, when time.Time, token string, deadline 
 		rec.Deadline = prevDeadline
 		rec.cancel = oldCancel
 		rec.done = prevDone
-		rec.once = prevOnce
 		cancel()
 		return Execution{}, nil, err
 	}
