@@ -273,6 +273,9 @@ func TestAPIGatewayInvoke(t *testing.T) {
 	if ex.Status != store.ExecSucceeded {
 		t.Fatalf("%s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
+	if got.Host != "abc123.execute-api.us-east-1.amazonaws.com" {
+		t.Fatalf("host %s", got.Host)
+	}
 	if got.Method != "GET" || got.URL.RawQuery != "billId=123456" || strings.Join(got.Header.Values("Key"), ",") != "value1,value2" || gotBody != "" {
 		t.Fatalf("request %s %s %v %q", got.Method, got.URL, got.Header, gotBody)
 	}

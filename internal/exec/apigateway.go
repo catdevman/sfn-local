@@ -29,6 +29,7 @@ var apiGatewayForbidden = map[string]bool{
 
 // apiGatewayRequest is apigateway:invoke's parameters, checked.
 type apiGatewayRequest struct {
+	host    string
 	apiID   string
 	method  string
 	stage   string
@@ -62,6 +63,7 @@ func parseAPIGatewayRequest(raw string) (apiGatewayRequest, *taskFailure) {
 	if endpoint == "" {
 		return req, apiGatewayParamErr("ApiEndpoint is required")
 	}
+	req.host = endpoint
 	req.apiID, _, _ = strings.Cut(endpoint, ".")
 	req.method, _ = obj["Method"].(string)
 	if !apiGatewayMethods[req.method] {
@@ -186,7 +188,7 @@ func dropNulls(v any) any {
 
 // apiGatewayURL is API_GATEWAY_ENDPOINT, then /<Stage> when Stage is set,
 // then /<Path>, then the query. {apiId} in the endpoint is replaced with the
-// first label of ApiEndpoint, so one setting can serve several APIs.
+// first label of ApiEndpoint, for servers that route by URL host.
 func apiGatewayURL(endpoint string, req apiGatewayRequest) string {
 	u := strings.TrimRight(strings.ReplaceAll(endpoint, "{apiId}", req.apiID), "/")
 	if req.stage != "" {
@@ -218,6 +220,12 @@ func (r *Runner) invokeAPIGateway(callCtx, parent context.Context, raw string, t
 		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 	}
 	httpReq.Header = req.headers
+	// AWS dials ApiEndpoint, so its Host header is ApiEndpoint. A server
+	// that serves several APIs on one address, such as the AWS Emulator,
+	// routes by it. An {apiId} endpoint routes by its own host instead.
+	if !strings.Contains(r.APIGatewayEndpoint, "{apiId}") {
+		httpReq.Host = req.host
+	}
 	resp, err := http.DefaultClient.Do(httpReq)
 	if err != nil {
 		return "", transportFailure(err, parent, callCtx, taskWins, "ApiGateway.ServiceException")
