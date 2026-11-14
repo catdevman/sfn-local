@@ -122,7 +122,9 @@ func dmapThreshold(ctx context.Context, e *Env) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	ex, err := e.run(ctx, arn, "run", `[{"bad":false},{"bad":true},{"bad":false},{"bad":false}]`)
+	// Nothing is left to start when the bad item fails, so the counts do not
+	// depend on how fast AWS notices the failure.
+	ex, err := e.run(ctx, arn, "run", `[{"bad":false},{"bad":true}]`)
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +155,7 @@ func dmapRedrive(ctx context.Context, e *Env) (map[string]any, error) {
 	if err != nil {
 		return nil, err
 	}
-	ex, err := e.run(ctx, arn, "run", `[{"bad":false},{"bad":true},{"bad":false}]`)
+	ex, err := e.run(ctx, arn, "run", `[{"bad":false},{"bad":true}]`)
 	if err != nil {
 		return nil, err
 	}
@@ -282,6 +284,36 @@ func sdkErrors(ctx context.Context, e *Env) (map[string]any, error) {
 	return map[string]any{"status": d["Status"], "output": output}, nil
 }
 
+// WaitForRole runs a probe until the role can write to the bucket and start
+// child executions. CreateStateMachine accepts a new IAM role before
+// executions can assume it.
+func (e *Env) WaitForRole(ctx context.Context, limit time.Duration) error {
+	arn, err := e.machine(ctx, "probe", `{"StartAt":"Put","States":{
+		"Put":{"Type":"Task","Resource":"arn:aws:states:::aws-sdk:s3:putObject","Parameters":{"Bucket":"`+e.Bucket+`","Key":"`+e.Prefix+`probe","Body":"ok"},"ResultPath":null,"Next":"M"},
+		"M":{"Type":"Map","ItemProcessor":{"ProcessorConfig":{"Mode":"DISTRIBUTED","ExecutionType":"STANDARD"},"StartAt":"P","States":{"P":{"Type":"Pass","End":true}}},"End":true}}}`)
+	if err != nil {
+		return err
+	}
+	deadline := time.Now().Add(limit)
+	for attempt := 1; ; attempt++ {
+		ex, err := e.run(ctx, arn, "probe-"+strconv.Itoa(attempt), `[1]`)
+		if err != nil {
+			return err
+		}
+		out, err := e.wait(ctx, ex)
+		if err != nil {
+			return err
+		}
+		if out.Status == types.ExecutionStatusSucceeded {
+			return nil
+		}
+		if time.Now().After(deadline) {
+			return fmt.Errorf("the role still does not work after %s: %s %s", limit, aws.ToString(out.Error), aws.ToString(out.Cause))
+		}
+		time.Sleep(10 * time.Second)
+	}
+}
+
 // parent is a parent execution, its history, and its Map Runs.
 func (e *Env) parent(ctx context.Context, ex string) (map[string]any, error) {
 	doc := map[string]any{}
@@ -341,16 +373,28 @@ func (e *Env) children(ctx context.Context, doc map[string]any, statuses ...stri
 	doc["childCounts"] = counts
 	sample := map[string]any{}
 	for _, status := range statuses {
-		for _, item := range items {
-			if string(item.Status) != status {
+		// The sample is the child with the smallest input, so AWS and this
+		// server describe the same item.
+		var pick *types.ExecutionListItem
+		var pickDesc map[string]any
+		for i := range items {
+			if string(items[i].Status) != status {
 				continue
 			}
-			child := map[string]any{}
-			var err error
-			if child["listItem"], err = sdk.Plain(item); err != nil {
+			d, err := e.describe(ctx, *items[i].ExecutionArn)
+			if err != nil {
 				return err
 			}
-			if child["execution"], err = e.describe(ctx, *item.ExecutionArn); err != nil {
+			in, _ := d["Input"].(string)
+			if prev, _ := pickDesc["Input"].(string); pick == nil || in < prev {
+				pick, pickDesc = &items[i], d
+			}
+		}
+		if pick != nil {
+			item := *pick
+			child := map[string]any{"execution": pickDesc}
+			var err error
+			if child["listItem"], err = sdk.Plain(item); err != nil {
 				return err
 			}
 			if child["history"], err = e.history(ctx, *item.ExecutionArn); err != nil {
@@ -364,7 +408,6 @@ func (e *Env) children(ctx context.Context, doc map[string]any, statuses ...stri
 				return err
 			}
 			sample[status] = child
-			break
 		}
 	}
 	doc["children"] = sample
@@ -463,7 +506,7 @@ var (
 	uuidPattern    = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	timePattern    = regexp.MustCompile(`\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(Z|[+-]\d{2}:\d{2})`)
 	requestPattern = regexp.MustCompile(`Request ID: [^,)]*`)
-	causePattern   = regexp.MustCompile(`^(?s)(.*) \((Service: [^,]+, Status Code: \d+)(, Request ID: <id>)?\)$`)
+	causePattern   = regexp.MustCompile(`^(?s)(.*) \((Service: [^,]+, Status Code: \d+)(, Request ID: <id>)?(, Extended Request ID: <id>)?\)( \(SDK Attempt Count: \d+\))?$`)
 )
 
 // opaqueKeys hold values that differ on every run.
@@ -515,6 +558,9 @@ func (e *Env) normString(s string) string {
 		s = strings.ReplaceAll(s, e.Prefix, "")
 	}
 	s = strings.ReplaceAll(s, e.Account, "<account>")
+	if s == e.Region {
+		return "<region>"
+	}
 	s = strings.ReplaceAll(s, ":"+e.Region+":", ":<region>:")
 	s = uuidPattern.ReplaceAllString(s, "<uuid>")
 	s = timePattern.ReplaceAllString(s, "<time>")
@@ -538,7 +584,7 @@ func Loosen(v any) any {
 		}
 		return out
 	case string:
-		return causePattern.ReplaceAllString(x, "<message> ($2)")
+		return causePattern.ReplaceAllString(x, "<message> ($2)$5")
 	default:
 		return v
 	}

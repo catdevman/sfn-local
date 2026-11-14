@@ -1,0 +1,25 @@
+{
+  "output": {
+    "Lambda": {
+      "Cause": "Function not found: arn:aws:lambda:\u003cregion\u003e:\u003caccount\u003e:function:missing:$LATEST (Service: Lambda, Status Code: 404, Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+      "Error": "Lambda.ResourceNotFoundException"
+    },
+    "S3": {
+      "Cause": "The specified key does not exist. (Service: S3, Status Code: 404, Request ID: \u003cid\u003e, Extended Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+      "Error": "S3.NoSuchKeyException"
+    },
+    "SecretsManager": {
+      "Cause": "Secrets Manager can't find the specified secret. (Service: SecretsManager, Status Code: 400, Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+      "Error": "SecretsManager.ResourceNotFoundException"
+    },
+    "Sfn": {
+      "Cause": "Execution Does Not Exist: 'arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:missing:x' (Service: Sfn, Status Code: 400, Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+      "Error": "Sfn.ExecutionDoesNotExistException"
+    },
+    "Ssm": {
+      "Cause": "Service returned error code ParameterNotFound (Service: Ssm, Status Code: 400, Request ID: \u003cid\u003e) (SDK Attempt Count: 1)",
+      "Error": "Ssm.ParameterNotFoundException"
+    }
+  },
+  "status": "SUCCEEDED"
+}

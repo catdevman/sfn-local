@@ -91,6 +91,12 @@ func (m *memS3) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			io.WriteString(w, `<Error><Code>NoSuchKey</Code><Message>The specified key does not exist.</Message></Error>`)
 			return
 		}
+		// The headers real S3 sends for an object stored without options.
+		w.Header().Set("Accept-Ranges", "bytes")
+		w.Header().Set("Content-Type", "application/octet-stream")
+		w.Header().Set("ETag", `"e"`)
+		w.Header().Set("Last-Modified", "Tue, 02 Jan 2024 03:04:05 GMT")
+		w.Header().Set("X-Amz-Server-Side-Encryption", "AES256")
 		w.Write(body)
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)

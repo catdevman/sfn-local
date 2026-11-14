@@ -1,0 +1,101 @@
+{
+  "failed": {
+    "Cause": "failed on purpose",
+    "Error": "Check.Failed",
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:status:bad",
+    "Input": "{\"fail\":true}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "bad",
+    "RedriveCount": 0,
+    "RedriveStatus": "REDRIVABLE",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:status",
+    "Status": "FAILED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "failedHistory": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{\"fail\":true}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{\"fail\":true}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Check"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ChoiceStateEntered"
+    },
+    {
+      "Id": 3,
+      "PreviousEventId": 2,
+      "StateExitedEventDetails": {
+        "Name": "Check",
+        "Output": "{\"fail\":true}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ChoiceStateExited"
+    },
+    {
+      "Id": 4,
+      "PreviousEventId": 3,
+      "StateEnteredEventDetails": {
+        "Input": "{\"fail\":true}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "Fail"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "FailStateEntered"
+    },
+    {
+      "ExecutionFailedEventDetails": {
+        "Cause": "failed on purpose",
+        "Error": "Check.Failed"
+      },
+      "Id": 5,
+      "PreviousEventId": 4,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionFailed"
+    }
+  ],
+  "succeeded": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:status:ok",
+    "Input": "{\"fail\":false}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "ok",
+    "Output": "{\"fail\":false}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:status",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  }
+}

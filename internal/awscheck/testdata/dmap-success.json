@@ -1,0 +1,251 @@
+{
+  "childCounts": {
+    "SUCCEEDED": 3
+  },
+  "children": {
+    "SUCCEEDED": {
+      "execution": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-success/items:\u003cuuid\u003e",
+        "Input": "{\"i\":0,\"v\":\"a\"}",
+        "InputDetails": {
+          "Included": true
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-success/items:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "Output": "{\"i\":0,\"v\":\"a\"}",
+        "OutputDetails": {
+          "Included": true
+        },
+        "RedriveCount": 0,
+        "RedriveStatus": "NOT_REDRIVABLE",
+        "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-success/items",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "history": [
+        {
+          "ExecutionStartedEventDetails": {
+            "Input": "{\"i\":0,\"v\":\"a\"}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "RoleArn": "\u003crole\u003e"
+          },
+          "Id": 1,
+          "PreviousEventId": 0,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionStarted"
+        },
+        {
+          "Id": 2,
+          "PreviousEventId": 0,
+          "StateEnteredEventDetails": {
+            "Input": "{\"i\":0,\"v\":\"a\"}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "P"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "PassStateEntered"
+        },
+        {
+          "Id": 3,
+          "PreviousEventId": 2,
+          "StateExitedEventDetails": {
+            "Name": "P",
+            "Output": "{\"i\":0,\"v\":\"a\"}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "PassStateExited"
+        },
+        {
+          "ExecutionSucceededEventDetails": {
+            "Output": "{\"i\":0,\"v\":\"a\"}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Id": 4,
+          "PreviousEventId": 3,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionSucceeded"
+        }
+      ],
+      "listItem": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-success/items:\u003cuuid\u003e",
+        "ItemCount": 1,
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-success/items:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-success/items",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "stateMachine": {
+        "Definition": "{\"StartAt\":\"P\",\"States\":{\"P\":{\"End\":true,\"Type\":\"Pass\"}}}",
+        "EncryptionConfiguration": {
+          "Type": "AWS_OWNED_KEY"
+        },
+        "Label": "items",
+        "LoggingConfiguration": {
+          "IncludeExecutionData": false,
+          "Level": "OFF"
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-success/items:\u003cuuid\u003e",
+        "Name": "dmap-success",
+        "RoleArn": "\u003crole\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-success/items",
+        "TracingConfiguration": {
+          "Enabled": false
+        },
+        "UpdateDate": "\u003ctime\u003e"
+      }
+    }
+  },
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-success:run",
+    "Input": "{\"items\":[\"a\",\"b\",\"c\"]}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "[{\"i\":0,\"v\":\"a\"},{\"i\":1,\"v\":\"b\"},{\"i\":2,\"v\":\"c\"}]",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-success",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{\"items\":[\"a\",\"b\",\"c\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{\"items\":[\"a\",\"b\",\"c\"]}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "M"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateEntered"
+    },
+    {
+      "Id": 3,
+      "MapStateStartedEventDetails": {
+        "Length": 3
+      },
+      "PreviousEventId": 2,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateStarted"
+    },
+    {
+      "Id": 4,
+      "MapRunStartedEventDetails": {
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-success/items:\u003cuuid\u003e"
+      },
+      "PreviousEventId": 3,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunStarted"
+    },
+    {
+      "Id": 5,
+      "PreviousEventId": 4,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunSucceeded"
+    },
+    {
+      "Id": 6,
+      "PreviousEventId": 5,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateSucceeded"
+    },
+    {
+      "Id": 7,
+      "PreviousEventId": 4,
+      "StateExitedEventDetails": {
+        "Name": "M",
+        "Output": "[{\"i\":0,\"v\":\"a\"},{\"i\":1,\"v\":\"b\"},{\"i\":2,\"v\":\"c\"}]",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateExited"
+    },
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "[{\"i\":0,\"v\":\"a\"},{\"i\":1,\"v\":\"b\"},{\"i\":2,\"v\":\"c\"}]",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Id": 8,
+      "PreviousEventId": 7,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionSucceeded"
+    }
+  ],
+  "mapRuns": [
+    {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-success:run",
+      "ExecutionCounts": {
+        "Aborted": 0,
+        "Failed": 0,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 3,
+        "Running": 0,
+        "Succeeded": 3,
+        "TimedOut": 0,
+        "Total": 3
+      },
+      "ItemCounts": {
+        "Aborted": 0,
+        "Failed": 0,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 3,
+        "Running": 0,
+        "Succeeded": 3,
+        "TimedOut": 0,
+        "Total": 3
+      },
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-success/items:\u003cuuid\u003e",
+      "MaxConcurrency": 2147483647,
+      "RedriveCount": 0,
+      "StartDate": "\u003ctime\u003e",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e",
+      "ToleratedFailureCount": 0,
+      "ToleratedFailurePercentage": 0
+    }
+  ]
+}

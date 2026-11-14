@@ -1,0 +1,223 @@
+{
+  "execution": {
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-writer:run",
+    "Input": "{}",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "Output": "{\"MapRunArn\":\"arn:aws:states:\\u003cregion\\u003e:\\u003caccount\\u003e:mapRun:dmap-writer/\\u003cuuid\\u003e:\\u003cuuid\\u003e\",\"ResultWriterDetails\":{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"results/\\u003cuuid\\u003e/manifest.json\"}}",
+    "OutputDetails": {
+      "Included": true
+    },
+    "RedriveCount": 0,
+    "RedriveStatus": "NOT_REDRIVABLE",
+    "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-writer",
+    "Status": "SUCCEEDED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "{}",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "M"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateEntered"
+    },
+    {
+      "Id": 3,
+      "MapStateStartedEventDetails": {
+        "Length": 0
+      },
+      "PreviousEventId": 2,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateStarted"
+    },
+    {
+      "Id": 4,
+      "MapRunStartedEventDetails": {
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e"
+      },
+      "PreviousEventId": 3,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunStarted"
+    },
+    {
+      "Id": 5,
+      "PreviousEventId": 4,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunSucceeded"
+    },
+    {
+      "Id": 6,
+      "PreviousEventId": 5,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateSucceeded"
+    },
+    {
+      "Id": 7,
+      "PreviousEventId": 4,
+      "StateExitedEventDetails": {
+        "Name": "M",
+        "Output": "{\"MapRunArn\":\"arn:aws:states:\\u003cregion\\u003e:\\u003caccount\\u003e:mapRun:dmap-writer/\\u003cuuid\\u003e:\\u003cuuid\\u003e\",\"ResultWriterDetails\":{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"results/\\u003cuuid\\u003e/manifest.json\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateExited"
+    },
+    {
+      "ExecutionSucceededEventDetails": {
+        "Output": "{\"MapRunArn\":\"arn:aws:states:\\u003cregion\\u003e:\\u003caccount\\u003e:mapRun:dmap-writer/\\u003cuuid\\u003e:\\u003cuuid\\u003e\",\"ResultWriterDetails\":{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"results/\\u003cuuid\\u003e/manifest.json\"}}",
+        "OutputDetails": {
+          "Truncated": false
+        }
+      },
+      "Id": 8,
+      "PreviousEventId": 7,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionSucceeded"
+    }
+  ],
+  "mapRuns": [
+    {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-writer:run",
+      "ExecutionCounts": {
+        "Aborted": 0,
+        "Failed": 1,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 3,
+        "Running": 0,
+        "Succeeded": 2,
+        "TimedOut": 0,
+        "Total": 3
+      },
+      "ItemCounts": {
+        "Aborted": 0,
+        "Failed": 1,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 3,
+        "Running": 0,
+        "Succeeded": 2,
+        "TimedOut": 0,
+        "Total": 3
+      },
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e",
+      "MaxConcurrency": 2147483647,
+      "RedriveCount": 0,
+      "StartDate": "\u003ctime\u003e",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e",
+      "ToleratedFailureCount": 1,
+      "ToleratedFailurePercentage": 0
+    }
+  ],
+  "resultFiles": {
+    "results/\u003cuuid\u003e/FAILED_0.json": [
+      {
+        "Cause": "bad item",
+        "Error": "Item.Bad",
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "{\"id\":\"2\"}",
+        "InputDetails": {
+          "Included": true
+        },
+        "Name": "\u003cuuid\u003e",
+        "OutputDetails": {
+          "Included": true
+        },
+        "RedriveCount": 0,
+        "RedriveStatus": "REDRIVABLE_BY_MAP_RUN",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-writer/\u003cuuid\u003e",
+        "Status": "FAILED",
+        "StopDate": "\u003ctime\u003e"
+      }
+    ],
+    "results/\u003cuuid\u003e/SUCCEEDED_0.json": [
+      {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "{\"id\":\"1\"}",
+        "InputDetails": {
+          "Included": true
+        },
+        "Name": "\u003cuuid\u003e",
+        "Output": "{\"id\":\"1\"}",
+        "OutputDetails": {
+          "Included": true
+        },
+        "RedriveCount": 0,
+        "RedriveStatus": "NOT_REDRIVABLE",
+        "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-writer/\u003cuuid\u003e",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "{\"id\":\"3\"}",
+        "InputDetails": {
+          "Included": true
+        },
+        "Name": "\u003cuuid\u003e",
+        "Output": "{\"id\":\"3\"}",
+        "OutputDetails": {
+          "Included": true
+        },
+        "RedriveCount": 0,
+        "RedriveStatus": "NOT_REDRIVABLE",
+        "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-writer/\u003cuuid\u003e",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      }
+    ],
+    "results/\u003cuuid\u003e/manifest.json": {
+      "DestinationBucket": "\u003cbucket\u003e",
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-writer/\u003cuuid\u003e:\u003cuuid\u003e",
+      "ResultFiles": {
+        "FAILED": [
+          {
+            "Key": "results/\u003cuuid\u003e/FAILED_0.json",
+            "Size": "\u003csize\u003e"
+          }
+        ],
+        "PENDING": [],
+        "SUCCEEDED": [
+          {
+            "Key": "results/\u003cuuid\u003e/SUCCEEDED_0.json",
+            "Size": "\u003csize\u003e"
+          }
+        ]
+      }
+    }
+  }
+}

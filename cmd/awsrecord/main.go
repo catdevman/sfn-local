@@ -98,6 +98,10 @@ func run(outDir, only string, keep bool, timeout time.Duration) error {
 	if _, err := iamc.PutRolePolicy(ctx, &iam.PutRolePolicyInput{RoleName: &roleName, PolicyName: aws.String("scenarios"), PolicyDocument: aws.String(rolePolicy(bucket))}); err != nil {
 		return fmt.Errorf("put role policy: %w", err)
 	}
+	fmt.Println("waiting for the role to work ...")
+	if err := env.WaitForRole(ctx, 4*time.Minute); err != nil {
+		return err
+	}
 	if err := os.MkdirAll(outDir, 0o755); err != nil {
 		return err
 	}

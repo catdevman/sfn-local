@@ -1,0 +1,377 @@
+{
+  "childCounts": {
+    "FAILED": 1,
+    "SUCCEEDED": 1
+  },
+  "children": {
+    "FAILED": {
+      "execution": {
+        "Cause": "bad item",
+        "Error": "Item.Bad",
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "{\"bad\":true}",
+        "InputDetails": {
+          "Included": true
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "RedriveStatus": "REDRIVABLE_BY_MAP_RUN",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "Status": "FAILED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "history": [
+        {
+          "ExecutionStartedEventDetails": {
+            "Input": "{\"bad\":true}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "RoleArn": "\u003crole\u003e"
+          },
+          "Id": 1,
+          "PreviousEventId": 0,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionStarted"
+        },
+        {
+          "Id": 2,
+          "PreviousEventId": 0,
+          "StateEnteredEventDetails": {
+            "Input": "{\"bad\":true}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "Check"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ChoiceStateEntered"
+        },
+        {
+          "Id": 3,
+          "PreviousEventId": 2,
+          "StateExitedEventDetails": {
+            "Name": "Check",
+            "Output": "{\"bad\":true}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ChoiceStateExited"
+        },
+        {
+          "Id": 4,
+          "PreviousEventId": 3,
+          "StateEnteredEventDetails": {
+            "Input": "{\"bad\":true}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "Fail"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "FailStateEntered"
+        },
+        {
+          "ExecutionFailedEventDetails": {
+            "Cause": "bad item",
+            "Error": "Item.Bad"
+          },
+          "Id": 5,
+          "PreviousEventId": 4,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionFailed"
+        }
+      ],
+      "listItem": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "ItemCount": 1,
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "Status": "FAILED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "stateMachine": {
+        "Definition": "{\"StartAt\":\"Check\",\"States\":{\"Check\":{\"Choices\":[{\"BooleanEquals\":true,\"Next\":\"Fail\",\"Variable\":\"$.bad\"}],\"Default\":\"Ok\",\"Type\":\"Choice\"},\"Fail\":{\"Cause\":\"bad item\",\"Error\":\"Item.Bad\",\"Type\":\"Fail\"},\"Ok\":{\"End\":true,\"Type\":\"Pass\"}}}",
+        "EncryptionConfiguration": {
+          "Type": "AWS_OWNED_KEY"
+        },
+        "Label": "\u003cuuid\u003e",
+        "LoggingConfiguration": {
+          "IncludeExecutionData": false,
+          "Level": "OFF"
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "dmap-threshold",
+        "RoleArn": "\u003crole\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "TracingConfiguration": {
+          "Enabled": false
+        },
+        "UpdateDate": "\u003ctime\u003e"
+      }
+    },
+    "SUCCEEDED": {
+      "execution": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Input": "{\"bad\":false}",
+        "InputDetails": {
+          "Included": true
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "Output": "{\"bad\":false}",
+        "OutputDetails": {
+          "Included": true
+        },
+        "RedriveCount": 0,
+        "RedriveStatus": "NOT_REDRIVABLE",
+        "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "history": [
+        {
+          "ExecutionStartedEventDetails": {
+            "Input": "{\"bad\":false}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "RoleArn": "\u003crole\u003e"
+          },
+          "Id": 1,
+          "PreviousEventId": 0,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionStarted"
+        },
+        {
+          "Id": 2,
+          "PreviousEventId": 0,
+          "StateEnteredEventDetails": {
+            "Input": "{\"bad\":false}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "Check"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ChoiceStateEntered"
+        },
+        {
+          "Id": 3,
+          "PreviousEventId": 2,
+          "StateExitedEventDetails": {
+            "Name": "Check",
+            "Output": "{\"bad\":false}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ChoiceStateExited"
+        },
+        {
+          "Id": 4,
+          "PreviousEventId": 3,
+          "StateEnteredEventDetails": {
+            "Input": "{\"bad\":false}",
+            "InputDetails": {
+              "Truncated": false
+            },
+            "Name": "Ok"
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "PassStateEntered"
+        },
+        {
+          "Id": 5,
+          "PreviousEventId": 4,
+          "StateExitedEventDetails": {
+            "Name": "Ok",
+            "Output": "{\"bad\":false}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "PassStateExited"
+        },
+        {
+          "ExecutionSucceededEventDetails": {
+            "Output": "{\"bad\":false}",
+            "OutputDetails": {
+              "Truncated": false
+            }
+          },
+          "Id": 6,
+          "PreviousEventId": 5,
+          "Timestamp": "\u003ctime\u003e",
+          "Type": "ExecutionSucceeded"
+        }
+      ],
+      "listItem": {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "ItemCount": 1,
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "\u003cuuid\u003e",
+        "RedriveCount": 0,
+        "StartDate": "\u003ctime\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e"
+      },
+      "stateMachine": {
+        "Definition": "{\"StartAt\":\"Check\",\"States\":{\"Check\":{\"Choices\":[{\"BooleanEquals\":true,\"Next\":\"Fail\",\"Variable\":\"$.bad\"}],\"Default\":\"Ok\",\"Type\":\"Choice\"},\"Fail\":{\"Cause\":\"bad item\",\"Error\":\"Item.Bad\",\"Type\":\"Fail\"},\"Ok\":{\"End\":true,\"Type\":\"Pass\"}}}",
+        "EncryptionConfiguration": {
+          "Type": "AWS_OWNED_KEY"
+        },
+        "Label": "\u003cuuid\u003e",
+        "LoggingConfiguration": {
+          "IncludeExecutionData": false,
+          "Level": "OFF"
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+        "Name": "dmap-threshold",
+        "RoleArn": "\u003crole\u003e",
+        "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold/\u003cuuid\u003e",
+        "TracingConfiguration": {
+          "Enabled": false
+        },
+        "UpdateDate": "\u003ctime\u003e"
+      }
+    }
+  },
+  "execution": {
+    "Cause": "The specified tolerated failure threshold was exceeded",
+    "Error": "States.ExceedToleratedFailureThreshold",
+    "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold:run",
+    "Input": "[{\"bad\":false},{\"bad\":true}]",
+    "InputDetails": {
+      "Included": true
+    },
+    "Name": "run",
+    "RedriveCount": 0,
+    "RedriveStatus": "REDRIVABLE",
+    "StartDate": "\u003ctime\u003e",
+    "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-threshold",
+    "Status": "FAILED",
+    "StopDate": "\u003ctime\u003e"
+  },
+  "history": [
+    {
+      "ExecutionStartedEventDetails": {
+        "Input": "[{\"bad\":false},{\"bad\":true}]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "RoleArn": "\u003crole\u003e"
+      },
+      "Id": 1,
+      "PreviousEventId": 0,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionStarted"
+    },
+    {
+      "Id": 2,
+      "PreviousEventId": 0,
+      "StateEnteredEventDetails": {
+        "Input": "[{\"bad\":false},{\"bad\":true}]",
+        "InputDetails": {
+          "Truncated": false
+        },
+        "Name": "M"
+      },
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateEntered"
+    },
+    {
+      "Id": 3,
+      "MapStateStartedEventDetails": {
+        "Length": 2
+      },
+      "PreviousEventId": 2,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateStarted"
+    },
+    {
+      "Id": 4,
+      "MapRunStartedEventDetails": {
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e"
+      },
+      "PreviousEventId": 3,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunStarted"
+    },
+    {
+      "Id": 5,
+      "MapRunFailedEventDetails": {
+        "Cause": "The specified tolerated failure threshold was exceeded",
+        "Error": "States.ExceedToleratedFailureThreshold"
+      },
+      "PreviousEventId": 4,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapRunFailed"
+    },
+    {
+      "Id": 6,
+      "PreviousEventId": 5,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "MapStateFailed"
+    },
+    {
+      "ExecutionFailedEventDetails": {
+        "Cause": "The specified tolerated failure threshold was exceeded",
+        "Error": "States.ExceedToleratedFailureThreshold"
+      },
+      "Id": 7,
+      "PreviousEventId": 6,
+      "Timestamp": "\u003ctime\u003e",
+      "Type": "ExecutionFailed"
+    }
+  ],
+  "mapRuns": [
+    {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-threshold:run",
+      "ExecutionCounts": {
+        "Aborted": 0,
+        "Failed": 1,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 2,
+        "Running": 0,
+        "Succeeded": 1,
+        "TimedOut": 0,
+        "Total": 2
+      },
+      "ItemCounts": {
+        "Aborted": 0,
+        "Failed": 1,
+        "FailuresNotRedrivable": 0,
+        "Pending": 0,
+        "PendingRedrive": 0,
+        "ResultsWritten": 2,
+        "Running": 0,
+        "Succeeded": 1,
+        "TimedOut": 0,
+        "Total": 2
+      },
+      "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-threshold/\u003cuuid\u003e:\u003cuuid\u003e",
+      "MaxConcurrency": 1,
+      "RedriveCount": 0,
+      "StartDate": "\u003ctime\u003e",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e",
+      "ToleratedFailureCount": 0,
+      "ToleratedFailurePercentage": 0
+    }
+  ]
+}

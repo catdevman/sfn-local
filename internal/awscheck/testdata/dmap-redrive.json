@@ -1,0 +1,467 @@
+{
+  "after": {
+    "childCounts": {
+      "SUCCEEDED": 2
+    },
+    "children": {
+      "SUCCEEDED": {
+        "execution": {
+          "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "Input": "{\"bad\":false}",
+          "InputDetails": {
+            "Included": true
+          },
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "Name": "\u003cuuid\u003e",
+          "Output": "{\"bad\":false}",
+          "OutputDetails": {
+            "Included": true
+          },
+          "RedriveCount": 0,
+          "RedriveStatus": "NOT_REDRIVABLE",
+          "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+          "StartDate": "\u003ctime\u003e",
+          "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-redrive/\u003cuuid\u003e",
+          "Status": "SUCCEEDED",
+          "StopDate": "\u003ctime\u003e"
+        },
+        "history": [
+          {
+            "ExecutionStartedEventDetails": {
+              "Input": "{\"bad\":false}",
+              "InputDetails": {
+                "Truncated": false
+              },
+              "RoleArn": "\u003crole\u003e"
+            },
+            "Id": 1,
+            "PreviousEventId": 0,
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "ExecutionStarted"
+          },
+          {
+            "Id": 2,
+            "PreviousEventId": 0,
+            "StateEnteredEventDetails": {
+              "Input": "{\"bad\":false}",
+              "InputDetails": {
+                "Truncated": false
+              },
+              "Name": "Read"
+            },
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "TaskStateEntered"
+          },
+          {
+            "Id": 3,
+            "PreviousEventId": 2,
+            "TaskScheduledEventDetails": {
+              "Parameters": "{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"present.txt\"}",
+              "Region": "\u003cregion\u003e",
+              "Resource": "getObject",
+              "ResourceType": "aws-sdk:s3"
+            },
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "TaskScheduled"
+          },
+          {
+            "Id": 4,
+            "PreviousEventId": 3,
+            "TaskStartedEventDetails": {
+              "Resource": "getObject",
+              "ResourceType": "aws-sdk:s3"
+            },
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "TaskStarted"
+          },
+          {
+            "Id": 5,
+            "PreviousEventId": 4,
+            "TaskSucceededEventDetails": {
+              "Output": "{\"AcceptRanges\":\"bytes\",\"Body\":\"ok\",\"ContentLength\":\"\\u003csize\\u003e\",\"ContentType\":\"application/octet-stream\",\"ETag\":\"\\u003cetag\\u003e\",\"LastModified\":\"\\u003ctime\\u003e\",\"Metadata\":{},\"ServerSideEncryption\":\"AES256\"}",
+              "OutputDetails": {
+                "Truncated": false
+              },
+              "Resource": "getObject",
+              "ResourceType": "aws-sdk:s3"
+            },
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "TaskSucceeded"
+          },
+          {
+            "Id": 6,
+            "PreviousEventId": 5,
+            "StateExitedEventDetails": {
+              "Name": "Read",
+              "Output": "{\"bad\":false}",
+              "OutputDetails": {
+                "Truncated": false
+              }
+            },
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "TaskStateExited"
+          },
+          {
+            "ExecutionSucceededEventDetails": {
+              "Output": "{\"bad\":false}",
+              "OutputDetails": {
+                "Truncated": false
+              }
+            },
+            "Id": 7,
+            "PreviousEventId": 6,
+            "Timestamp": "\u003ctime\u003e",
+            "Type": "ExecutionSucceeded"
+          }
+        ],
+        "listItem": {
+          "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "ItemCount": 1,
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "Name": "\u003cuuid\u003e",
+          "RedriveCount": 0,
+          "StartDate": "\u003ctime\u003e",
+          "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-redrive/\u003cuuid\u003e",
+          "Status": "SUCCEEDED",
+          "StopDate": "\u003ctime\u003e"
+        },
+        "stateMachine": {
+          "Definition": "{\"StartAt\":\"Read\",\"States\":{\"Read\":{\"Arguments\":{\"Bucket\":\"\\u003cbucket\\u003e\",\"Key\":\"{% $states.input.bad and $states.context.Execution.RedriveCount = 0 ? 'missing' : 'present.txt' %}\"},\"End\":true,\"Output\":\"{% $states.input %}\",\"Resource\":\"arn:aws:states:::aws-sdk:s3:getObject\",\"Type\":\"Task\"}}}",
+          "EncryptionConfiguration": {
+            "Type": "AWS_OWNED_KEY"
+          },
+          "Label": "\u003cuuid\u003e",
+          "LoggingConfiguration": {
+            "IncludeExecutionData": false,
+            "Level": "OFF"
+          },
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "Name": "dmap-redrive",
+          "RoleArn": "\u003crole\u003e",
+          "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-redrive/\u003cuuid\u003e",
+          "TracingConfiguration": {
+            "Enabled": false
+          },
+          "UpdateDate": "\u003ctime\u003e"
+        }
+      }
+    },
+    "execution": {
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive:run",
+      "Input": "[{\"bad\":false},{\"bad\":true}]",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "run",
+      "Output": "[{\"bad\":false},{\"bad\":true}]",
+      "OutputDetails": {
+        "Included": true
+      },
+      "RedriveCount": 1,
+      "RedriveDate": "\u003ctime\u003e",
+      "RedriveStatus": "NOT_REDRIVABLE",
+      "RedriveStatusReason": "Execution is SUCCEEDED and cannot be redriven",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-redrive",
+      "Status": "SUCCEEDED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "M"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateEntered"
+      },
+      {
+        "Id": 3,
+        "MapStateStartedEventDetails": {
+          "Length": 2
+        },
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateStarted"
+      },
+      {
+        "Id": 4,
+        "MapRunStartedEventDetails": {
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e"
+        },
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunStarted"
+      },
+      {
+        "Id": 5,
+        "MapRunFailedEventDetails": {
+          "Cause": "The specified tolerated failure threshold was exceeded",
+          "Error": "States.ExceedToleratedFailureThreshold"
+        },
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunFailed"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "The specified tolerated failure threshold was exceeded",
+          "Error": "States.ExceedToleratedFailureThreshold"
+        },
+        "Id": 7,
+        "PreviousEventId": 6,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      },
+      {
+        "ExecutionRedrivenEventDetails": {
+          "RedriveCount": 1
+        },
+        "Id": 8,
+        "PreviousEventId": 7,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionRedriven"
+      },
+      {
+        "Id": 9,
+        "MapRunRedrivenEventDetails": {
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+          "RedriveCount": 1
+        },
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunRedriven"
+      },
+      {
+        "Id": 10,
+        "PreviousEventId": 9,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunSucceeded"
+      },
+      {
+        "Id": 11,
+        "PreviousEventId": 10,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateSucceeded"
+      },
+      {
+        "Id": 12,
+        "PreviousEventId": 9,
+        "StateExitedEventDetails": {
+          "Name": "M",
+          "Output": "[{\"bad\":false},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateExited"
+      },
+      {
+        "ExecutionSucceededEventDetails": {
+          "Output": "[{\"bad\":false},{\"bad\":true}]",
+          "OutputDetails": {
+            "Truncated": false
+          }
+        },
+        "Id": 13,
+        "PreviousEventId": 12,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionSucceeded"
+      }
+    ],
+    "mapRuns": [
+      {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive:run",
+        "ExecutionCounts": {
+          "Aborted": 0,
+          "Failed": 0,
+          "FailuresNotRedrivable": 0,
+          "Pending": 0,
+          "PendingRedrive": 0,
+          "ResultsWritten": 2,
+          "Running": 0,
+          "Succeeded": 2,
+          "TimedOut": 0,
+          "Total": 2
+        },
+        "ItemCounts": {
+          "Aborted": 0,
+          "Failed": 0,
+          "FailuresNotRedrivable": 0,
+          "Pending": 0,
+          "PendingRedrive": 0,
+          "ResultsWritten": 2,
+          "Running": 0,
+          "Succeeded": 2,
+          "TimedOut": 0,
+          "Total": 2
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+        "MaxConcurrency": 1,
+        "RedriveCount": 1,
+        "RedriveDate": "\u003ctime\u003e",
+        "StartDate": "\u003ctime\u003e",
+        "Status": "SUCCEEDED",
+        "StopDate": "\u003ctime\u003e",
+        "ToleratedFailureCount": 0,
+        "ToleratedFailurePercentage": 0
+      }
+    ]
+  },
+  "before": {
+    "execution": {
+      "Cause": "The specified tolerated failure threshold was exceeded",
+      "Error": "States.ExceedToleratedFailureThreshold",
+      "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive:run",
+      "Input": "[{\"bad\":false},{\"bad\":true}]",
+      "InputDetails": {
+        "Included": true
+      },
+      "Name": "run",
+      "RedriveCount": 0,
+      "RedriveStatus": "REDRIVABLE",
+      "StartDate": "\u003ctime\u003e",
+      "StateMachineArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:stateMachine:dmap-redrive",
+      "Status": "FAILED",
+      "StopDate": "\u003ctime\u003e"
+    },
+    "history": [
+      {
+        "ExecutionStartedEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "RoleArn": "\u003crole\u003e"
+        },
+        "Id": 1,
+        "PreviousEventId": 0,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionStarted"
+      },
+      {
+        "Id": 2,
+        "PreviousEventId": 0,
+        "StateEnteredEventDetails": {
+          "Input": "[{\"bad\":false},{\"bad\":true}]",
+          "InputDetails": {
+            "Truncated": false
+          },
+          "Name": "M"
+        },
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateEntered"
+      },
+      {
+        "Id": 3,
+        "MapStateStartedEventDetails": {
+          "Length": 2
+        },
+        "PreviousEventId": 2,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateStarted"
+      },
+      {
+        "Id": 4,
+        "MapRunStartedEventDetails": {
+          "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e"
+        },
+        "PreviousEventId": 3,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunStarted"
+      },
+      {
+        "Id": 5,
+        "MapRunFailedEventDetails": {
+          "Cause": "The specified tolerated failure threshold was exceeded",
+          "Error": "States.ExceedToleratedFailureThreshold"
+        },
+        "PreviousEventId": 4,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapRunFailed"
+      },
+      {
+        "Id": 6,
+        "PreviousEventId": 5,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "MapStateFailed"
+      },
+      {
+        "ExecutionFailedEventDetails": {
+          "Cause": "The specified tolerated failure threshold was exceeded",
+          "Error": "States.ExceedToleratedFailureThreshold"
+        },
+        "Id": 7,
+        "PreviousEventId": 6,
+        "Timestamp": "\u003ctime\u003e",
+        "Type": "ExecutionFailed"
+      }
+    ],
+    "mapRuns": [
+      {
+        "ExecutionArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:execution:dmap-redrive:run",
+        "ExecutionCounts": {
+          "Aborted": 0,
+          "Failed": 1,
+          "FailuresNotRedrivable": 0,
+          "Pending": 0,
+          "PendingRedrive": 0,
+          "ResultsWritten": 2,
+          "Running": 0,
+          "Succeeded": 1,
+          "TimedOut": 0,
+          "Total": 2
+        },
+        "ItemCounts": {
+          "Aborted": 0,
+          "Failed": 1,
+          "FailuresNotRedrivable": 0,
+          "Pending": 0,
+          "PendingRedrive": 0,
+          "ResultsWritten": 2,
+          "Running": 0,
+          "Succeeded": 1,
+          "TimedOut": 0,
+          "Total": 2
+        },
+        "MapRunArn": "arn:aws:states:\u003cregion\u003e:\u003caccount\u003e:mapRun:dmap-redrive/\u003cuuid\u003e:\u003cuuid\u003e",
+        "MaxConcurrency": 1,
+        "RedriveCount": 0,
+        "StartDate": "\u003ctime\u003e",
+        "Status": "FAILED",
+        "StopDate": "\u003ctime\u003e",
+        "ToleratedFailureCount": 0,
+        "ToleratedFailurePercentage": 0
+      }
+    ]
+  },
+  "redrive": {
+    "RedriveDate": "\u003ctime\u003e"
+  },
+  "redrivenChildren": 1
+}
