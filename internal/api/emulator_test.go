@@ -50,7 +50,7 @@ func TestAWSEmulator(t *testing.T) {
 		s := newService()
 		s.Runner.SDK = sdk.New(sdk.Config{
 			Region:            "us-east-1",
-			Endpoints:         map[string]string{"ecs": endpoint, "sfn": endpoint},
+			Endpoints:         map[string]string{"athena": endpoint, "ecs": endpoint, "sfn": endpoint},
 			Credentials:       out.Credentials,
 			HTTPClient:        out.HTTPClient,
 			DisableHostPrefix: out.DisableHostPrefix,
@@ -135,6 +135,35 @@ func TestAWSEmulator(t *testing.T) {
 		desc := call("describeTasks", `{"Cluster":"sfn","Tasks":["`+submitted.Tasks[0].TaskArn+`"]}`)
 		if !strings.Contains(desc, `"StoppedReason":"Task stopped by AWS Step Functions"`) {
 			t.Fatalf("not stopped by the timeout: %s", desc)
+		}
+	})
+
+	t.Run("AthenaSync", func(t *testing.T) {
+		s := newEmulatorService()
+		def := `{"StartAt":"Query","States":{` +
+			`"Query":{"Type":"Task","Resource":"arn:aws:states:::athena:startQueryExecution.sync",` +
+			`"Parameters":{"QueryString":"SELECT 1 AS n","WorkGroup":"primary","ResultConfiguration":{"OutputLocation":"s3://sfn-local-athena/out/"}},` +
+			`"ResultSelector":{"id.$":"$.QueryExecution.QueryExecutionId","state.$":"$.QueryExecution.Status.State"},"Next":"Results"},` +
+			`"Results":{"Type":"Task","Resource":"arn:aws:states:::athena:getQueryResults","Parameters":{"QueryExecutionId.$":"$.id"},` +
+			`"ResultSelector":{"header.$":"$.ResultSet.Rows[0].Data[0].VarCharValue","value.$":"$.ResultSet.Rows[1].Data[0].VarCharValue"},"End":true}}}`
+		ex := runSlow(t, s, "emu-athena", def)
+		if ex.Status != store.ExecSucceeded {
+			t.Fatalf("%s %s %s %v", ex.Status, ex.Error, ex.Cause, typesOf(ex))
+		}
+		jsonEqual(t, ex.Output, `{"header":"n","value":"1"}`)
+		if countEvents(ex, "TaskSubmitted") != 1 {
+			t.Fatalf("%v", typesOf(ex))
+		}
+
+		bad := `{"StartAt":"Query","States":{"Query":{"Type":"Task","Resource":"arn:aws:states:::athena:startQueryExecution.sync",` +
+			`"Parameters":{"QueryString":"SELECT * FROM sfn_local_missing_table","WorkGroup":"primary","ResultConfiguration":{"OutputLocation":"s3://sfn-local-athena/out/"}},"End":true}}}`
+		ex = runSlow(t, s, "emu-athena-bad", bad)
+		if ex.Status != store.ExecFailed {
+			t.Fatalf("%s %s", ex.Status, ex.Output)
+		}
+		// The query starts, then fails while it runs.
+		if ex.Error != "States.TaskFailed" || !strings.Contains(ex.Cause, `"State":"FAILED"`) || countEvents(ex, "TaskSubmitted") != 1 {
+			t.Fatalf("%s %.400s %v", ex.Error, ex.Cause, typesOf(ex))
 		}
 	})
 
