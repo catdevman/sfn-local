@@ -351,15 +351,25 @@ func (r *Runner) contextObject(ctx context.Context, ex store.Execution, st *asl.
 	if st.Type == "Task" || st.Type == "Parallel" || st.Type == "Map" {
 		state["RetryCount"] = retries
 	}
+	execution := map[string]any{
+		"Id":        ex.ARN,
+		"Input":     input,
+		"Name":      ex.Name,
+		"RoleArn":   role,
+		"StartTime": isoInstant(ex.Started),
+	}
+	// AWS reports RedriveCount, 0 before any redrive, as the redrive-states
+	// recording shows, and RedriveTime once the execution is redriven. The
+	// jar has neither.
+	if !r.JarContext {
+		execution["RedriveCount"] = int(ex.RedriveCount)
+		if ex.RedriveDate != nil {
+			execution["RedriveTime"] = isoInstant(*ex.RedriveDate)
+		}
+	}
 	obj := map[string]any{
-		"Execution": map[string]any{
-			"Id":        ex.ARN,
-			"Input":     input,
-			"Name":      ex.Name,
-			"RoleArn":   role,
-			"StartTime": isoInstant(ex.Started),
-		},
-		"State": state,
+		"Execution": execution,
+		"State":     state,
 		"StateMachine": map[string]any{
 			"Id":   ex.StateMachineARN,
 			"Name": arnName(ex.StateMachineARN, ":stateMachine:"),

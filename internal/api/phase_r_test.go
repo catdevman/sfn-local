@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"encoding/json"
 	"strings"
 	"sync"
 	"sync/atomic"
@@ -114,24 +115,42 @@ func TestRedriveResumesOpenState(t *testing.T) {
 	}
 }
 
-func TestRedriveKeepsJSONPathContext(t *testing.T) {
+// TestRedriveJSONPathContext reads RedriveCount and RedriveTime through $$,
+// as AWS reports them: 0 and no RedriveTime before a redrive, then the count
+// and the redrive's time. --compat=sfn-local leaves both out, as the jar does.
+func TestRedriveJSONPathContext(t *testing.T) {
 	s := newService()
-	def := `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount"},"End":true}}}`
+	def := `{"StartAt":"C","States":{` +
+		`"C":{"Type":"Choice","Choices":[{"Variable":"$$.Execution.RedriveCount","NumericEquals":1,"Next":"P"}]},` +
+		`"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount","t.$":"$$.Execution.RedriveTime"},"End":true}}}`
 	sm := createMachine(t, s, "redrive-path", def, roleARN)
 	started := startExec(t, s, *sm.StateMachineArn, "run", `{}`)
 	ex := waitExec(t, s, *started.ExecutionArn)
-	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
-		t.Fatalf("%s %s", ex.Error, ex.Cause)
+	if ex.Status != store.ExecFailed || ex.Error != "States.Runtime" || !strings.Contains(ex.Cause, "Failed to transition out of the state") {
+		t.Fatalf("%s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
 	if _, err := s.RedriveExecution(context.Background(), &gen.RedriveExecutionInput{ExecutionArn: started.ExecutionArn}); err != nil {
 		t.Fatal(err)
 	}
 	ex = waitExec(t, s, *started.ExecutionArn)
-	if ex.Status != store.ExecFailed || ex.RedriveCount != 1 || ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
+	if ex.Status != store.ExecSucceeded || ex.RedriveCount != 1 || ex.RedriveDate == nil {
 		t.Fatalf("%s %s %s %d", ex.Status, ex.Error, ex.Cause, ex.RedriveCount)
 	}
-	if countEvents(ex, "PassStateEntered") != 1 || countEvents(ex, "ExecutionRedriven") != 1 {
-		t.Fatalf("%v", typesOf(ex))
+	var out struct {
+		C int
+		T string
+	}
+	if err := json.Unmarshal([]byte(ex.Output), &out); err != nil {
+		t.Fatal(err)
+	}
+	if when, err := time.Parse(time.RFC3339Nano, out.T); out.C != 1 || err != nil || !when.Equal(ex.RedriveDate.Truncate(time.Millisecond)) {
+		t.Fatalf("output %s, redrive date %s", ex.Output, ex.RedriveDate)
+	}
+
+	s.Runner.JarContext = true
+	jar := runMachine(t, s, "redrive-path-jar", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount"},"End":true}}}`, "run", `{}`)
+	if jar.Error != "States.Runtime" || !missingCause(jar.Cause) {
+		t.Fatalf("%s %s", jar.Error, jar.Cause)
 	}
 }
 

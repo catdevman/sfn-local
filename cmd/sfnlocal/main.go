@@ -117,6 +117,7 @@ func serve(ctx context.Context, cfg Config, stdout, stderr io.Writer) int {
 		StepFunctionsEndpoint: cfg.StepFunctionsEndpoint,
 		APIGatewayEndpoint:    cfg.APIGatewayEndpoint,
 		HTTPClient:            cfg.Outbound.HTTPClient,
+		JarContext:            cfg.Profile == api.ProfileSFNLocal,
 		Region:                cfg.Region,
 		Account:               cfg.Account,
 		SDK: sdk.New(sdk.Config{

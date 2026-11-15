@@ -51,6 +51,10 @@ type Runner struct {
 	// HTTPClient carries Lambda, nested Step Functions, and API Gateway
 	// calls. Nil is http.DefaultClient.
 	HTTPClient *http.Client
+	// JarContext leaves RedriveCount and RedriveTime off the JSONPath context
+	// object, as amazon/aws-stepfunctions-local does (--compat=sfn-local).
+	// The JSONata context always has RedriveCount.
+	JarContext bool
 	// ECSPoll is how often a .sync ecs:runTask describes its task. Zero is
 	// one second.
 	ECSPoll time.Duration

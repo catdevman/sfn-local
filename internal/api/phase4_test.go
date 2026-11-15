@@ -426,7 +426,13 @@ func TestPhase4RetryCountAndIntrinsics(t *testing.T) {
 		t.Fatalf("%v", typesOf(ex))
 	}
 
+	// AWS reports RedriveCount 0 before a redrive. The jar has no RedriveCount.
 	redrive := runPhase4(t, s, "redrive", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount"},"End":true}}}`, "run", `{}`)
+	if redrive.Status != store.ExecSucceeded || redrive.Output != `{"c":0}` {
+		t.Fatalf("%s %s %s", redrive.Status, redrive.Error, redrive.Output)
+	}
+	s.Runner.JarContext = true
+	redrive = runPhase4(t, s, "redrive-jar", `{"StartAt":"P","States":{"P":{"Type":"Pass","Parameters":{"c.$":"$$.Execution.RedriveCount"},"End":true}}}`, "run", `{}`)
 	if redrive.Error != "States.Runtime" || !missingCause(redrive.Cause) {
 		t.Fatalf("%s %s", redrive.Error, redrive.Cause)
 	}
@@ -442,6 +448,7 @@ func TestPhase4RetryCountAndIntrinsics(t *testing.T) {
 	if ex.Error != "States.Runtime" || !missingCause(ex.Cause) {
 		t.Fatalf("%s %s %s", ex.Status, ex.Error, ex.Cause)
 	}
+	s.Runner.JarContext = false
 
 	params := map[string]string{
 		"s.$":      `States.Format('id={}', 'A')`,
