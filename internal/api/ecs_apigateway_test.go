@@ -93,7 +93,7 @@ func ecsService(t *testing.T, f *fakeECS) *Service {
 	t.Cleanup(srv.Close)
 	s := newService()
 	s.Runner.SDK = sdk.New(sdk.Config{Region: "us-east-1", Endpoints: map[string]string{"ecs": srv.URL}})
-	s.Runner.ECSPoll = 5 * time.Millisecond
+	s.Runner.SyncPoll = 5 * time.Millisecond
 	return s
 }
 

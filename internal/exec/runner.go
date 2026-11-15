@@ -55,11 +55,11 @@ type Runner struct {
 	// object, as amazon/aws-stepfunctions-local does (--compat=sfn-local).
 	// The JSONata context always has RedriveCount.
 	JarContext bool
-	// ECSPoll is how often a .sync ecs:runTask describes its task. Zero is
-	// one second.
-	ECSPoll time.Duration
-	Region  string
-	Account string
+	// SyncPoll is how often a .sync ecs:runTask describes its task and a .sync
+	// athena:startQueryExecution reads its query. Zero is one second.
+	SyncPoll time.Duration
+	Region   string
+	Account  string
 	// SDK runs arn:aws:states:::aws-sdk: resources and the DynamoDB, SQS,
 	// SNS, and EventBridge integrations. Nil means they are unsupported.
 	SDK *sdk.Caller

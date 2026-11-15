@@ -57,7 +57,7 @@ func TestAWSEmulator(t *testing.T) {
 		})
 		s.Runner.HTTPClient = out.HTTPClient
 		s.Runner.APIGatewayEndpoint = endpoint
-		s.Runner.ECSPoll = 500 * time.Millisecond
+		s.Runner.SyncPoll = 500 * time.Millisecond
 		return s
 	}
 	awsCfg := aws.Config{Region: "us-east-1", Credentials: out.Credentials, HTTPClient: out.HTTPClient, BaseEndpoint: aws.String(endpoint)}

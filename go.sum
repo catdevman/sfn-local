@@ -16,6 +16,8 @@ github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.12 h1:uvX2yaL+aMjkmnrLPPlR/zwjoKF
 github.com/aws/aws-sdk-go-v2/internal/v4a v1.5.12/go.mod h1:dicT+2eNhHHqGkxHO7LoXw3QghIUGuzgdmFqaSTopgI=
 github.com/aws/aws-sdk-go-v2/service/apigateway v1.52.9 h1:VYNZI0mt6b18sJX1T6jF9oWUO9Kj0m/fOOLPk9nKyWk=
 github.com/aws/aws-sdk-go-v2/service/apigateway v1.52.9/go.mod h1:HK+nhn9kUsy3xl34LXQs4HRQoCQiofFqJXv1gbsoLso=
+github.com/aws/aws-sdk-go-v2/service/athena v1.67.1 h1:MHojv+bZQ1+ZUeztGUOBKbrnmYkBn2wJXm2WOcNn1Nk=
+github.com/aws/aws-sdk-go-v2/service/athena v1.67.1/go.mod h1:NiQPosVHeirVl2IwekOMLfp3S3qBfqtJCik4GSlj2Eo=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.74.0 h1:DSfi8o1qAb2AQwFwfk4gjOE3R9V+33/V5k/ICYkkSac=
 github.com/aws/aws-sdk-go-v2/service/dynamodb v1.74.0/go.mod h1:tzOEVcpLdi8aqyYUKQkuOVVAOfOgfLA0xEomIUTHIFY=
 github.com/aws/aws-sdk-go-v2/service/ec2 v1.347.0 h1:g+2QZq6gbCn/jhTY7YsXflh+WlbX/zH/2bzKMlXuv3M=

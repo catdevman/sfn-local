@@ -96,10 +96,7 @@ func (r *Runner) invokeECSSync(callCtx, parent context.Context, arn string, meta
 	if err != nil {
 		return "", &taskFailure{Name: "States.Runtime", Cause: err.Error()}
 	}
-	poll := r.ECSPoll
-	if poll <= 0 {
-		poll = time.Second
-	}
+	poll := r.syncPoll()
 	for {
 		if callCtx.Err() != nil {
 			r.stopECSTasks(started)

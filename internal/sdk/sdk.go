@@ -76,6 +76,7 @@ type service struct {
 
 // services is every integration this package runs, keyed by service id.
 var services = map[string]service{
+	"athena":         athenaService,
 	"dynamodb":       dynamodbService,
 	"ecs":            ecsService,
 	"eventbridge":    eventbridgeService,

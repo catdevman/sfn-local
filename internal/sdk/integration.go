@@ -20,14 +20,18 @@ type integration struct {
 }
 
 var integrations = map[string]integration{
-	"arn:aws:states:::dynamodb:getItem":    {id: "dynamodb", action: "getItem", prefix: "DynamoDB"},
-	"arn:aws:states:::dynamodb:putItem":    {id: "dynamodb", action: "putItem", prefix: "DynamoDB"},
-	"arn:aws:states:::dynamodb:updateItem": {id: "dynamodb", action: "updateItem", prefix: "DynamoDB"},
-	"arn:aws:states:::dynamodb:deleteItem": {id: "dynamodb", action: "deleteItem", prefix: "DynamoDB"},
-	"arn:aws:states:::sqs:sendMessage":     {id: "sqs", action: "sendMessage", prefix: "SQS", asText: memberText("MessageBody")},
-	"arn:aws:states:::sns:publish":         {id: "sns", action: "publish", prefix: "SNS", asText: memberText("Message")},
-	"arn:aws:states:::events:putEvents":    {id: "eventbridge", action: "putEvents", prefix: "EventBridge", asText: entriesDetail},
-	"arn:aws:states:::ecs:runTask":         {id: "ecs", action: "runTask", prefix: "ECS", fallback: "ECS.AmazonECSException"},
+	"arn:aws:states:::dynamodb:getItem":           {id: "dynamodb", action: "getItem", prefix: "DynamoDB"},
+	"arn:aws:states:::dynamodb:putItem":           {id: "dynamodb", action: "putItem", prefix: "DynamoDB"},
+	"arn:aws:states:::dynamodb:updateItem":        {id: "dynamodb", action: "updateItem", prefix: "DynamoDB"},
+	"arn:aws:states:::dynamodb:deleteItem":        {id: "dynamodb", action: "deleteItem", prefix: "DynamoDB"},
+	"arn:aws:states:::sqs:sendMessage":            {id: "sqs", action: "sendMessage", prefix: "SQS", asText: memberText("MessageBody")},
+	"arn:aws:states:::sns:publish":                {id: "sns", action: "publish", prefix: "SNS", asText: memberText("Message")},
+	"arn:aws:states:::events:putEvents":           {id: "eventbridge", action: "putEvents", prefix: "EventBridge", asText: entriesDetail},
+	"arn:aws:states:::ecs:runTask":                {id: "ecs", action: "runTask", prefix: "ECS", fallback: "ECS.AmazonECSException"},
+	"arn:aws:states:::athena:startQueryExecution": {id: "athena", action: "startQueryExecution", prefix: "Athena", fallback: "Athena.AmazonAthenaException"},
+	"arn:aws:states:::athena:stopQueryExecution":  {id: "athena", action: "stopQueryExecution", prefix: "Athena", fallback: "Athena.AmazonAthenaException"},
+	"arn:aws:states:::athena:getQueryExecution":   {id: "athena", action: "getQueryExecution", prefix: "Athena", fallback: "Athena.AmazonAthenaException"},
+	"arn:aws:states:::athena:getQueryResults":     {id: "athena", action: "getQueryResults", prefix: "Athena", fallback: "Athena.AmazonAthenaException"},
 }
 
 // IsIntegration reports whether resource is an optimized integration this

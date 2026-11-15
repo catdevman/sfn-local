@@ -2,6 +2,7 @@
 # Every operation of every AWS SDK for Go v2 client in internal/sdk.
 # implemented runs through op. codec runs through a hand-written handler.
 # unsupported has no handler. opaque lists members the codec cannot carry.
+# athena: 26 of 75 operations run.
 # dynamodb: 23 of 62 operations run.
 # ecs: 17 of 88 operations run.
 # eventbridge: 14 of 57 operations run.
@@ -12,6 +13,381 @@
 # sns: 14 of 42 operations run.
 # sqs: 16 of 23 operations run.
 # ssm: 18 of 152 operations run.
+
+[[operation]]
+service = "athena"
+action = "batchGetNamedQuery"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "batchGetPreparedStatement"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "batchGetQueryExecution"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "cancelCapacityReservation"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createCapacityReservation"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createDataCatalog"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createNamedQuery"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "createNotebook"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createPreparedStatement"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createPresignedNotebookUrl"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createSystemTableConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "createWorkGroup"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "deleteCapacityReservation"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "deleteDataCatalog"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "deleteNamedQuery"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "deleteNotebook"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "deletePreparedStatement"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "deleteSystemTableConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "deleteWorkGroup"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "exportNotebook"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getCalculationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getCalculationExecutionCode"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getCalculationExecutionStatus"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getCapacityAssignmentConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getCapacityReservation"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getDataCatalog"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getDatabase"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getNamedQuery"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getNotebookMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getPreparedStatement"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getQueryExecution"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getQueryResults"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getQueryRuntimeStatistics"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getResourceDashboard"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getSession"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getSessionEndpoint"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getSessionStatus"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getSystemTableConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "getTableMetadata"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "getWorkGroup"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "importNotebook"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listApplicationDPUSizes"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listCalculationExecutions"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listCapacityReservations"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listDataCatalogs"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listDatabases"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listEngineVersions"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listExecutors"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listNamedQueries"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listNotebookMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listNotebookSessions"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listPreparedStatements"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listQueryExecutions"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listSessions"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listSystemTableStatuses"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "listTableMetadata"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listTagsForResource"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "listWorkGroups"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "putCapacityAssignmentConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "startCalculationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "startQueryExecution"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "startSession"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "stopCalculationExecution"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "stopQueryExecution"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "tagResource"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "terminateSession"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "untagResource"
+status = "implemented"
+
+[[operation]]
+service = "athena"
+action = "updateCapacityReservation"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateDataCatalog"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateNamedQuery"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateNotebook"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateNotebookMetadata"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updatePreparedStatement"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateSystemTableConfiguration"
+status = "unsupported"
+
+[[operation]]
+service = "athena"
+action = "updateWorkGroup"
+status = "implemented"
 
 [[operation]]
 service = "dynamodb"

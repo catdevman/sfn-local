@@ -41,7 +41,11 @@ func integrationResource(resource string) (base, mode string, ok bool) {
 		"arn:aws:states:::states:startExecution",
 		"arn:aws:states:::events:putEvents",
 		ecsRunTask,
-		apiGatewayInvoke:
+		apiGatewayInvoke,
+		athenaStartQuery,
+		"arn:aws:states:::athena:stopQueryExecution",
+		"arn:aws:states:::athena:getQueryExecution",
+		"arn:aws:states:::athena:getQueryResults":
 		return base, mode, true
 	default:
 		return "", "", false
@@ -52,11 +56,12 @@ const (
 	startExecution   = "arn:aws:states:::states:startExecution"
 	ecsRunTask       = "arn:aws:states:::ecs:runTask"
 	apiGatewayInvoke = "arn:aws:states:::apigateway:invoke"
+	athenaStartQuery = "arn:aws:states:::athena:startQueryExecution"
 )
 
 // syncBases lists the integrations that run each .sync mode.
 var syncBases = map[string][]string{
-	"sync":  {startExecution, ecsRunTask},
+	"sync":  {startExecution, ecsRunTask, athenaStartQuery},
 	"sync2": {startExecution},
 }
 
@@ -84,7 +89,10 @@ func syncHint(mode string) string {
 	if len(bases) == 1 {
 		return "only " + bases[0] + " runs " + suffix
 	}
-	return "only " + strings.Join(bases[:len(bases)-1], ", ") + " and " + bases[len(bases)-1] + " run " + suffix
+	if len(bases) == 2 {
+		return "only " + bases[0] + " and " + bases[1] + " run " + suffix
+	}
+	return "only " + strings.Join(bases[:len(bases)-1], ", ") + ", and " + bases[len(bases)-1] + " run " + suffix
 }
 
 // unsupported is the error for a resource this server cannot run, with a
@@ -146,6 +154,14 @@ func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta
 	if !ok || !modeRuns(base, mode) || !r.integrationReady(base) {
 		return "", &taskFailure{Name: "States.Runtime", Cause: r.unsupported(meta.resource).Error()}
 	}
+	if mode == "sync" {
+		switch base {
+		case ecsRunTask:
+			return r.invokeECSSync(callCtx, parent, arn, meta, taskWins)
+		case athenaStartQuery:
+			return r.invokeAthenaSync(callCtx, parent, arn, meta, taskWins)
+		}
+	}
 	switch base {
 	case "arn:aws:states:::lambda:invoke":
 		return r.invokeLambdaOptimized(callCtx, parent, meta.input, taskWins)
@@ -153,11 +169,6 @@ func (r *Runner) invokeService(callCtx, parent context.Context, arn string, meta
 		return r.invokeStartExecution(callCtx, parent, arn, meta, r.StepFunctionsEndpoint, mode, taskWins)
 	case apiGatewayInvoke:
 		return r.invokeAPIGateway(callCtx, parent, meta.input, taskWins)
-	case ecsRunTask:
-		if mode == "sync" {
-			return r.invokeECSSync(callCtx, parent, arn, meta, taskWins)
-		}
-		fallthrough
 	default:
 		out, err := r.SDK.CallIntegration(callCtx, base, []byte(meta.input))
 		return out, sdkFailure(err, parent, callCtx, taskWins, sdk.IntegrationFallback(base))
@@ -405,6 +416,14 @@ func transportFailure(err error, parent, callCtx context.Context, taskWins bool,
 
 func postJSON10(ctx context.Context, client *http.Client, endpoint, target, body string) (string, int, error) {
 	return postBody(ctx, client, strings.TrimRight(endpoint, "/"), "application/x-amz-json-1.0", body, target)
+}
+
+// syncPoll is how often a .sync job is checked.
+func (r *Runner) syncPoll() time.Duration {
+	if r.SyncPoll > 0 {
+		return r.SyncPoll
+	}
+	return time.Second
 }
 
 // httpClient is the client for this runner's own HTTP calls.
