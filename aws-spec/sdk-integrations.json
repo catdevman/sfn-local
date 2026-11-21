@@ -3,6 +3,12 @@
   "source_url": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.md",
   "added": [
     {
+      "date": "November 4, 2026",
+      "services": [
+        "AWS Lambda Web"
+      ]
+    },
+    {
       "date": "October 14, 2026",
       "services": [
         "AWS Network Security Manager",
