@@ -5,6 +5,14 @@
   "hint_note": "local_runtime_hint is a keyword guess added by the sync script. AWS does not publish that label. behavior means a person should read the row before changing a local interpreter. docs means the row looks like a documentation edit.",
   "items": [
     {
+      "guid": "https://docs.aws.amazon.com/step-functions/latest/dg/#New_AWS_SDK_service_integration:_AWS_Lambda_Web_2026-11-04",
+      "title": "New AWS SDK service integration: AWS Lambda Web",
+      "link": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.html",
+      "published": "2026-11-04T19:00:00Z",
+      "description": "Added AWS Lambda Web.",
+      "local_runtime_hint": "unclassified"
+    },
+    {
       "guid": "https://docs.aws.amazon.com/step-functions/latest/dg/#3_new_AWS_SDK_service_integrations_2026-10-14",
       "title": "3 new AWS SDK service integrations",
       "link": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.html",

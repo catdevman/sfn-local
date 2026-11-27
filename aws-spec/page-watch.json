@@ -5,288 +5,288 @@
       "id": "document-history",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/document-history.md",
       "why": "Human changelog of the developer guide, including documentation-only rows.",
-      "sha256": "291ba4234b76b0d2ac9a316a83e35dfa02fd40ad4593a20f579725ef390f811f",
-      "bytes": 63640
+      "sha256": "91b2d8544165fb6c8e7dff0734c466f520aa335dac1d02ca7a294f6bc3307856",
+      "bytes": 63608
     },
     {
       "id": "recent-launches",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/recent-launches.md",
       "why": "Dated feature launches and links to the announcement posts.",
-      "sha256": "fdf3d41ba4eef4690f55a6d659d1df7076783b74ff2614d858272590fa91fe06",
-      "bytes": 3260
+      "sha256": "d18ff485a5e392e5d06c8f78aee711139d402354d443d68c32030659c8cdd901",
+      "bytes": 3229
     },
     {
       "id": "awssdk-release-history",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/awssdk-release-history.md",
       "why": "Dates when AWS SDK integrations were added.",
-      "sha256": "613a2daea8a977215f33c823efc65e193dbb016c1ecb7c5fe726f80d9e3a02f0",
-      "bytes": 3403
+      "sha256": "924e76ef9c956e5fc153e672863f17dffda8a29c1b667dbab76ba0fd7324b783",
+      "bytes": 3404
     },
     {
       "id": "concepts-amazon-states-language",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-amazon-states-language.md",
       "why": "Amazon States Language overview and the examples AWS publishes.",
-      "sha256": "c9fb686e610d656f03679a9ad5cc6a7bad1f0618a3d7d8dd8ccf3d46dea134ec",
-      "bytes": 2469
+      "sha256": "f52c075af2d415121b83406b55cdea5839258cb0b9d2337e5d2e50607a45733c",
+      "bytes": 2426
     },
     {
       "id": "statemachine-structure",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/statemachine-structure.md",
       "why": "Top-level state machine fields.",
-      "sha256": "88a9ac8a88989283a95c55adf0b5aa90b87c49afd137f5579a433ae57fa3cec2",
-      "bytes": 6711
+      "sha256": "7725583e601d7029dab4de71a4e304c9b28b13c3fc66fe44f3ecdbde8174f7c8",
+      "bytes": 6677
     },
     {
       "id": "workflow-states",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/workflow-states.md",
       "why": "State type overview.",
-      "sha256": "b372721888b0e4a4c6c2810e89376e2cb89f810bc73d21161f159ecaa7969b55",
-      "bytes": 4109
+      "sha256": "ecdff55651dd7054a16874976e403f50d57dedc6a18b4382b224b2ab9efb0cf6",
+      "bytes": 4078
     },
     {
       "id": "intrinsic-functions",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/intrinsic-functions.md",
       "why": "States intrinsic functions.",
-      "sha256": "7eecf29123cabab277f268769acb84e429d64f133664d4b43f223dbcf3a04886",
-      "bytes": 22741
+      "sha256": "630fa614681009524004fd3c164396720d799f21e6264971437ff54d1659edbe",
+      "bytes": 22930
     },
     {
       "id": "state-task",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-task.md",
       "why": "Task state, including service integration resource forms.",
-      "sha256": "db94fe6c63eb486379dfeaece7b132660f7fcd22459ade5b6d4d8e20ef40563c",
-      "bytes": 17892
+      "sha256": "12d79c305ce82656de82a1565a89c4ce9f3c8b449e9e47fc902641d8c186fc19",
+      "bytes": 17898
     },
     {
       "id": "state-choice",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-choice.md",
       "why": "Choice state rules.",
-      "sha256": "a228974ea14a5344f5aa25f0da2e38e7f58f1eaf67c13c27df0a505f8191e4be",
-      "bytes": 9954
+      "sha256": "c4a39a5fd3c82311e8190e7249f5da133a3bef86b6af55c96b7a9f7cbfc2d91b",
+      "bytes": 9930
     },
     {
       "id": "state-parallel",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-parallel.md",
       "why": "Parallel state.",
-      "sha256": "967d84f0abb2f7432b5b7b70b6472ec9ae762947ef9713767ff90a3464f7efc9",
-      "bytes": 8275
+      "sha256": "86c0cf31104872575f6a058a5e2e81cd04833db1d4fb4fdc040f9dc0855323d8",
+      "bytes": 8253
     },
     {
       "id": "state-map",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map.md",
       "why": "Map state overview.",
-      "sha256": "54593b5b9b9db7e9cf20492496147d919611a690394d180a9a8c7cba1b33145c",
-      "bytes": 5361
+      "sha256": "34fa88076366b944e1dcf439762eca2aa01ef4d697f746087a28c7c2baf73ff0",
+      "bytes": 5336
     },
     {
       "id": "state-map-inline",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-inline.md",
       "why": "Inline Map.",
-      "sha256": "629379ce761c1fd59d52fdb97caca44929bf4019f0914ac764e83bcd4ac1c5a6",
-      "bytes": 16473
+      "sha256": "327d5cc27423a0a193615a2f906b69f578069ea9b9e6e2b4b9b9a6b96a35b388",
+      "bytes": 16461
     },
     {
       "id": "state-map-distributed",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-map-distributed.md",
       "why": "Distributed Map.",
-      "sha256": "228d6c4b6ca5ea4c3c8e49096ef7ca61150d2b43b03491b627af930cbb7311a2",
-      "bytes": 24547
+      "sha256": "b4b7981defa00007aef857c45367d29748b35f025f9c046363176e0f3e5c8595",
+      "bytes": 24534
     },
     {
       "id": "state-pass",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-pass.md",
       "why": "Pass state.",
-      "sha256": "a371b2348c8d41c2e88c636f369352bd61bf8fe8f9fc2a96a28f3883b8df0258",
-      "bytes": 3159
+      "sha256": "ae8feed148667e03620760a577d6766262106d5e5969d152da09a1d8ecf4e4cf",
+      "bytes": 3133
     },
     {
       "id": "state-wait",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-wait.md",
       "why": "Wait state.",
-      "sha256": "4803008cd16f3c00c9bbee1f79d1e68458e86328d137e4587a34c62c5f9cb08b",
-      "bytes": 3080
+      "sha256": "0dbb24f00f8ec9fba48331b9515a7bd55047b30d52ec3386f344166763769698",
+      "bytes": 3054
     },
     {
       "id": "state-succeed",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-succeed.md",
       "why": "Succeed state.",
-      "sha256": "bf6eb2771ca0ddd428edaf77c80b896cdef7fd7bc6a1d8210fa3db82b91894a2",
-      "bytes": 1358
+      "sha256": "51b6c1a7c9344f38d4918a861d65a54683db4ff60788358d82b7c070784d2dae",
+      "bytes": 1329
     },
     {
       "id": "state-fail",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/state-fail.md",
       "why": "Fail state.",
-      "sha256": "cf0a6c6fa97ff0b4d1c2447109c5a9752f5ca943bc175ba833c43afbdbeeb9e5",
-      "bytes": 4490
+      "sha256": "dd84d0a16218d773184f0a40f330362db8b655eba6b6e1434e68deb520e8078e",
+      "bytes": 4464
     },
     {
       "id": "concepts-error-handling",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-error-handling.md",
       "why": "Retry, Catch, and error names.",
-      "sha256": "94261c6314a07a2fec86a4178622a164c4b0b0ae035a435d17b40ab974bdfff1",
-      "bytes": 23779
+      "sha256": "a03ec4bd5b76855e2b4a6a4e93922ece84d3090997e8cc7ce1ae985e21c5143c",
+      "bytes": 23788
     },
     {
       "id": "service-quotas",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/service-quotas.md",
       "why": "Quotas that change execution limits.",
-      "sha256": "d17924110d1ca42053bb3475512a60197c7195f90f06b99fe6cf7a8c597fc0a0",
-      "bytes": 14258
+      "sha256": "d2a1a20ad695a7dbe088bbcb0415615d2105f0979ca86af5cc71fd3902c6dfc1",
+      "bytes": 14228
     },
     {
       "id": "concepts-input-output-filtering",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-input-output-filtering.md",
       "why": "Input and output processing overview.",
-      "sha256": "f4174bdd5db26bde2250b3f1c5455225efe8a367152187a62468208a63f45786",
-      "bytes": 4503
+      "sha256": "94bb2311527812605cb643097ab92d2de42812f79b48bdb37f459e8507757156",
+      "bytes": 4456
     },
     {
       "id": "workflow-variables",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/workflow-variables.md",
       "why": "Workflow variables and Assign.",
-      "sha256": "a4b0c40f3cabb3053da7dfd2b9816aad33e851578d97415fdaec7cde768a8a3f",
-      "bytes": 13151
+      "sha256": "4a5361c1581c748c8440dff578a5f21c93ecaf1798e7bf3e4ea83ee97dfdad5a",
+      "bytes": 13251
     },
     {
       "id": "transforming-data",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/transforming-data.md",
       "why": "JSONata data transformations.",
-      "sha256": "016e4ef8330ec9ee04218119123feeb13a01343291af52a9fc66bfd3ce9f6874",
-      "bytes": 25780
+      "sha256": "ced0f3723131b0a1ce8f79c14f887c401cdbbc0ed5305769a10fbacf856f094b",
+      "bytes": 25957
     },
     {
       "id": "input-output-contextobject",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-contextobject.md",
       "why": "Context object, including $states.",
-      "sha256": "3854d4baa914c433da82ac4bf939a4aa8a3000bc37eff470a14e6af7a0d58e41",
-      "bytes": 7825
+      "sha256": "e7d906ceed348f2b9daccb0215d830a1dbd280f72eee956a1be2af00b85e3ca6",
+      "bytes": 7819
     },
     {
       "id": "amazon-states-language-paths",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/amazon-states-language-paths.md",
       "why": "JSONPath fields.",
-      "sha256": "9a73832b68b5ce5d2008c5a4bb2d905f1c6836098f00a60951be7e59cd730ce6",
-      "bytes": 3369
+      "sha256": "a0e453f362f677d1810216cefaaf7e1d368a7b0db7043c0aab306bbbb1593ac2",
+      "bytes": 3333
     },
     {
       "id": "input-output-inputpath-params",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-inputpath-params.md",
       "why": "InputPath, Parameters, and ResultSelector.",
-      "sha256": "8d7a5ed45cdcd8e17d473497689525f286eb48edd6b13c4883d41155488e2965",
-      "bytes": 8103
+      "sha256": "450d54e2b5dd1a605e57830038dcb376c656c55a7c1500cb9ae873de6e252ec0",
+      "bytes": 8106
     },
     {
       "id": "input-output-resultpath",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-resultpath.md",
       "why": "ResultPath and output selection.",
-      "sha256": "087861a77cbb09c1d2945199daa8ac0419b6998dcabb16e5f290e86d0e567e2a",
-      "bytes": 5475
+      "sha256": "15be438d4873fdbae2d9ec7b0c1aa6e8187dfa9681f2d97d7a6e801ede81402e",
+      "bytes": 5476
     },
     {
       "id": "input-output-itemspath",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemspath.md",
       "why": "Map ItemsPath.",
-      "sha256": "d14374c8e69879d5c41ea088b567233d45ff66f3e1c56419959804eb27c7772a",
-      "bytes": 3768
+      "sha256": "26eb4e307e7eb9a96eb8d20aa3ad1378afc71caa0a9dca6fcca7a3d625c1c19b",
+      "bytes": 3746
     },
     {
       "id": "input-output-itemreader",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemreader.md",
       "why": "Distributed Map ItemReader.",
-      "sha256": "ffc11433a4d00415e4c2b40258493e0b206582098fd11b97e05253a920f9628e",
-      "bytes": 36284
+      "sha256": "fc06c01fe81e3cba41898d5162e62d83e4b28593573ce7ae8625f16c6768d66f",
+      "bytes": 36325
     },
     {
       "id": "input-output-itemselector",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itemselector.md",
       "why": "Map ItemSelector.",
-      "sha256": "ecf97fd51be4b3f27f752d0d177490faf6abdb1ca1981270c988ec313a448ec6",
-      "bytes": 2481
+      "sha256": "6c6b79a0d1715820d710b8911340d66eeb68fbcb51dac20e9c08385c1df74b7c",
+      "bytes": 2452
     },
     {
       "id": "input-output-itembatcher",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-itembatcher.md",
       "why": "Map ItemBatcher.",
-      "sha256": "198d9c660eb2fd8245971d1b7ea6233a80605872ffb77b3a30f6eb57a6f3e2dd",
+      "sha256": "85a042e7310104acd8e15e4f447339881587a9abbbba2fcab3b5e242b8336c87",
       "bytes": 6835
     },
     {
       "id": "input-output-resultwriter",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/input-output-resultwriter.md",
       "why": "Map ResultWriter.",
-      "sha256": "c50c0652a8d07777b56242340f32a7dd6345bd2629376911a702c0c91b12584f",
-      "bytes": 16114
+      "sha256": "7b5167578af80d020defe5f16627f2458436e460a18719965170de5c63495aed",
+      "bytes": 16093
     },
     {
       "id": "connect-to-resource",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-to-resource.md",
       "why": "Integration patterns: Request Response, .sync, and .waitForTaskToken.",
-      "sha256": "05513d6998a0e27d841a73120bd3bb480dbf80ab1e188b0d5b42648611862cb7",
-      "bytes": 19780
+      "sha256": "57feff3b48c2b20b132a3a05e971f90fe23e5ea23fdc85c5a1369ab6b0abc372",
+      "bytes": 19773
     },
     {
       "id": "call-https-apis",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/call-https-apis.md",
       "why": "HTTP Task.",
-      "sha256": "3515460c2c6e7afc6f3ceafd19d85cfd164f4ff7e7c91326f2620146fddae632",
-      "bytes": 33420
+      "sha256": "f4e02cbe49efa5b3e068e5ce522d35956e14e50a8639e705d58f1e939744a199",
+      "bytes": 33429
     },
     {
       "id": "connect-parameters",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/connect-parameters.md",
       "why": "Task Parameters passed to a service API.",
-      "sha256": "ef2a348c0fe2f00ab848965d772cd47c462ee3ec9038769fdad10f67b54a84b1",
-      "bytes": 4061
+      "sha256": "d4ccb9a3ea6bda59fa40c1b391398252acfed39de766d421348d1f34ed3a78ea",
+      "bytes": 4043
     },
     {
       "id": "concepts-activities",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/concepts-activities.md",
       "why": "Activities and activity workers.",
-      "sha256": "60a969cb473ef6a31578dea9e425739608e08120dda8321e0765e81ea70d5595",
-      "bytes": 8763
+      "sha256": "c261e4889dec2f5f2090ced1652101f939777578fb4406f226b6389f4cf7b725",
+      "bytes": 8732
     },
     {
       "id": "test-state-isolation",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/test-state-isolation.md",
       "why": "TestState API behavior.",
-      "sha256": "679cf9738b9508f94b93614ae3c11f3e1bb5f3c4838b72c1ee5e71df57765e24",
-      "bytes": 44181
+      "sha256": "f14a479b029d55fbad915ab20e870bc3e91f4c4893f87edbf426296cb7b488bf",
+      "bytes": 44145
     },
     {
       "id": "redrive-executions",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/redrive-executions.md",
       "why": "Redrive behavior.",
-      "sha256": "89d736fbb430bdab823b6ebd749efa183a52d97552e909b1690fb1a813f64ab3",
-      "bytes": 12876
+      "sha256": "f8781334c56dcc26ba7b8bc3ffb935e882df7ec8b50dd8d8792f2c08b29a3abf",
+      "bytes": 12846
     },
     {
       "id": "supported-services-awssdk",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/supported-services-awssdk.md",
       "why": "Catalog of AWS SDK integrations.",
-      "sha256": "85089795417392caf7d5c3ac9a04dbc979a4eb13c24aeda17f792f8b286a6c07",
-      "bytes": 69078
+      "sha256": "647802b7a539f16e33362fface384376a937192d815b1b600733852a3c34f7dd",
+      "bytes": 69173
     },
     {
       "id": "sfn-local",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local.md",
       "why": "AWS page for Step Functions Local, the archived local tool.",
-      "sha256": "4c530713dc01ea81c99fd60fc82fab15d9ec386a8a4dc489f1e1d64321b5cd55",
-      "bytes": 11981
+      "sha256": "7886201fd1d5bc84d830b175dd7cd30e861a9df36ea0f12dcd54c23457771342",
+      "bytes": 11988
     },
     {
       "id": "sfn-local-lambda",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local-lambda.md",
       "why": "Local Lambda endpoint wiring described by AWS.",
-      "sha256": "90c37d6263ea58f50e048a21ed4f58b655325c8c1fd202d3db4f871a43edf2a4",
-      "bytes": 8497
+      "sha256": "3e3a782e6fd8f6ec2c0a747b78182ff15e80889a0b8fbd7c10a812e169833e96",
+      "bytes": 8489
     },
     {
       "id": "sfn-local-test-sm-exec",
       "url": "https://docs.aws.amazon.com/step-functions/latest/dg/sfn-local-test-sm-exec.md",
       "why": "Mocked service integrations for local testing, as AWS describes them.",
-      "sha256": "cb5f871cfe2bf729613d021c990434389a484335f949d35245d0e7d70a1cb3d0",
-      "bytes": 27744
+      "sha256": "9ce45494d92b9c1875a209b948a9d3822f41242a5214e52da8b715b64ac84cd1",
+      "bytes": 27746
     }
   ]
 }
