@@ -7,8 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 concurrency:
   group: aws-spec-sync
@@ -19,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.AWS_SPEC_SYNC_TOKEN }}
 
       - uses: actions/setup-go@v5
         with:
@@ -36,10 +37,14 @@ jobs:
 
       - name: Open a pull request when snapshots change
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.AWS_SPEC_SYNC_TOKEN }}
           BASE_BRANCH: ${{ github.event.repository.default_branch }}
         run: |
           set -euo pipefail
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::Missing AWS_SPEC_SYNC_TOKEN repository secret."
+            exit 1
+          fi
           if ! git status --porcelain | grep -q .; then
             echo "No AWS spec changes."
             exit 0
